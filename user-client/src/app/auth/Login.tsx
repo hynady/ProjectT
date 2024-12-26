@@ -40,8 +40,9 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const LoginPage = () => {
-  const {isAuthenticated, setAuthenticated} = useAppContext();
+  const {setAuthenticated} = useAppContext();
   const navigate = useNavigate();
+
   // Initialize form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -54,19 +55,33 @@ const LoginPage = () => {
   // Handle form submission
   const onSubmit = async (data: FormValues) => {
     try {
+      // Gọi authService để đăng nhập
+      const response = await authService.login(data);
+      console.log("Đăng nhập thành công:", response);
+      // Hiển thị thông báo đăng nhập thành công
       toast({
         title: "Đăng nhập thành công!",
         variant: "success",
       });
-      const response = await authService.login(data);
-      console.log("Đăng nhập thành công:", response);
+      // Nếu đăng nhập thành công, cập nhật trạng thái và điều hướng
       setAuthenticated(true);
       navigate('/');
-    } catch (error) {
-      toast({
-        title: "Có lỗi khi đăng nhập, thử lại sau!",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      // Kiểm tra nếu là lỗi 403
+      if (error.status === 403) {
+        toast({
+          title: "Email hoặc mật khẩu không đúng. Vui lòng thử lại.",
+          variant: "destructive",
+        });
+      } else {
+        // Xử lý các lỗi khác (ví dụ lỗi mạng, lỗi server)
+        toast({
+          title: "Có lỗi khi đăng nhập, thử lại sau!",
+          variant: "destructive",
+        });
+      }
+
+      // Log lỗi ra console để debug
       console.error("Lỗi đăng nhập:", error);
     }
   };
@@ -119,7 +134,7 @@ const LoginPage = () => {
                   </FormItem>
                 )}
               />
-              <Button className="w-full" type="submit">
+              <Button className="w-full" type="submit" disabled={!form.formState.isValid}>
                 Đăng nhập
               </Button>
             </form>

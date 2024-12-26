@@ -5,7 +5,6 @@ import {Input} from "@/components/ui/input.tsx";
 import {Label} from "@/components/ui/label.tsx";
 import {InputOTP, InputOTPGroup, InputOTPSlot,} from "@/components/ui/input-otp"
 // import { authService } from "@/services/authService";
-import {mockAuthService as authService} from "@/services/mockAuthService.tsx";
 import {useToast} from "@/hooks/use-toast.ts"
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 import {REGEXP_ONLY_DIGITS} from "input-otp";
@@ -22,17 +21,23 @@ const ResetPasswordPage = () => {
   const [activeTab, setActiveTab] = useState("step1");
   const [loading, setLoading] = useState(false); // Trạng thái loading khi gửi OTP
   const [strength, setStrength] = useState(0);
+  const [resendDisabled, setResendDisabled] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
   const {toast} = useToast()
 
   const handleSendOtp = async () => {
     setLoading(true); // Bắt đầu quá trình gửi OTP
     try {
-      await authService.sendOtp(email);
+      await userService.sendOtp(email);
       toast({
         title: "OTP đã được gửi đến email của bạn!",
       });
       setActiveTab("step2"); // Chuyển sang bước 2
+
+      // Kích hoạt trạng thái chờ và đặt thời gian cooldown
+      setResendDisabled(true);
+      setCooldown(30);
     } catch (error: any) {
       if (error.response?.status === 429) { // HTTP 429: Too Many Requests
         toast({
@@ -53,7 +58,7 @@ const ResetPasswordPage = () => {
   const handleVerifyOtp = async () => {
     setLoading(true); // Bắt đầu quá trình xác thực OTP
     try {
-      await authService.verifyOtp(email, otp);
+      await userService.verifyOtp(email, otp);
       toast({
         title: "OTP hợp lệ!",
       })
@@ -120,6 +125,20 @@ const ResetPasswordPage = () => {
     const {score} = checkPasswordStrength(password);
     setStrength(score);
   }, [password]);
+
+  useEffect(() => {
+    if (resendDisabled && cooldown > 0) {
+      const timer = setTimeout(() => {
+        setCooldown(cooldown - 1);
+      }, 1000);
+
+      return () => clearTimeout(timer); // Xóa timer khi component unmount
+    }
+
+    if (cooldown === 0) {
+      setResendDisabled(false);
+    }
+  }, [cooldown, resendDisabled]);
 
   return (
     <div className="flex items-center justify-center h-screen">
@@ -191,10 +210,11 @@ const ResetPasswordPage = () => {
                       <Button
                         type="button"
                         onClick={handleSendOtp}
-                        className="ml-auto"
+                        className="ml-auto text-sm"
                         variant="link"
+                        disabled={resendDisabled} // Vô hiệu hóa khi đang trong trạng thái chờ
                       >
-                        Gửi lại mã
+                        {resendDisabled ? `Gửi lại mã trong (${cooldown}s)` : "Gửi lại mã"}
                       </Button>
                     </div>
 

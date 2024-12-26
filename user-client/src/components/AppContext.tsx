@@ -10,11 +10,10 @@ const AppContext = createContext<AuthContextProps | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({children}) => {
   const [isAuthenticated, setAuthenticated] = useState<boolean>(false); // Trạng thái đăng nhập
 
-
   return (
-    <AppContext.Provider value={{isAuthenticated, setAuthenticated}}>
+      <AppContext.Provider value={{isAuthenticated, setAuthenticated}}>
         {children}
-    </AppContext.Provider>
+      </AppContext.Provider>
   );
 };
 

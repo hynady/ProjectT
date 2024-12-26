@@ -1,11 +1,18 @@
-import {LoginPayload, RegisterPayload} from "@/services/authService";
+import {RegisterPayload} from "@/services/authService";
 
 export const mockAuthService = {
-  login: async (_payload: LoginPayload) => {
-    // Giả lập phản hồi từ server
-    return new Promise((resolve) => {
+  // Hàm giả lập đăng nhập
+  login: async (_payload: { email: string; password: string }) => {
+    return new Promise<{ token: string }>((resolve, reject) => {
       setTimeout(() => {
-        resolve({token: "fake-jwt-token"});
+        // Kiểm tra thông tin đăng nhập (giả lập)
+        if (_payload.email === 'duyvnlx3016@gmail.com' && _payload.password === 'Namduy2003@))#') {
+          // Giả lập phản hồi từ server với JWT token
+          const token = 'fake-jwt-token';
+          // Trả về token giả
+          resolve({ token });
+        } else {
+          reject({ status: 403, message: 'Thông tin đăng nhập chưa đúng' });        }
       }, 1000);
     });
   },
