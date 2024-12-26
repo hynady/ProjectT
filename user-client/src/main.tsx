@@ -5,14 +5,17 @@ import {BrowserRouter} from "react-router-dom";
 import AppRouter from "@/router/AppRouter.tsx";
 import {Toaster} from "@/components/ui/toaster.tsx";
 import {ThemeProvider} from "@/components/theme-provider.tsx";
+import {AppProvider} from "@/components/AppContext.tsx";
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <BrowserRouter>
-        <AppRouter />
-        <Toaster />
-      </BrowserRouter>
-    </ThemeProvider>
+    <AppProvider>
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <BrowserRouter>
+          <AppRouter/>
+          <Toaster/>
+        </BrowserRouter>
+      </ThemeProvider>
+    </AppProvider>
   </StrictMode>,
 );

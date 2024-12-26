@@ -1,9 +1,9 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import {useForm} from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
 import {
   FormFixColorLabel,
   FormControl,
@@ -22,6 +22,9 @@ import {
 } from "@/components/ui/card";
 import {mockAuthService as authService} from "@/services/mockAuthService.tsx";
 import {toast} from "@/hooks/use-toast.ts";
+import {useAppContext} from "@/components/AppContext.tsx";
+import {useNavigate} from "react-router-dom";
+
 
 // Define form validation schema
 const formSchema = z.object({
@@ -37,6 +40,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const LoginPage = () => {
+  const {isAuthenticated, setAuthenticated} = useAppContext();
+  const navigate = useNavigate();
   // Initialize form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -55,6 +60,8 @@ const LoginPage = () => {
       });
       const response = await authService.login(data);
       console.log("Đăng nhập thành công:", response);
+      setAuthenticated(true);
+      navigate('/');
     } catch (error) {
       toast({
         title: "Có lỗi khi đăng nhập, thử lại sau!",
@@ -77,20 +84,20 @@ const LoginPage = () => {
               <FormField
                 control={form.control}
                 name="email"
-                render={({ field }) => (
+                render={({field}) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input placeholder="Nhập email" {...field} />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage/>
                   </FormItem>
                 )}
               />
               <FormField
                 control={form.control}
                 name="password"
-                render={({ field }) => (
+                render={({field}) => (
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Mật khẩu</FormLabel>
@@ -108,7 +115,7 @@ const LoginPage = () => {
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage/>
                   </FormItem>
                 )}
               />

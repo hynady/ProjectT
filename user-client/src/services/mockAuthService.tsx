@@ -6,7 +6,7 @@ export const mockAuthService = {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({token: "fake-jwt-token"});
-      }, 5000);
+      }, 1000);
     });
   },
 
