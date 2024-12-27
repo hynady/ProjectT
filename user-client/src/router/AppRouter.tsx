@@ -5,7 +5,8 @@ import ResetPasswordPage from "@/app/auth/ResetPassword.tsx";
 import { AuthLayout } from "@/layouts/AuthLayout.tsx";
 import { MainLayout } from "@/layouts/MainLayout.tsx";
 import HomePage from "@/app/homepage/HomePage.tsx";
-import ProtectedRoute from "@/router/ProtectedRoute.tsx"; // Import ProtectedRoute
+import ProtectedRoute from "@/router/ProtectedRoute.tsx";
+import {CardWithForm} from "@/app/auth/Test.tsx"; // Import ProtectedRoute
 
 function AppRouter() {
   return (
@@ -15,6 +16,7 @@ function AppRouter() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/rs-pw" element={<ResetPasswordPage />} />
+        <Route path="/t" element={<CardWithForm/>} />
       </Route>
 
       {/* Protected Main Routes */}

@@ -1,16 +1,14 @@
 // layouts/MainLayout.tsx
 import { Outlet } from 'react-router-dom'
-import {ModeToggle} from "@/components/ui/mode-toggle.tsx";
+import Navbar from "@/components/ui/Navbar.tsx";
 
 export const MainLayout = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
+    <div className="">
+      <main className="container mx-auto px-4 py-20">
+        <Navbar/>
         <Outlet />
       </main>
-      <div className="sticky-bottom">
-        <ModeToggle />
-      </div>
     </div>
   )
 }

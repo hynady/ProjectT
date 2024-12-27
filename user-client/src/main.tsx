@@ -9,13 +9,15 @@ import {AppProvider} from "@/components/AppContext.tsx";
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AppProvider>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <BrowserRouter>
-          <AppRouter/>
-          <Toaster/>
-        </BrowserRouter>
-      </ThemeProvider>
-    </AppProvider>
+    <div className="hide-scrollbar">
+      <AppProvider>
+        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+          <BrowserRouter>
+            <AppRouter/>
+            <Toaster/>
+          </BrowserRouter>
+        </ThemeProvider>
+      </AppProvider>
+    </div>
   </StrictMode>,
 );

@@ -24,6 +24,7 @@ import {mockAuthService as authService} from "@/services/mockAuthService.tsx";
 import {toast} from "@/hooks/use-toast.ts";
 import {useAppContext} from "@/components/AppContext.tsx";
 import {useNavigate} from "react-router-dom";
+import {useState} from "react";
 
 
 // Define form validation schema
@@ -41,6 +42,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 const LoginPage = () => {
   const {setAuthenticated} = useAppContext();
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
   // Initialize form
@@ -55,6 +58,7 @@ const LoginPage = () => {
   // Handle form submission
   const onSubmit = async (data: FormValues) => {
     try {
+      setLoading(true);
       // Gọi authService để đăng nhập
       const response = await authService.login(data);
       console.log("Đăng nhập thành công:", response);
@@ -83,6 +87,8 @@ const LoginPage = () => {
 
       // Log lỗi ra console để debug
       console.error("Lỗi đăng nhập:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -134,7 +140,7 @@ const LoginPage = () => {
                   </FormItem>
                 )}
               />
-              <Button className="w-full" type="submit" disabled={!form.formState.isValid}>
+              <Button className="w-full" type="submit" disabled={!form.formState.isValid} loading={loading}>
                 Đăng nhập
               </Button>
             </form>

@@ -59,13 +59,41 @@
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
+    scrollbar-gutter: stable;
   }
+}
+/*custom scrollbar*/
+/* styles/globals.css */
+
+/* Áp dụng custom scrollbar cho tất cả các phần tử */
+* {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: #cbd5e1 transparent; /* Firefox */
+}
+
+/* Custom scrollbar cho Webkit browsers (Chrome, Safari, etc.) */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* Màu của scrollbar */
+  border-radius: 6px;
+  border: 2px solid transparent; /* Khoảng cách giữa thumb và track */
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #a0aec0; /* Màu khi hover */
 }
