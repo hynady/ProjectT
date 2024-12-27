@@ -1,15 +1,9 @@
-import {Monitor, Moon, Sun} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useTheme } from "@/components/theme-provider";
-import {
-  DropdownMenuTrigger,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu.tsx";
-import {useEffect, useState} from "react";
+import { Moon, Sun, Monitor } from "lucide-react";
+import { DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
+import { useTheme } from "@/components/theme-provider.tsx";
+import { useState, useEffect } from "react";
 
-export function ModeToggle() {
+const ThemeSwitcher = () => {
   const { theme, setTheme } = useTheme();
   const [systemTheme, setSystemTheme] = useState<"light" | "dark">("light");
 
@@ -29,31 +23,26 @@ export function ModeToggle() {
   const renderThemeIcon = () => {
     switch (theme) {
       case "light":
-        return <Sun className="" />;
+        return <Sun className="h-4 w-4 mr-2" />;
       case "dark":
-        return <Moon className="" />;
+        return <Moon className="h-4 w-4 mr-2" />;
       case "system":
       default:
         return systemTheme === "dark" ? (
-          <Moon className="" />
+          <Moon className="h-4 w-4 mr-2" />
         ) : (
-          <Sun className="" />
+          <Sun className="h-4 w-4 mr-2" />
         );
     }
   };
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="flex items-center space-x-2">
-          {renderThemeIcon()}
-        </Button>
-      </DropdownMenuTrigger>
 
-      {/* Dropdown Menu */}
-      <DropdownMenuContent
-        align="end"
-        className="w-[160px] p-2 bg-white dark:bg-black rounded-md shadow-lg"
-      >
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>
+        {renderThemeIcon()}
+        <span>Đổi giao diện</span>
+      </DropdownMenuSubTrigger>
+      <DropdownMenuSubContent>
         <DropdownMenuItem
           onClick={() => setTheme("light")}
           className="flex items-center space-x-2"
@@ -75,7 +64,9 @@ export function ModeToggle() {
           <Monitor className="h-4 w-4" />
           <span>Hệ thống</span>
         </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
   );
-}
+};
+
+export default ThemeSwitcher;

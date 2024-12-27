@@ -7,10 +7,10 @@ import {InputOTP, InputOTPGroup, InputOTPSlot,} from "@/components/ui/input-otp"
 // import { authService } from "@/services/authService";
 import {mockAuthService as authService} from "@/services/mockAuthService.tsx";
 import {useToast} from "@/hooks/use-toast.ts"
-import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card.tsx";
+import {CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 import {REGEXP_ONLY_DIGITS} from "input-otp";
 import {Alert, AlertDescription} from "@/components/ui/alert.tsx";
-import { Progress } from "@/components/ui/progress-check-strength.tsx"
+import {Progress} from "@/components/ui/progress-check-strength.tsx"
 import {cn} from "@/lib/utils.ts";
 import {checkPasswordStrength} from "@/utils/password.tsx";
 
@@ -127,131 +127,130 @@ const RegisterPage = () => {
   }, [cooldown, resendDisabled]);
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <Card className="w-full max-w-md p-6 rounded-md shadow-md">
-        <CardHeader>
-          <CardTitle className="font-bold">Đăng ký</CardTitle>
-          <CardDescription>Nhập các thông tin của bạn để tiến hành đăng ký</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab}>
-            <TabsList className="flex justify-between mb-4">
-              <TabsTrigger
-                value="step1"
-                onClick={() => {
-                  setActiveTab("step1");
-                  setOtp(""); // Xóa trạng thái OTP khi quay lại bước 1
-                  setPassword(""); // Xóa trạng thái Password khi quay lại bước 1
-                  setConfirmPassword("");
-                }}>
-                Bước 1
-              </TabsTrigger>
-              <TabsTrigger value="step2" disabled>
-                Bước 2
-              </TabsTrigger>
-              <TabsTrigger value="step3" disabled>
-                Bước 3
-              </TabsTrigger>
-            </TabsList>
+    <>
+      <CardHeader>
+        <CardTitle className="font-bold">Đăng ký</CardTitle>
+        <CardDescription>Nhập các thông tin của bạn để tiến hành đăng ký</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab}>
+          <TabsList className="flex justify-between mb-4">
+            <TabsTrigger
+              value="step1"
+              onClick={() => {
+                setActiveTab("step1");
+                setOtp(""); // Xóa trạng thái OTP khi quay lại bước 1
+                setPassword(""); // Xóa trạng thái Password khi quay lại bước 1
+                setConfirmPassword("");
+              }}>
+              Bước 1
+            </TabsTrigger>
+            <TabsTrigger value="step2" disabled>
+              Bước 2
+            </TabsTrigger>
+            <TabsTrigger value="step3" disabled>
+              Bước 3
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Bước 1: Nhập Email */}
-            <TabsContent value="step1">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSendOtp();
-                }}
-              >
-                <div className="grid w-full items-center gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Nhập email của bạn"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button className="w-full" type="submit" loading={loading} disabled={email.length < 1}>
-                    Gửi OTP
-                  </Button>
+          {/* Bước 1: Nhập Email */}
+          <TabsContent value="step1">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendOtp();
+              }}
+            >
+              <div className="grid w-full items-center gap-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Nhập email của bạn"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
                 </div>
-              </form>
-            </TabsContent>
+                <Button className="w-full" type="submit" loading={loading} disabled={email.length < 1}>
+                  Gửi OTP
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
 
-            {/* Bước 2: Nhập OTP */}
-            <TabsContent value="step2">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleVerifyOtp();
-                }}
-              >
-                <div className="grid w-full items-center gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <div className="flex items-center">
-                      <Label htmlFor="otp">Nhập mã OTP</Label>
-                      <Button
-                        type="button"
-                        onClick={handleSendOtp}
-                        className="ml-auto text-sm"
-                        variant="link"
-                        disabled={resendDisabled} // Vô hiệu hóa khi đang trong trạng thái chờ
-                      >
-                        {resendDisabled ? `Gửi lại mã trong (${cooldown}s)` : "Gửi lại mã"}
-                      </Button>
-                    </div>
-
-                    <div className="space-y-2">
-                      <InputOTP
-                        pattern={REGEXP_ONLY_DIGITS}
-                        maxLength={6}
-                        value={otp}
-                        onChange={(value) => setOtp(value)}
-                      >
-                        <InputOTPGroup>
-                          <InputOTPSlot index={0}/>
-                          <InputOTPSlot index={1}/>
-                          <InputOTPSlot index={2}/>
-                          <InputOTPSlot index={3}/>
-                          <InputOTPSlot index={4}/>
-                          <InputOTPSlot index={5}/>
-                        </InputOTPGroup>
-                      </InputOTP>
-                    </div>
+          {/* Bước 2: Nhập OTP */}
+          <TabsContent value="step2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleVerifyOtp();
+              }}
+            >
+              <div className="grid w-full items-center gap-4">
+                <div className="flex flex-col space-y-1.5">
+                  <div className="flex items-center">
+                    <Label htmlFor="otp">Nhập mã OTP</Label>
+                    <Button
+                      type="button"
+                      onClick={handleSendOtp}
+                      className="ml-auto text-sm"
+                      variant="link"
+                      disabled={resendDisabled} // Vô hiệu hóa khi đang trong trạng thái chờ
+                    >
+                      {resendDisabled ? `Gửi lại mã trong (${cooldown}s)` : "Gửi lại mã"}
+                    </Button>
                   </div>
-                  <Button className="w-full" type="submit" disabled={otp.length < 6} loading={loading}>
-                    Xác nhận OTP
-                  </Button>
-                </div>
-              </form>
-            </TabsContent>
 
-            {/* Bước 3: Nhập Mật khẩu */}
-            <TabsContent value="step3">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleRegister();
-                }}
-              >
-                <div className="grid w-full items-center gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="password">Mật khẩu mới</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Nhập mật khẩu mới"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                    {password && (
-                      <>
-                        <div className="mt-2">
-                          <div className="flex justify-between mb-1">
+                  <div className="space-y-2">
+                    <InputOTP
+                      pattern={REGEXP_ONLY_DIGITS}
+                      maxLength={6}
+                      value={otp}
+                      onChange={(value) => setOtp(value)}
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0}/>
+                        <InputOTPSlot index={1}/>
+                        <InputOTPSlot index={2}/>
+                        <InputOTPSlot index={3}/>
+                        <InputOTPSlot index={4}/>
+                        <InputOTPSlot index={5}/>
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+                </div>
+                <Button className="w-full" type="submit" disabled={otp.length < 6} loading={loading}>
+                  Xác nhận OTP
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+
+          {/* Bước 3: Nhập Mật khẩu */}
+          <TabsContent value="step3">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleRegister();
+              }}
+            >
+              <div className="grid w-full items-center gap-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="password">Mật khẩu mới</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Nhập mật khẩu mới"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  {password && (
+                    <>
+                      <div className="mt-2">
+                        <div className="flex justify-between mb-1">
                 <span className="text-sm">
                   Độ mạnh: {
                   strength === 0 ? "Rất yếu" :
@@ -261,94 +260,93 @@ const RegisterPage = () => {
                           strength <= 80 ? "Mạnh" : "Rất mạnh"
                 }
                 </span>
-                            <span className="text-sm">{strength}%</span>
-                          </div>
-                          <Progress
-                            value={strength}
-                          />
+                          <span className="text-sm">{strength}%</span>
                         </div>
-                        <Alert className="mt-2">
-                          <AlertDescription>
-                            {(() => {
-                              const { criteria } = checkPasswordStrength(password);
-                              return (
-                                <ul className="text-sm list-disc pl-4 space-y-1">
-                                  <li className={cn(
-                                    criteria.length
-                                      ? "text-green-500 dark:text-green-400"
-                                      : "text-destructive dark:text-destructive-foreground"
-                                  )}>
-                                    Ít nhất 8 ký tự
-                                  </li>
-                                  <li className={cn(
-                                    criteria.hasNumber
-                                      ? "text-green-500 dark:text-green-400"
-                                      : "text-destructive dark:text-destructive-foreground"
-                                  )}>
-                                    Ít nhất 1 số
-                                  </li>
-                                  <li className={cn(
-                                    criteria.hasLower
-                                      ? "text-green-500 dark:text-green-400"
-                                      : "text-destructive dark:text-destructive-foreground"
-                                  )}>
-                                    Ít nhất 1 chữ thường
-                                  </li>
-                                  <li className={cn(
-                                    criteria.hasUpper
-                                      ? "text-green-500 dark:text-green-400"
-                                      : "text-destructive dark:text-destructive-foreground"
-                                  )}>
-                                    Ít nhất 1 chữ hoa
-                                  </li>
-                                  <li className={cn(
-                                    criteria.hasSpecial
-                                      ? "text-green-500 dark:text-green-400"
-                                      : "text-destructive dark:text-destructive-foreground"
-                                  )}>
-                                    Ít nhất 1 ký tự đặc biệt
-                                  </li>
-                                </ul>
-                              );
-                            })()}
-                          </AlertDescription>
-                        </Alert>
-                      </>
-                    )}
-                  </div>
-                  <div className="mb-4">
-                    <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="Xác nhận mật khẩu"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button
-                    className="w-full"
-                    type="submit"
-                    loading={loading}
-                    disabled={confirmPassword.length < 1 || password.length < 1 || strength < 80}
-                  >
-                    Đăng ký
-                  </Button>
+                        <Progress
+                          value={strength}
+                        />
+                      </div>
+                      <Alert className="mt-2">
+                        <AlertDescription>
+                          {(() => {
+                            const {criteria} = checkPasswordStrength(password);
+                            return (
+                              <ul className="text-sm list-disc pl-4 space-y-1">
+                                <li className={cn(
+                                  criteria.length
+                                    ? "text-green-500 dark:text-green-400"
+                                    : "text-destructive dark:text-destructive-foreground"
+                                )}>
+                                  Ít nhất 8 ký tự
+                                </li>
+                                <li className={cn(
+                                  criteria.hasNumber
+                                    ? "text-green-500 dark:text-green-400"
+                                    : "text-destructive dark:text-destructive-foreground"
+                                )}>
+                                  Ít nhất 1 số
+                                </li>
+                                <li className={cn(
+                                  criteria.hasLower
+                                    ? "text-green-500 dark:text-green-400"
+                                    : "text-destructive dark:text-destructive-foreground"
+                                )}>
+                                  Ít nhất 1 chữ thường
+                                </li>
+                                <li className={cn(
+                                  criteria.hasUpper
+                                    ? "text-green-500 dark:text-green-400"
+                                    : "text-destructive dark:text-destructive-foreground"
+                                )}>
+                                  Ít nhất 1 chữ hoa
+                                </li>
+                                <li className={cn(
+                                  criteria.hasSpecial
+                                    ? "text-green-500 dark:text-green-400"
+                                    : "text-destructive dark:text-destructive-foreground"
+                                )}>
+                                  Ít nhất 1 ký tự đặc biệt
+                                </li>
+                              </ul>
+                            );
+                          })()}
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  )}
                 </div>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Label>
-            Đã có tài khoản?{" "}
-            <a href="/login" className="text-primary hover:underline">Đăng
+                <div className="mb-4">
+                  <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Xác nhận mật khẩu"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button
+                  className="w-full"
+                  type="submit"
+                  loading={loading}
+                  disabled={confirmPassword.length < 1 || password.length < 1 || strength < 80}
+                >
+                  Đăng ký
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <Label>
+          Đã có tài khoản?{" "}
+          <a href="/login" className="text-primary hover:underline">Đăng
             nhập</a>
-          </Label>
-        </CardFooter>
-      </Card>
-    </div>
+        </Label>
+      </CardFooter>
+    </>
   );
 };
 
