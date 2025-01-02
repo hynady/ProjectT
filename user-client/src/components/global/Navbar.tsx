@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu-pointer-cursor.tsx";
-import ThemeSwitcher from "@/components/ThemeSwitcher.tsx";
+import ThemeSwitcher from "@/components/global/ThemeSwitcher.tsx";
 import {useNavigate} from "react-router-dom";
 
 const Navbar = () => {
@@ -24,14 +24,14 @@ const Navbar = () => {
         <div className="h-16 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <a href="/" className="flex items-center space-x-2">
+            <span onClick={() => navigate('/')} className="flex items-center space-x-2 cursor-pointer ">
               <img
                 src="/web-app-manifest-512x512.png"
                 alt="Logo"
                 className="h-8 w-auto"
               />
               <span className="text-xl font-bold hidden sm:inline">TackTicket</span>
-            </a>
+            </span>
           </div>
 
           {/* Search Bar */}

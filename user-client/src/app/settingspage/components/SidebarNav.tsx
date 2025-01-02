@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils.ts';
 import {buttonVariants} from "@/components/ui/button.tsx";
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {

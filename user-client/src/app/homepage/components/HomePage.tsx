@@ -1,9 +1,9 @@
 // src/pages/HomePage.tsx
 import {useState, useEffect} from 'react';
-import {Button} from "@/components/ui/button";
-import {Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious} from "@/components/ui/carousel";
-import {Card, CardHeader, CardTitle, CardDescription} from "@/components/ui/card";
-import {Badge} from "@/components/ui/badge"
+import {Button} from "@/components/ui/button.tsx";
+import {Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious} from "@/components/ui/carousel.tsx";
+import {Card, CardHeader, CardTitle, CardDescription} from "@/components/ui/card.tsx";
+import {Badge} from "@/components/ui/badge.tsx"
 import {ArrowRight, Calendar, MapPin} from 'lucide-react';
 import {Category, EventData as Event, Venue} from "@/types";
 import Autoplay from "embla-carousel-autoplay";

@@ -3,14 +3,15 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs.tsx
 import {Button} from "@/components/ui/button.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Label} from "@/components/ui/label.tsx";
-import {InputOTP, InputOTPGroup, InputOTPSlot,} from "@/components/ui/input-otp"
+import {InputOTP, InputOTPGroup, InputOTPSlot,} from "@/components/ui/input-otp.tsx"
 import {useToast} from "@/hooks/use-toast.ts"
 import {CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 import {REGEXP_ONLY_DIGITS} from "input-otp";
 import {Alert, AlertDescription} from "@/components/ui/alert.tsx";
 import {Progress} from "@/components/ui/progress-check-strength.tsx"
 import {cn} from "@/lib/utils.ts";
-import {mockUserService as userService} from "@/services/mockUserService";
+import {mockUserService as userService} from "@/services/mockUserService.tsx";
+import {useNavigate} from "react-router-dom";
 
 interface ResetPasswordProps {
   hideNavigation?: boolean; // Option để ẩn header và footer
@@ -30,6 +31,8 @@ const ResetPassword = ({
   const [strength, setStrength] = useState(0);
   const [resendDisabled, setResendDisabled] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+
+  const navigate = useNavigate();
 
   const {toast} = useToast()
 
@@ -358,7 +361,7 @@ const ResetPassword = ({
       {!hideNavigation && (
         <CardFooter className={cn(noPadding && "p-0")}>
           <Label>
-            Bạn muốn đăng nhập? <a href="/login" className="text-primary">Đăng nhập</a>
+            Bạn muốn đăng nhập? <a onClick={() => navigate('/login')} className="text-primary cursor-pointer hover:underline">Đăng nhập</a>
           </Label>
         </CardFooter>
       )}

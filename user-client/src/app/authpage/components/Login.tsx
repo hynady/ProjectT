@@ -1,9 +1,9 @@
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
+import {Button} from "@/components/ui/button.tsx";
+import {Input} from "@/components/ui/input.tsx";
+import {Label} from "@/components/ui/label.tsx";
 import {
   FormFixColorLabel,
   FormControl,
@@ -18,10 +18,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/components/ui/card.tsx";
 import {mockAuthService as authService} from "@/services/mockAuthService.tsx";
 import {toast} from "@/hooks/use-toast.ts";
-import {useAppContext} from "@/components/AppContext.tsx";
+import {useAuthContext} from "@/app/authpage/contexts/AuthContext.tsx";
 import {useNavigate} from "react-router-dom";
 import {useState} from "react";
 
@@ -40,7 +40,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const LoginPage = () => {
-  const {setAuthenticated} = useAppContext();
+  const {setAuthenticated} = useAuthContext();
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -121,12 +121,12 @@ const LoginPage = () => {
                 <FormItem>
                   <div className="flex items-center justify-between">
                     <FormLabel>Mật khẩu</FormLabel>
-                    <a
-                      href="/rs-pw"
-                      className="text-sm text-primary hover:underline"
+                    <span
+                      onClick={() => navigate('/rs-pw')}
+                      className="text-sm text-primary hover:underline cursor-pointer"
                     >
                       Quên mật khẩu?
-                    </a>
+                    </span>
                   </div>
                   <FormControl>
                     <Input
@@ -148,7 +148,9 @@ const LoginPage = () => {
       <CardFooter className="flex justify-between">
         <Label>
           Chưa có tài khoản?{" "}
-          <a href="/register" className="text-primary hover:underline">
+          <a className="text-primary hover:underline cursor-pointer"
+             onClick={() => navigate('/register')}
+          >
             Đăng ký
           </a>
         </Label>

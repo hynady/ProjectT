@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button.tsx';
 import {
   FormControl,
   FormDescription,
@@ -7,16 +7,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { toast } from "@/hooks/use-toast";
+} from '@/components/ui/form.tsx';
+import { Input } from '@/components/ui/input.tsx';
+import { toast } from "@/hooks/use-toast.ts";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { DatePicker } from "@/components/ui/date-picker";
+import { Card } from "@/components/ui/card.tsx";
+import { Separator } from "@/components/ui/separator.tsx";
+import { DatePicker } from "@/components/ui/date-picker.tsx";
 import { Popover } from "@radix-ui/react-popover";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.tsx";
 import { ChangeEvent, useState } from 'react';
 
 const profileFormSchema = z.object({

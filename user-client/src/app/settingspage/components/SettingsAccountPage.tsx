@@ -1,6 +1,6 @@
-import { Separator } from "@/components/ui/separator";
-import ResetPassword from "@/app/auth/ResetPassword";
-import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator.tsx";
+import ResetPassword from "@/app/authpage/components/ResetPassword.tsx";
+import { Card } from "@/components/ui/card.tsx";
 
 export default function SettingsAccountPage() {
   return (

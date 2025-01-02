@@ -5,20 +5,20 @@ interface AuthContextProps {
   setAuthenticated: (value: boolean) => void; // Hàm cập nhật trạng thái xác thực
 }
 
-const AppContext = createContext<AuthContextProps | undefined>(undefined);
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: ReactNode }> = ({children}) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
   const [isAuthenticated, setAuthenticated] = useState<boolean>(false); // Trạng thái đăng nhập
 
   return (
-      <AppContext.Provider value={{isAuthenticated, setAuthenticated}}>
+      <AuthContext.Provider value={{isAuthenticated, setAuthenticated}}>
         {children}
-      </AppContext.Provider>
+      </AuthContext.Provider>
   );
 };
 
-export const useAppContext = (): AuthContextProps => {
-  const context = useContext(AppContext);
+export const useAuthContext = (): AuthContextProps => {
+  const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAppContext must be used within AppProvider");
   }

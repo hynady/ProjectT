@@ -3,7 +3,7 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs.tsx
 import {Button} from "@/components/ui/button.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Label} from "@/components/ui/label.tsx";
-import {InputOTP, InputOTPGroup, InputOTPSlot,} from "@/components/ui/input-otp"
+import {InputOTP, InputOTPGroup, InputOTPSlot,} from "@/components/ui/input-otp.tsx"
 // import { authService } from "@/services/authService";
 import {mockAuthService as authService} from "@/services/mockAuthService.tsx";
 import {useToast} from "@/hooks/use-toast.ts"
@@ -13,6 +13,7 @@ import {Alert, AlertDescription} from "@/components/ui/alert.tsx";
 import {Progress} from "@/components/ui/progress-check-strength.tsx"
 import {cn} from "@/lib/utils.ts";
 import {checkPasswordStrength} from "@/utils/password.tsx";
+import {useNavigate} from "react-router-dom";
 
 const RegisterPage = () => {
   const [email, setEmail] = useState("");
@@ -26,6 +27,7 @@ const RegisterPage = () => {
   const [cooldown, setCooldown] = useState(0);
 
   const {toast} = useToast()
+  const navigate = useNavigate();
 
   const handleSendOtp = async () => {
     setLoading(true); // Bắt đầu quá trình gửi OTP
@@ -342,7 +344,8 @@ const RegisterPage = () => {
       <CardFooter className="flex justify-between">
         <Label>
           Đã có tài khoản?{" "}
-          <a href="/login" className="text-primary hover:underline">Đăng
+          <a onClick={() => navigate('/login')}
+             className="text-primary hover:underline cursor-pointer">Đăng
             nhập</a>
         </Label>
       </CardFooter>

@@ -1,10 +1,10 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { SidebarNav } from "@/app/my/components/SidebarNav.tsx";
+import { SidebarNav } from "@/app/settingspage/components/SidebarNav.tsx";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button.tsx";
 import { ArrowLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator.tsx"
-import Navbar from "@/components/Navbar.tsx";
+import Navbar from "@/components/global/Navbar.tsx";
 
 const sidebarNavItems = [
   { title: 'Account', href: '/settings/account' },
