@@ -6,7 +6,10 @@ import { AuthLayout } from "@/layouts/AuthLayout.tsx";
 import { MainLayout } from "@/layouts/MainLayout.tsx";
 import HomePage from "@/app/homepage/HomePage.tsx";
 import ProtectedRoute from "@/router/ProtectedRoute.tsx";
-import {CardWithForm} from "@/app/auth/Test.tsx"; // Import ProtectedRoute
+import {CardWithForm} from "@/app/auth/Test.tsx";
+import SettingsProfilePage from "@/app/my/components/SettingsProfilePage.tsx";
+import SettingsLayout from "@/layouts/SettingsLayout.tsx";
+import SettingsAccountPage from "@/app/my/components/SettingsAccountPage.tsx";
 
 function AppRouter() {
   return (
@@ -18,7 +21,6 @@ function AppRouter() {
         <Route path="/rs-pw" element={<ResetPasswordPage />} />
         <Route path="/t" element={<CardWithForm/>} />
       </Route>
-
       {/* Protected Main Routes */}
       <Route element={<MainLayout />}>
         <Route
@@ -29,6 +31,11 @@ function AppRouter() {
             </ProtectedRoute>
           }
         />
+      </Route>
+      <Route path="/settings" element={<SettingsLayout />}>
+        <Route path="profile" element={<SettingsProfilePage />} />
+        <Route path="account" element={<SettingsAccountPage />} />
+        {/* Thêm các route khác tương tự */}
       </Route>
     </Routes>
   );

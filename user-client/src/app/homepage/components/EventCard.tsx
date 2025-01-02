@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Calendar, MapPin, Clock, ArrowRight } from 'lucide-react';
 import { EventData as Event } from '@/types';
 

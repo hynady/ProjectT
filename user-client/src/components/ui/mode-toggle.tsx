@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import {
   DropdownMenuTrigger,
-  DropdownMenu,
+  DropdownMenuPointerCursor,
   DropdownMenuContent,
   DropdownMenuItem,
-} from "@/components/ui/dropdown-menu.tsx";
+} from "@/components/ui/dropdown-menu-pointer-cursor.tsx";
 import {useEffect, useState} from "react";
 
 export function ModeToggle() {
@@ -42,7 +42,7 @@ export function ModeToggle() {
     }
   };
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenuPointerCursor modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="flex items-center space-x-2">
           {renderThemeIcon()}
@@ -76,6 +76,6 @@ export function ModeToggle() {
           <span>Hệ thống</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>
+    </DropdownMenuPointerCursor>
   );
 }

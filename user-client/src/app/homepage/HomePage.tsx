@@ -14,12 +14,12 @@ import {
   getUpcomingEvents,
   getVenues
 } from "@/services/eventService.tsx";
-import {VenueCard} from "@/components/ui/VenueCard.tsx";
-import {EventCard} from "@/components/ui/EventCard.tsx";
-import {VenueCardSkeleton} from "@/components/ui/skeletons/VenueCardSkeleton.tsx";
-import {EventCardSkeleton} from "@/components/ui/skeletons/EventCardSkeleton.tsx";
-import {CategorySkeleton} from "@/components/ui/skeletons/CategorySkeleton.tsx";
-import {HeroSkeleton} from "@/components/ui/skeletons/HeroSkeleton.tsx";
+import {VenueCard} from "@/app/homepage/components/VenueCard.tsx";
+import {EventCard} from "@/app/homepage/components/EventCard.tsx";
+import {VenueCardSkeleton} from "@/app/homepage/components/skeletons/VenueCardSkeleton.tsx";
+import {EventCardSkeleton} from "@/app/homepage/components/skeletons/EventCardSkeleton.tsx";
+import {CategorySkeleton} from "@/app/homepage/components/skeletons/CategorySkeleton.tsx";
+import {HeroSkeleton} from "@/app/homepage/components/skeletons/HeroSkeleton.tsx";
 
 
 const HomePage = () => {

@@ -4,7 +4,6 @@ import {Button} from "@/components/ui/button.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Label} from "@/components/ui/label.tsx";
 import {InputOTP, InputOTPGroup, InputOTPSlot,} from "@/components/ui/input-otp"
-// import { authService } from "@/services/authService";
 import {useToast} from "@/hooks/use-toast.ts"
 import {CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 import {REGEXP_ONLY_DIGITS} from "input-otp";
@@ -13,13 +12,21 @@ import {Progress} from "@/components/ui/progress-check-strength.tsx"
 import {cn} from "@/lib/utils.ts";
 import {mockUserService as userService} from "@/services/mockUserService";
 
-const ResetPasswordPage = () => {
+interface ResetPasswordProps {
+  hideNavigation?: boolean; // Option để ẩn header và footer
+  noPadding?: boolean; // Option để tắt padding
+}
+
+const ResetPassword = ({
+                         hideNavigation = false,
+                         noPadding = false
+                       }: ResetPasswordProps) => {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [activeTab, setActiveTab] = useState("step1");
-  const [loading, setLoading] = useState(false); // Trạng thái loading khi gửi OTP
+  const [loading, setLoading] = useState(false);
   const [strength, setStrength] = useState(0);
   const [resendDisabled, setResendDisabled] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -27,19 +34,17 @@ const ResetPasswordPage = () => {
   const {toast} = useToast()
 
   const handleSendOtp = async () => {
-    setLoading(true); // Bắt đầu quá trình gửi OTP
+    setLoading(true);
     try {
       await userService.sendOtp(email);
       toast({
         title: "OTP đã được gửi đến email của bạn!",
       });
-      setActiveTab("step2"); // Chuyển sang bước 2
-
-      // Kích hoạt trạng thái chờ và đặt thời gian cooldown
+      setActiveTab("step2");
       setResendDisabled(true);
       setCooldown(30);
     } catch (error: any) {
-      if (error.response?.status === 429) { // HTTP 429: Too Many Requests
+      if (error.response?.status === 429) {
         toast({
           variant: "destructive",
           title: "Bạn đã gửi quá nhiều yêu cầu OTP. Vui lòng thử lại sau.",
@@ -51,30 +56,30 @@ const ResetPasswordPage = () => {
         });
       }
     } finally {
-      setLoading(false); // Kết thúc quá trình gửi OTP
+      setLoading(false);
     }
   };
 
   const handleVerifyOtp = async () => {
-    setLoading(true); // Bắt đầu quá trình xác thực OTP
+    setLoading(true);
     try {
       await userService.verifyOtp(email, otp);
       toast({
         title: "OTP hợp lệ!",
       })
-      setActiveTab("step3"); // Chuyển sang bước 3
+      setActiveTab("step3");
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Lỗi xác thực OTP, nhập lại hoặc gửi lại mã khác!"
       });
     } finally {
-      setLoading(false); // Kết thúc quá trình xác thực OTP
+      setLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
-    setLoading(true); // Bắt đầu quá trình đăng ký
+    setLoading(true);
     try {
       if (password !== confirmPassword) {
         toast({
@@ -90,7 +95,7 @@ const ResetPasswordPage = () => {
       });
 
       setTimeout(() => {
-        window.location.href = "/login"; // Chuyển hướng sang trang đăng nhập
+        window.location.href = "/login";
       }, 1000);
     } catch (error) {
       toast({
@@ -98,7 +103,7 @@ const ResetPasswordPage = () => {
         title: "Lỗi đăng ký, thử lại sau!"
       });
     } finally {
-      setLoading(false); // Kết thúc quá trình đăng ký
+      setLoading(false);
     }
   };
 
@@ -132,7 +137,7 @@ const ResetPasswordPage = () => {
         setCooldown(cooldown - 1);
       }, 1000);
 
-      return () => clearTimeout(timer); // Xóa timer khi component unmount
+      return () => clearTimeout(timer);
     }
 
     if (cooldown === 0) {
@@ -142,19 +147,21 @@ const ResetPasswordPage = () => {
 
   return (
     <>
-      <CardHeader>
-        <CardTitle className="font-bold">Thay đổi mật khẩu</CardTitle>
-        <CardDescription>Nhập các thông tin xác minh để thay đổi mật khẩu</CardDescription>
-      </CardHeader>
-      <CardContent>
+      {!hideNavigation && (
+        <CardHeader className={cn(noPadding && "p-0")}>
+          <CardTitle className="font-bold">Thay đổi mật khẩu</CardTitle>
+          <CardDescription>Nhập các thông tin xác minh để thay đổi mật khẩu</CardDescription>
+        </CardHeader>
+      )}
+      <CardContent className={cn(noPadding && "p-0")}>
         <Tabs value={activeTab}>
           <TabsList className="flex justify-between mb-4">
             <TabsTrigger
               value="step1"
               onClick={() => {
                 setActiveTab("step1");
-                setOtp(""); // Xóa trạng thái OTP khi quay lại bước 1
-                setPassword(""); // Xóa trạng thái Password khi quay lại bước 1
+                setOtp("");
+                setPassword("");
                 setConfirmPassword("");
               }}>
               Bước 1
@@ -167,7 +174,6 @@ const ResetPasswordPage = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Bước 1: Nhập Email */}
           <TabsContent value="step1">
             <form
               onSubmit={(e) => {
@@ -194,7 +200,6 @@ const ResetPasswordPage = () => {
             </form>
           </TabsContent>
 
-          {/* Bước 2: Nhập OTP */}
           <TabsContent value="step2">
             <form
               onSubmit={(e) => {
@@ -211,7 +216,7 @@ const ResetPasswordPage = () => {
                       onClick={handleSendOtp}
                       className="ml-auto text-sm"
                       variant="link"
-                      disabled={resendDisabled} // Vô hiệu hóa khi đang trong trạng thái chờ
+                      disabled={resendDisabled}
                     >
                       {resendDisabled ? `Gửi lại mã trong (${cooldown}s)` : "Gửi lại mã"}
                     </Button>
@@ -242,7 +247,6 @@ const ResetPasswordPage = () => {
             </form>
           </TabsContent>
 
-          {/* Bước 3: Nhập Mật khẩu */}
           <TabsContent value="step3">
             <form
               onSubmit={(e) => {
@@ -265,20 +269,18 @@ const ResetPasswordPage = () => {
                     <>
                       <div className="mt-2">
                         <div className="flex justify-between mb-1">
-                <span className="text-sm">
-                  Độ mạnh: {
-                  strength === 0 ? "Rất yếu" :
-                    strength <= 20 ? "Yếu" :
-                      strength <= 40 ? "Trung bình" :
-                        strength <= 60 ? "Khá" :
-                          strength <= 80 ? "Mạnh" : "Rất mạnh"
-                }
-                </span>
+                          <span className="text-sm">
+                            Độ mạnh: {
+                            strength === 0 ? "Rất yếu" :
+                              strength <= 20 ? "Yếu" :
+                                strength <= 40 ? "Trung bình" :
+                                  strength <= 60 ? "Khá" :
+                                    strength <= 80 ? "Mạnh" : "Rất mạnh"
+                          }
+                          </span>
                           <span className="text-sm">{strength}%</span>
                         </div>
-                        <Progress
-                          value={strength}
-                        />
+                        <Progress value={strength}/>
                       </div>
                       <Alert className="mt-2">
                         <AlertDescription>
@@ -353,14 +355,15 @@ const ResetPasswordPage = () => {
           </TabsContent>
         </Tabs>
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <Label>
-          Bạn muốn đăng nhập? <a href="/login" className="text-primary">Đăng
-          nhập</a>
-        </Label>
-      </CardFooter>
+      {!hideNavigation && (
+        <CardFooter className={cn(noPadding && "p-0")}>
+          <Label>
+            Bạn muốn đăng nhập? <a href="/login" className="text-primary">Đăng nhập</a>
+          </Label>
+        </CardFooter>
+      )}
     </>
   );
 };
 
-export default ResetPasswordPage;
+export default ResetPassword;
