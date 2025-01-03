@@ -6,7 +6,7 @@ import {
   ToastProvider,
   ToastTitle,
   ToastViewport,
-} from "@/components/ui/toast-custom.tsx"
+} from "@/components/ui-custom/toast-custom.tsx"
 
 export function Toaster() {
   const { toasts } = useToast()

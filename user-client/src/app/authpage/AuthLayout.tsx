@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom'
-import { ModeToggle } from "@/components/ui/mode-toggle.tsx"
+import { ModeToggle } from "@/components/global/mode-toggle.tsx"
 import { Card } from '@/components/ui/card.tsx'
 
 export const AuthLayout = () => {

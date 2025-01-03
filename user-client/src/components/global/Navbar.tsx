@@ -1,6 +1,5 @@
-import {LogOut, Search, Settings, Ticket, User} from "lucide-react";
+import {AlignJustify, ChevronDown, LogOut, Settings, Ticket, User} from "lucide-react";
 import {Button} from "@/components/ui/button.tsx";
-import {Input} from "@/components/ui/input.tsx";
 import {Card} from "@/components/ui/card.tsx";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.tsx";
 import {
@@ -11,65 +10,144 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu-pointer-cursor.tsx";
+} from "@/components/ui-custom/dropdown-menu-pointer-cursor.tsx";
 import ThemeSwitcher from "@/components/global/ThemeSwitcher.tsx";
 import {useNavigate} from "react-router-dom";
+import {SearchBar} from "@/app/searchsystem/components/SearchBar.tsx";
+import {cn} from "@/lib/utils.ts";
+import {useState} from "react";
 
 const Navbar = () => {
   const isLoggedIn = true;
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <Card className="fixed top-0 left-0 right-0 z-10 gap-4">
-      <div className="container mx-auto px-4 sm:px-8 md:px-14">
-        <div className="h-16 flex items-center justify-between">
+    <Card className="fixed top-0 left-0 right-0 z-10">
+      <div className="container mx-auto">
+        <div className="h-14 md:h-16 flex items-center justify-between gap-4 px-2 sm:px-4 md:px-8">
           {/* Logo */}
           <div className="flex items-center">
             <span onClick={() => navigate('/')} className="flex items-center space-x-2 cursor-pointer ">
-              <img
-                src="/web-app-manifest-512x512.png"
-                alt="Logo"
-                className="h-8 w-auto"
-              />
-              <span className="text-xl font-bold hidden sm:inline">TackTicket</span>
+              <Avatar className="cursor-pointer">
+                <AvatarImage src="/web-app-manifest-512x512.png"/>
+                <AvatarFallback>TK</AvatarFallback>
+              </Avatar>
+              <span className="text-lg md:text-xl font-bold hidden sm:inline">
+                TackTicket
+              </span>
             </span>
           </div>
 
-          {/* Search Bar */}
-          <div className="flex-1 max-w-md mx-4 sm:mx-8">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"/>
-              <Input placeholder="Tìm kiếm sự kiện..." className="pl-8 w-full"/>
-            </div>
+          {/*SearchBar*/}
+          <div className="flex-1 max-w-[200px] sm:max-w-[300px] md:max-w-[400px] lg:max-w-[800px]">
+            <SearchBar/>
           </div>
 
-          {/* Navigation Links (Hidden on small screens) */}
-          <nav className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost">Sự kiện</Button>
-            <Button variant="ghost">Lịch chiếu</Button>
-            <Button variant="ghost">Khuyến mãi</Button>
-            <Button variant="default"><Ticket className="mr-2"/>Vé của tôi</Button>
+          {/* Navigation Menu for Mobile & Tablet */}
+          <div className="lg:hidden flex-shrink-0">
+            <DropdownMenuPointerCursor modal={false}>
+              <DropdownMenuTrigger asChild>
+                <div className="relative">
+                  <div
+                    className="relative"
+                    onClick={() => setIsOpen(!isOpen)}
+                  >
+                    <div className={cn(
+                      "transition-all duration-300 ease-in-out",
+                      "absolute inset-0",
+                      isOpen ? "opacity-0 rotate-180" : "opacity-100 rotate-0"
+                    )}>
+                      <AlignJustify size={30} className="cursor-pointer"/>
+                    </div>
+                    <div className={cn(
+                      "transition-all duration-300 ease-in-out",
+                      isOpen ? "opacity-100 rotate-0" : "opacity-0 -rotate-180"
+                    )}>
+                      <ChevronDown size={30} className="cursor-pointer"/>
+                    </div>
+                  </div>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuLabel className="text-sm">Menu</DropdownMenuLabel>
+                <DropdownMenuSeparator/>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem className="text-sm">
+                    <span>Sự kiện</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-sm">
+                    <span>Lịch chiếu</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-sm">
+                    <span>Khuyến mãi</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-sm">
+                    <Ticket className="h-4 w-4 mr-2"/>
+                    <span>Vé của tôi</span>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenuPointerCursor>
+          </div>
+
+          {/* Navigation Links for Desktop */}
+          <nav className="hidden lg:flex items-center gap-2">
+            <Button
+              variant="ghost"
+              className="text-sm px-3 h-9"
+            >
+              Sự kiện
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-sm px-3 h-9"
+            >
+              Lịch chiếu
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-sm px-3 h-9"
+            >
+              Khuyến mãi
+            </Button>
+            <Button
+              variant="default"
+              className="text-sm px-3 h-9"
+            >
+              <Ticket className="w-4 h-4 mr-2"/>
+              Vé của tôi
+            </Button>
           </nav>
 
           {/* Auth Buttons / User Menu */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {isLoggedIn ? (
               <DropdownMenuPointerCursor modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Avatar>
+                  <Avatar className="h-8 w-8 md:h-9 md:w-9">
                     <AvatarImage src="https://github.com/shadcn.png"/>
                     <AvatarFallback>CN</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56">
-                  <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
+                <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuLabel className="text-sm">
+                    Tài khoản của tôi
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator/>
                   <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => navigate("/settings/account")}>
-                      <User className="mr-2"/>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/settings/account")}
+                      className="text-sm"
+                    >
+                      <User className="h-4 w-4 mr-2"/>
                       <span>Hồ sơ</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/settings")}>
-                      <Settings className="mr-2"/>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/settings")}
+                      className="text-sm"
+                    >
+                      <Settings className="h-4 w-4 mr-2"/>
                       <span>Cài đặt</span>
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
@@ -78,16 +156,23 @@ const Navbar = () => {
                     <ThemeSwitcher/>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator/>
-                  <DropdownMenuItem>
-                    <LogOut className="mr-2"/>
+                  <DropdownMenuItem className="text-sm">
+                    <LogOut className="h-4 w-4 mr-2"/>
                     <span>Đăng xuất</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenuPointerCursor>
             ) : (
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost">Đăng nhập</Button>
-                <Button>Đăng ký</Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  className="text-sm px-3 h-8 md:h-9"
+                >
+                  Đăng nhập
+                </Button>
+                <Button className="text-sm px-3 h-8 md:h-9">
+                  Đăng ký
+                </Button>
               </div>
             )}
           </div>

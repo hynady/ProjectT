@@ -8,7 +8,7 @@ import {useToast} from "@/hooks/use-toast.ts"
 import {CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 import {REGEXP_ONLY_DIGITS} from "input-otp";
 import {Alert, AlertDescription} from "@/components/ui/alert.tsx";
-import {Progress} from "@/components/ui/progress-check-strength.tsx"
+import {Progress} from "@/components/ui-custom/progress-check-strength.tsx"
 import {cn} from "@/lib/utils.ts";
 import {mockUserService as userService} from "@/services/mockUserService.tsx";
 import {useNavigate} from "react-router-dom";

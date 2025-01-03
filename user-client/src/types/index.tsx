@@ -1,6 +1,5 @@
-// src/types/index.ts
 export interface EventData {  // Đổi tên từ Event sang EventData
-  id: number;
+  id: string;
   title: string;
   image: string;
   date: string;
@@ -21,4 +20,9 @@ export interface Venue {
   image: string;
   location: string;
   eventCount: number;
+}
+
+export interface EventSection {
+  title: string;
+  events: EventData[];
 }

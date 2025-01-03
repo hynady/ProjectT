@@ -21,7 +21,6 @@ import {EventCardSkeleton} from "@/app/homepage/components/skeletons/EventCardSk
 import {CategorySkeleton} from "@/app/homepage/components/skeletons/CategorySkeleton.tsx";
 import {HeroSkeleton} from "@/app/homepage/components/skeletons/HeroSkeleton.tsx";
 
-
 const HomePage = () => {
   // Add explicit type annotations for all state variables
   const [loading, setLoading] = useState<boolean>(true);

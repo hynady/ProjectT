@@ -11,7 +11,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form-fix-color-label.tsx";
+} from "@/components/ui-custom/form-fix-color-label.tsx";
 import {
   CardContent,
   CardDescription,
