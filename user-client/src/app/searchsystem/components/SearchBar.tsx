@@ -3,7 +3,7 @@ import {Input} from "@/components/ui/input"
 import {cn} from "@/lib/utils"
 import {mockSections} from "@/services/mockData.tsx"
 import {useEffect, useMemo, useRef, useState} from "react"
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router-dom";
 import {EventData} from "@/types";
 
 interface RecentSearch {
@@ -30,6 +30,8 @@ const searchEventsAPI = async (query: string): Promise<EventData[]> => {
         title: `Similar to "${query}" - Event 1`,
         image: '/',
         date: '2025-01-15',
+        categoryId: "1",
+        venueId: "1",
         time: "20:00",
         location: 'Location A',
         price: '200.000 VND'
@@ -39,6 +41,8 @@ const searchEventsAPI = async (query: string): Promise<EventData[]> => {
         title: `Similar to "${query}" - Event 2`,
         image: '/',
         date: '2025-01-20',
+        categoryId: "1",
+        venueId: "1",
         time: "20:00",
         location: 'Location B',
         price: '300.000 VND'
@@ -55,6 +59,7 @@ export function SearchBar() {
   const [apiResults, setApiResults] = useState<EventData[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [searchParams] = useSearchParams();
 
   // Recent searches state
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>(() => {
@@ -92,6 +97,8 @@ export function SearchBar() {
     setIsLoading(true);
     try {
       const results = await searchEventsAPI(query);
+      console.error('1');
+
       setApiResults(results);
     } catch (error) {
       console.error('Search API error:', error);
@@ -101,11 +108,18 @@ export function SearchBar() {
     }
   };
 
+  //Replace search input value key in param
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.value = searchParams.get('keyword') || '';
+    }
+  }, []);
+
   // Debounced API search
   useEffect(() => {
     const timer = setTimeout(() => {
       handleApiSearch();
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -114,7 +128,7 @@ export function SearchBar() {
   const handleSearchSubmit = (searchQuery: string) => {
     addToRecentSearches(searchQuery);
     setIsOpen(false);
-    navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    navigate(`/search?keyword=${encodeURIComponent(searchQuery)}&sortBy=title&sortOrder=desc`);
   };
 
   // Handle key press
@@ -173,25 +187,27 @@ export function SearchBar() {
       navigate(`/events/${event.id}`);
     } else {
       // Nếu không có event cụ thể, điều hướng đến trang tìm kiếm
-      navigate(`/search?q=${encodeURIComponent(query)}`);
+      navigate(`/search?keyword=${encodeURIComponent(query)}&sortBy=title&sortOrder=desc`);
     }
     setIsOpen(false);
   };
 
   return (
-    <div className="relative w-full">
-      <div className={cn("relative", isOpen && "z-50")}>
-        <Search
-          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-        />
+    <>
+      <div className={cn("relative",
+        isOpen &&
+        "z-50 absolute left-0 right-0 top-4 mx-auto w-[95vw] md:w-[80vw] lg:w-[70vw] xl:w-[60vw] max-w-3xl")}>
         <Input
           ref={inputRef}
           placeholder="Tìm kiếm sự kiện..."
-          className="pl-10 pr-4 h-11 rounded-full border border-input bg-background"
+          className="pl-10 pr-4 h-11 rounded-full border border-input bg-background "
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsOpen(true)}
           onKeyUp={handleKeyPress}
+        />
+        <Search
+          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
         />
       </div>
 
@@ -199,14 +215,25 @@ export function SearchBar() {
         <>
           {/* Overlay*/}
           <div
-            className="fixed inset-0 z-40 bg-black/40"
+            className={cn(
+              "fixed inset-0 z-40 h-full",
+              "backdrop-blur-sm bg-black/10",
+              "animate-fade animate-duration-200",
+              "supports-[backdrop-filter]:bg-black/60"      // Fallback cho trình duyệt không hỗ trợ backdrop-filter
+            )}
             onClick={() => setIsOpen(false)}
           />
 
           {/* Dropdown content */}
           <div className={cn(
-            "absolute top-full mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-md z-50",
-            "animate-in fade-in-0 zoom-in-95"
+            // Thay đổi positioning để căn giữa màn hình
+            "absolute left-0 right-0 top-full mt-2 mx-auto",
+            // Responsive width
+            "w-[95vw] md:w-[80vw] lg:w-[70vw] xl:w-[60vw] max-w-3xl",
+            // Styling cơ bản
+            "rounded-md border bg-popover text-popover-foreground shadow-md z-50",
+            // Animation khi xuất hiện
+            "animate-fade-down animate-duration-[300ms] animate-ease-out"
           )}>
             <div className="max-h-[80vh] overflow-y-auto pt-2">
 
@@ -227,8 +254,7 @@ export function SearchBar() {
                           className="cursor-pointer w-full"
                           onClick={() => {
                             setQuery(search.query);
-                            navigate(`/search?q=${encodeURIComponent(search.query)}`);
-                            setIsOpen(false);
+                            inputRef.current?.focus();
                           }}
                         >
                           {search.query}
@@ -368,7 +394,7 @@ export function SearchBar() {
 
                   {/* Phần 2: Từ khóa tìm kiếm */}
                   <div
-                    className="flex items-center justify-between p-2 hover:bg-accent rounded-md cursor-pointer"
+                    className="flex items-center justify-between p-2 hover:bg-accent rounded-md cursor-pointer border text-primary"
                     onClick={() => handleSearchSubmit(query)}
                   >
                     Tìm kiếm với từ khóa "{query}"
@@ -427,6 +453,6 @@ export function SearchBar() {
           </div>
         </>
       )}
-    </div>
+    </>
   )
 }

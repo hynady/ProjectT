@@ -1,17 +1,20 @@
-import { Outlet } from 'react-router-dom'
-import { ModeToggle } from "@/components/global/mode-toggle.tsx"
-import { Card } from '@/components/ui/card.tsx'
+import {Outlet, useNavigate} from 'react-router-dom'
+import {ModeToggle} from "@/components/global/mode-toggle.tsx"
+import {Card} from '@/components/ui/card.tsx'
+import {ArrowLeft} from "lucide-react";
+import {Button} from "@/components/ui/button.tsx";
 
 export const AuthLayout = () => {
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Background with Video */}
-      <Background />
+      <Background/>
 
       {/* Main Content */}
       <div className="relative z-10 min-h-screen flex flex-col justify-center items-center">
-        <AuthCard />
-        <ThemeToggle />
+        <AuthCard/>
+        <ThemeToggle/>
       </div>
     </div>
   )
@@ -35,21 +38,28 @@ const Background = () => (
         />
       </video>
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/60" />
+      <div className="absolute inset-0 bg-black/60"/>
     </div>
   </>
 );
 
 // Auth Card Component
-const AuthCard = () => (
-  <div className="relative z-10 flex px-10 py-12 w-full">
-    <Card className="w-full max-w-[400px] p-6 sm:p-8 shadow-2xl transition-all duration-300 hover:shadow-3xl z-50">
-      <Outlet />
+const AuthCard = () => {
+  const navigate = useNavigate(); // Gọi hook useNavigate trực tiếp trong component
 
-      <TermsAndPolicy />
-    </Card>
-  </div>
-)
+  return (
+    <div className="relative z-10 flex px-10 py-12 w-full">
+      <Card className="w-full max-w-[400px] p-6 sm:p-8 shadow-2xl transition-all duration-300 hover:shadow-3xl z-50">
+        <Button onClick={() => navigate('/')} variant="link" className="px-0 py-0">
+          <ArrowLeft/>
+          <span>Quay về Trang chủ</span>
+        </Button>
+        <Outlet/>
+        <TermsAndPolicy/>
+      </Card>
+    </div>
+  )
+}
 
 // Terms and Policy Component
 const TermsAndPolicy = () => (

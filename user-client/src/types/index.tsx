@@ -1,21 +1,23 @@
-export interface EventData {  // Đổi tên từ Event sang EventData
+export interface EventData {
   id: string;
   title: string;
   image: string;
   date: string;
+  categoryId: string;
   location: string;
+  venueId: string;
   time: string;
   price: string;
 }
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   count: number;
 }
 
 export interface Venue {
-  id: number;
+  id: string;
   name: string;
   image: string;
   location: string;

@@ -1,10 +1,11 @@
 import React from 'react';
 
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card.tsx";
-import { Button } from "@/components/ui/button.tsx";
-import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { Calendar, MapPin, Clock, ArrowRight } from 'lucide-react';
-import { EventData as Event } from '@/types';
+import {Card, CardContent, CardHeader, CardTitle, CardFooter} from "@/components/ui/card.tsx";
+import {Button} from "@/components/ui/button.tsx";
+import {Skeleton} from "@/components/ui/skeleton.tsx";
+import {Calendar, MapPin, Clock, ArrowRight} from 'lucide-react';
+import {EventData as Event} from '@/types';
+import {useNavigate} from "react-router-dom";
 
 interface EventCardProps {
   event: Event;
@@ -12,6 +13,8 @@ interface EventCardProps {
 }
 
 export const EventCard: React.FC<EventCardProps> = ({event, loading}) => {
+  const navigate = useNavigate();
+
   if (loading) {
     return (
       <Card className="w-full">
@@ -28,8 +31,16 @@ export const EventCard: React.FC<EventCardProps> = ({event, loading}) => {
     );
   }
 
+  const handleCardClick = () => {
+    navigate(`/events/${event.id}`)
+  }
+
   return (
-    <Card className="group cursor-pointer w-full hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <Card
+      className="group cursor-pointer w-full hover:shadow-lg transition-all duration-300 overflow-hidden"
+      onClick={() => {
+        handleCardClick()
+      }}>
       <CardHeader className="p-0">
         <div className="relative overflow-hidden">
           <img

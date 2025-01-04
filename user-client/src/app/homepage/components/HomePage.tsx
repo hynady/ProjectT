@@ -20,6 +20,7 @@ import {VenueCardSkeleton} from "@/app/homepage/components/skeletons/VenueCardSk
 import {EventCardSkeleton} from "@/app/homepage/components/skeletons/EventCardSkeleton.tsx";
 import {CategorySkeleton} from "@/app/homepage/components/skeletons/CategorySkeleton.tsx";
 import {HeroSkeleton} from "@/app/homepage/components/skeletons/HeroSkeleton.tsx";
+import {useNavigate} from "react-router-dom";
 
 const HomePage = () => {
   // Add explicit type annotations for all state variables
@@ -29,6 +30,7 @@ const HomePage = () => {
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -81,6 +83,8 @@ const HomePage = () => {
             <CarouselItem
               key={event.id}
               className="pl-4 md:basis-full lg:basis-1/2 min-w-0 "
+              onClick={() => navigate(`/events/${event.id}`)
+              }
             >
               <div className="relative aspect-[4/3] overflow-hidden rounded-lg cursor-pointer border group">
                 <img
@@ -160,7 +164,7 @@ const HomePage = () => {
               </CardTitle>
               <CardDescription>
                 <Badge
-                variant="secondary">
+                  variant="secondary">
                   {category.count} sự kiện
                 </Badge>
 

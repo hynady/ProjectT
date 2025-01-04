@@ -16,11 +16,27 @@ import {useNavigate} from "react-router-dom";
 import {SearchBar} from "@/app/searchsystem/components/SearchBar.tsx";
 import {cn} from "@/lib/utils.ts";
 import {useState} from "react";
+import {useAuth} from "@/app/authpage/contexts/AuthContext.tsx";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const Navbar = () => {
-  const isLoggedIn = true;
+  const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <Card className="fixed top-0 left-0 right-0 z-10">
@@ -39,7 +55,7 @@ const Navbar = () => {
             </span>
           </div>
 
-          {/*SearchBar*/}
+          {/* SearchBar */}
           <div className="flex-1 max-w-[200px] sm:max-w-[300px] md:max-w-[400px] lg:max-w-[800px]">
             <SearchBar/>
           </div>
@@ -82,10 +98,12 @@ const Navbar = () => {
                   <DropdownMenuItem className="text-sm">
                     <span>Khuyến mãi</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-sm">
-                    <Ticket className="h-4 w-4 mr-2"/>
-                    <span>Vé của tôi</span>
-                  </DropdownMenuItem>
+                  {isAuthenticated && (
+                    <DropdownMenuItem className="text-sm">
+                      <Ticket className="h-4 w-4 mr-2"/>
+                      <span>Vé của tôi</span>
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenuPointerCursor>
@@ -93,36 +111,26 @@ const Navbar = () => {
 
           {/* Navigation Links for Desktop */}
           <nav className="hidden lg:flex items-center gap-2">
-            <Button
-              variant="ghost"
-              className="text-sm px-3 h-9"
-            >
+            <Button variant="ghost" className="text-sm px-3 h-9">
               Sự kiện
             </Button>
-            <Button
-              variant="ghost"
-              className="text-sm px-3 h-9"
-            >
+            <Button variant="ghost" className="text-sm px-3 h-9">
               Lịch chiếu
             </Button>
-            <Button
-              variant="ghost"
-              className="text-sm px-3 h-9"
-            >
+            <Button variant="ghost" className="text-sm px-3 h-9">
               Khuyến mãi
             </Button>
-            <Button
-              variant="default"
-              className="text-sm px-3 h-9"
-            >
-              <Ticket className="w-4 h-4 mr-2"/>
-              Vé của tôi
-            </Button>
+            {isAuthenticated && (
+              <Button variant="default" className="text-sm px-3 h-9">
+                <Ticket className="w-4 h-4 mr-2"/>
+                Vé của tôi
+              </Button>
+            )}
           </nav>
 
           {/* Auth Buttons / User Menu */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {isLoggedIn ? (
+          <div className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
+            {isAuthenticated ? (
               <DropdownMenuPointerCursor modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="h-8 w-8 md:h-9 md:w-9">
@@ -156,9 +164,35 @@ const Navbar = () => {
                     <ThemeSwitcher/>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator/>
-                  <DropdownMenuItem className="text-sm">
-                    <LogOut className="h-4 w-4 mr-2"/>
-                    <span>Đăng xuất</span>
+                  <DropdownMenuItem
+                    className="text-sm"
+                    onSelect={(e) => {
+                      // Ngăn việc đóng dropdown menu
+                      e.preventDefault();
+                    }}
+                  >
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <div className="flex items-center w-full">
+                          <LogOut className="h-4 w-4 mr-2"/>
+                          <span>Đăng xuất</span>
+                        </div>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Xác nhận đăng xuất</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Hủy</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleLogout}>
+                            Đăng xuất
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenuPointerCursor>
@@ -167,10 +201,14 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   className="text-sm px-3 h-8 md:h-9"
+                  onClick={() => navigate("/login")}
                 >
                   Đăng nhập
                 </Button>
-                <Button className="text-sm px-3 h-8 md:h-9">
+                <Button
+                  className="text-sm px-3 h-8 md:h-9"
+                  onClick={() => navigate("/register")}
+                >
                   Đăng ký
                 </Button>
               </div>

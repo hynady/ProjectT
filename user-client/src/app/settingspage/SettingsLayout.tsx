@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button.tsx";
 import { ArrowLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator.tsx"
-import Navbar from "@/components/global/Navbar.tsx";
 
 const sidebarNavItems = [
   { title: 'Account', href: '/settings/account' },
@@ -23,8 +22,7 @@ export default function SettingsLayout() {
   }, [location, navigate]);
 
   return (
-    <div className="mx-auto space-y-7 p-10 pb-16 max-w-screen-xl">
-      <Navbar/>
+    <main className="mx-auto space-y-7 pb-16 max-w-screen-xl container px-4 py-20">
       <div>
         <Button onClick={() => navigate('/')} variant="link" className="px-0 py-0">
           <ArrowLeft/>
@@ -44,7 +42,10 @@ export default function SettingsLayout() {
         <div className="flex-1 lg:max-w-2xl">
           <Outlet />
         </div>
+        <aside className="hidden lg:inline">
+          ????????????????
+        </aside>
       </div>
-    </div>
+    </main>
   );
 }

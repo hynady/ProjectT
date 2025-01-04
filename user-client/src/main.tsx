@@ -9,15 +9,13 @@ import {AuthProvider} from "@/app/authpage/contexts/AuthContext.tsx";
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <div className="hide-scrollbar">
-      <AuthProvider>
-        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-          <BrowserRouter>
-            <AppRouter/>
-            <Toaster/>
-          </BrowserRouter>
-        </ThemeProvider>
-      </AuthProvider>
-    </div>
+    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+      <BrowserRouter>
+        <AuthProvider>
+          <AppRouter/>
+          <Toaster/>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   </StrictMode>,
 );

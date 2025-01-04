@@ -21,10 +21,9 @@ import {
 } from "@/components/ui/card.tsx";
 import {mockAuthService as authService} from "@/services/mockAuthService.tsx";
 import {toast} from "@/hooks/use-toast.ts";
-import {useAuthContext} from "@/app/authpage/contexts/AuthContext.tsx";
 import {useNavigate} from "react-router-dom";
 import {useState} from "react";
-
+import {useAuth} from "@/app/authpage/contexts/AuthContext.tsx";
 
 // Define form validation schema
 const formSchema = z.object({
@@ -40,9 +39,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const LoginPage = () => {
-  const {setAuthenticated} = useAuthContext();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
 
   // Initialize form
@@ -60,14 +58,13 @@ const LoginPage = () => {
       setLoading(true);
       // Gọi authService để đăng nhập
       const response = await authService.login(data);
+      login(response.token);
       console.log("Đăng nhập thành công:", response);
       // Hiển thị thông báo đăng nhập thành công
       toast({
         title: "Đăng nhập thành công!",
         variant: "success",
       });
-      // Nếu đăng nhập thành công, cập nhật trạng thái và điều hướng
-      setAuthenticated(true);
       navigate('/');
     } catch (error: any) {
       // Kiểm tra nếu là lỗi 403

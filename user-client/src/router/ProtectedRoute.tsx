@@ -1,18 +1,12 @@
-import { Navigate } from "react-router-dom";
-import React from "react";
-import {useAuthContext} from "@/app/authpage/contexts/AuthContext.tsx";
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '@/app/authpage/contexts/AuthContext';
 
-interface ProtectedRouteProps {
-  children: React.ReactNode; // Các component con
-}
+export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated } = useAuthContext();
-  console.log(isAuthenticated);
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
+
   return <>{children}</>;
 };
-
-export default ProtectedRoute;
