@@ -14,43 +14,48 @@ import {NavLayout} from "@/components/global/globallayout/NavLayout.tsx";
 import AuthRoute from "@/router/AuthRoute.tsx";
 import {ProtectedRoute} from "@/router/ProtectedRoute.tsx";
 import NotFoundPage from "@/components/global/NotFoundPage.tsx";
-import EventDetailPage from "@/components/ui-custom/ticket.tsx";
+import EventDetailPage from "@/app/tack&paysystem/components/EventDetail.tsx";
+import {TackPayLayout} from "@/app/tack&paysystem/Tack&PayLayout.tsx";
 
 function AppRouter() {
   return (
-    <Routes>
-      {/* Nav Routes */}
-      <Route element={<NavLayout/>}>
-        <Route element={<SearchResultLayout/>}>
-          <Route path="/search" element={<SearchPage/>}/>
+    <>
+      <Routes>
+        {/* Nav Routes */}
+        <Route element={<NavLayout/>}>
+          <Route element={<SearchResultLayout/>}>
+            <Route path="/search" element={<SearchPage/>}/>
+          </Route>
+          <Route element={<TackPayLayout/>}>
+            <Route path="events/:id" element={<EventDetailPage/>}/>
+          </Route>
+          <Route element={<HomeLayout/>}>
+            <Route path="/" element={<HomePage/>}/>
+          </Route>
+
+          {/* Settings Routes - Protected */}
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <SettingsLayout/>
+            </ProtectedRoute>
+          }>
+            <Route path="profile" element={<SettingsProfilePage/>}/>
+            <Route path="account" element={<SettingsAccountPage/>}/>
+          </Route>
         </Route>
 
-        <Route path="events/:id" element={<EventDetailPage />} />
-        <Route element={<HomeLayout/>}>
-          <Route path="/" element={<HomePage/>}/>
+        {/* Auth Routes */}
+        <Route element={<AuthLayout/>}>
+          <Route path="/login" element={<AuthRoute><LoginPage/></AuthRoute>}/>
+          <Route path="/register" element={<AuthRoute><RegisterPage/></AuthRoute>}/>
+          <Route path="/rs-pw" element={<AuthRoute><ResetPasswordPage/></AuthRoute>}/>
         </Route>
 
-        {/* Settings Routes - Protected */}
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <SettingsLayout/>
-          </ProtectedRoute>
-        }>
-          <Route path="profile" element={<SettingsProfilePage/>}/>
-          <Route path="account" element={<SettingsAccountPage/>}/>
-        </Route>
-      </Route>
+        {/* 404 Not Found Route */}
+        <Route path="*" element={<NotFoundPage/>}/>
+      </Routes>
+    </>
 
-      {/* Auth Routes */}
-      <Route element={<AuthLayout/>}>
-        <Route path="/login" element={<AuthRoute><LoginPage/></AuthRoute>}/>
-        <Route path="/register" element={<AuthRoute><RegisterPage/></AuthRoute>}/>
-        <Route path="/rs-pw" element={<AuthRoute><ResetPasswordPage/></AuthRoute>}/>
-      </Route>
-
-      {/* 404 Not Found Route */}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
   );
 }
 

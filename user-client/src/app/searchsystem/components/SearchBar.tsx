@@ -5,6 +5,7 @@ import {mockSections} from "@/services/mockData.tsx"
 import {useEffect, useMemo, useRef, useState} from "react"
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {EventData} from "@/types";
+import {Overlay, useOverlay} from "@/components/global/Overlay.tsx";
 
 interface RecentSearch {
   id: string;
@@ -54,7 +55,7 @@ const searchEventsAPI = async (query: string): Promise<EventData[]> => {
 
 export function SearchBar() {
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false)
+  const { isOpen, open, close } = useOverlay();
   const [query, setQuery] = useState("")
   const [apiResults, setApiResults] = useState<EventData[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -127,7 +128,7 @@ export function SearchBar() {
   // Handle search submission
   const handleSearchSubmit = (searchQuery: string) => {
     addToRecentSearches(searchQuery);
-    setIsOpen(false);
+    close()
     navigate(`/search?keyword=${encodeURIComponent(searchQuery)}&sortBy=title&sortOrder=desc`);
   };
 
@@ -189,7 +190,7 @@ export function SearchBar() {
       // Nếu không có event cụ thể, điều hướng đến trang tìm kiếm
       navigate(`/search?keyword=${encodeURIComponent(query)}&sortBy=title&sortOrder=desc`);
     }
-    setIsOpen(false);
+    close();
   };
 
   return (
@@ -203,27 +204,19 @@ export function SearchBar() {
           className="pl-10 pr-4 h-11 rounded-full border border-input bg-background "
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => open()}
           onKeyUp={handleKeyPress}
         />
         <Search
           className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
         />
       </div>
-
+      <Overlay
+        isVisible={isOpen}
+        onClick={() => close()}
+      />
       {isOpen && (
         <>
-          {/* Overlay*/}
-          <div
-            className={cn(
-              "fixed inset-0 z-40 h-full",
-              "backdrop-blur-sm bg-black/10",
-              "animate-fade animate-duration-200",
-              "supports-[backdrop-filter]:bg-black/60"      // Fallback cho trình duyệt không hỗ trợ backdrop-filter
-            )}
-            onClick={() => setIsOpen(false)}
-          />
-
           {/* Dropdown content */}
           <div className={cn(
             // Thay đổi positioning để căn giữa màn hình
@@ -288,7 +281,7 @@ export function SearchBar() {
                           className="w-full"
                           onClick={() => {
                             navigate(`/events/${recentEvent.id}`);
-                            setIsOpen(false);
+                            open();
                           }}>
                           <p className="font-medium">{recentEvent.title}</p>
                           <p className="text-sm text-muted-foreground">

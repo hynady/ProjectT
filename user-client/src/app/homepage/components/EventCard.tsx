@@ -47,6 +47,9 @@ export const EventCard: React.FC<EventCardProps> = ({event, loading}) => {
             src={event.image}
             alt={event.title}
             className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={(e) => {
+              e.currentTarget.src = "https://placehold.co/600x400/8b5cf6/f5f3ff?text=No+Image";
+            }}
           />
           <div
             className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>
@@ -72,7 +75,7 @@ export const EventCard: React.FC<EventCardProps> = ({event, loading}) => {
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full group-hover:bg-primary/90" variant="default">
+        <Button className="w-full group-hover:bg-primary/90 " variant="default">
           <span>Mua vé ngay</span>
           <ArrowRight className="w-4 h-4 ml-2"/>
         </Button>

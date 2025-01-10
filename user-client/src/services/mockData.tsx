@@ -240,7 +240,7 @@ export const featuredEvents: Event[] = [
   {
     id: "2",
     title: "The Phantom of the Opera - Broadway Show",
-    image: "https://res.klook.com/image/upload/c_fill,w_750,h_563/q_80/w_80,x_15,y_15,g_south_west,l_Klook_water_br_trans_yhcmh3/activities/ea25ft7t8qvbuooohmag.jpg",
+    image: "https://res.klook.com/image/upload/c_fill,w_750,h_563/q_80/w_80,x_15,y_15,g_south_west,l_Klook_water_br_trans_yhcmh3a/activities/ea25ft7t8qvbuooohmag.jpg",
     date: "10/02/2025",
     location: "Nhà hát Lớn, Hà Nội",
     time: "20:00",

@@ -1,6 +1,5 @@
 import {AlignJustify, ChevronDown, LogOut, Settings, Ticket, User} from "lucide-react";
 import {Button} from "@/components/ui/button.tsx";
-import {Card} from "@/components/ui/card.tsx";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.tsx";
 import {
   DropdownMenuPointerCursor,
@@ -39,7 +38,7 @@ const Navbar = () => {
   };
 
   return (
-    <Card className="fixed top-0 left-0 right-0 z-10">
+    <nav className="fixed top-0 left-0 right-0 z-10  border shadow-lg bg-card">
       <div className="container mx-auto">
         <div className="h-14 md:h-16 flex items-center justify-between gap-4 px-2 sm:px-4 md:px-8">
           {/* Logo */}
@@ -216,7 +215,7 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-    </Card>
+    </nav>
   );
 };
 
