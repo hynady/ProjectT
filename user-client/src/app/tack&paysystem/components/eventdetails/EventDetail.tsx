@@ -132,8 +132,13 @@ Join us for a special music night with BlackPink, featuring their most popular h
       setLoading(false);
     };
 
-    fetchEvent();
+
+    setTimeout(() => fetchEvent(), 1000);
   }, [id, navigate]);
+
+  if (loading) {
+    return <EventDetailSkeleton />;
+  }
 
   if (!event) return null;
   const renderUpcomingEvents = () => {
@@ -392,7 +397,7 @@ Join us for a special music night with BlackPink, featuring their most popular h
                     </AccordionItem>
                   ))}
                 </Accordion>
-                <Button className="w-full mt-6" size="lg">
+                <Button className="w-full mt-6" size="lg" onClick={()=>navigate("booking")}>
                   Đặt vé ngay
                 </Button>
                 <p className="text-center text-sm text-muted-foreground mt-4">
@@ -571,6 +576,7 @@ import Autoplay from "embla-carousel-autoplay";
 import {EventCardSkeleton} from "@/app/homepage/components/skeletons/EventCardSkeleton.tsx";
 import {EventCard} from "@/app/homepage/components/EventCard.tsx";
 import {upcomingEvents} from "@/services/mockData.tsx";
+import {EventDetailSkeleton} from "@/app/tack&paysystem/components/eventdetails/skeletons/EventDetailSkeleton.tsx";
 
 // Định nghĩa type Event
 interface Event {

@@ -14,20 +14,23 @@ import {NavLayout} from "@/components/global/globallayout/NavLayout.tsx";
 import AuthRoute from "@/router/AuthRoute.tsx";
 import {ProtectedRoute} from "@/router/ProtectedRoute.tsx";
 import NotFoundPage from "@/components/global/NotFoundPage.tsx";
-import EventDetailPage from "@/app/tack&paysystem/components/EventDetail.tsx";
+import EventDetailPage from "@/app/tack&paysystem/components/eventdetails/EventDetail.tsx";
 import {TackPayLayout} from "@/app/tack&paysystem/Tack&PayLayout.tsx";
+import BookingPage from "@/app/tack&paysystem/components/BookingPage.tsx";
+import {ScrollToTop} from "@/components/global/ScrollToTop.tsx";
 
 function AppRouter() {
   return (
-    <>
+    <ScrollToTop>
       <Routes>
         {/* Nav Routes */}
         <Route element={<NavLayout/>}>
           <Route element={<SearchResultLayout/>}>
             <Route path="/search" element={<SearchPage/>}/>
           </Route>
-          <Route element={<TackPayLayout/>}>
-            <Route path="events/:id" element={<EventDetailPage/>}/>
+          <Route path="events" element={<TackPayLayout/>}>
+            <Route path=":id" element={<EventDetailPage/>}/>
+            <Route path=":id/booking" element={<BookingPage/>}/>
           </Route>
           <Route element={<HomeLayout/>}>
             <Route path="/" element={<HomePage/>}/>
@@ -54,7 +57,7 @@ function AppRouter() {
         {/* 404 Not Found Route */}
         <Route path="*" element={<NotFoundPage/>}/>
       </Routes>
-    </>
+    </ScrollToTop>
 
   );
 }
