@@ -20,16 +20,16 @@ import {
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import * as z from 'zod';
-import {EventData} from '@/types';
-import {EventCard} from "@/app/homepage/components/EventCard";
-import {categories as mockCategories, mockEvents, venues as mockVenues} from "@/services/mockData";
+import {OccaCard, OccaCardUnit} from "@/app/homepage/components/fragments/OccaCard.tsx";
 import {Filter, X} from "lucide-react";
 import {ScrollArea} from "@/components/ui/scroll-area";
+import {categoriesSectionData, venuesSectionData} from "@/app/homepage/services/mock/mockData.tsx";
+import {mockAllOcca} from "@/app/searchsystem/services/mock/mockData.tsx";
 
 // Define the search params schema
 const searchFormSchema = z.object({
-  categoryId: z.enum(['all', ...mockCategories.map(c => c.id)]),
-  venueId: z.enum(['all', ...mockVenues.map(v => v.id)]),
+  categoryId: z.enum(['all', ...categoriesSectionData.map(c => c.id)]),
+  venueId: z.enum(['all', ...venuesSectionData.map(v => v.id)]),
   sortBy: z.enum(['date', 'price', 'title']),
   sortOrder: z.enum(['asc', 'desc']),
 });
@@ -38,7 +38,7 @@ type SearchFormValues = z.infer<typeof searchFormSchema>;
 
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [events, setEvents] = useState<EventData[]>([]);
+  const [events, setEvents] = useState<OccaCardUnit[]>([]);
   const [loading, setLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<SearchFormValues>({
@@ -79,29 +79,29 @@ export const SearchPage: React.FC = () => {
   }, [searchParams, form]);
 
   const getCategoryName = (id: string) =>
-    id === 'all' ? 'Tất cả' : mockCategories.find(c => c.id === id)?.name || '';
+    id === 'all' ? 'Tất cả' : categoriesSectionData.find(c => c.id === id)?.name || '';
 
   const getVenueName = (id: string) =>
-    id === 'all' ? 'Tất cả' : mockVenues.find(v => v.id === id)?.name || '';
+    id === 'all' ? 'Tất cả' : venuesSectionData.find(v => v.id === id)?.name || '';
 
   const fetchEvents = async (page: number, formValues: SearchFormValues) => {
     setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      let filteredEvents = [...mockEvents];
+      let filteredEvents = [...mockAllOcca];
 
       const keyword = searchParams.get('keyword');
       if (keyword) {
-        filteredEvents = filteredEvents.filter(event =>
-          event.title.toLowerCase().includes(keyword.toLowerCase()) ||
-          event.location.toLowerCase().includes(keyword.toLowerCase())
+        filteredEvents = filteredEvents.filter(occa =>
+          occa.title.toLowerCase().includes(keyword.toLowerCase()) ||
+          occa.location.toLowerCase().includes(keyword.toLowerCase())
         );
       }
 
       if (formValues.categoryId && formValues.categoryId !== 'all') {
-        filteredEvents = filteredEvents.filter(event =>
-          event.categoryId === formValues.categoryId
+        filteredEvents = filteredEvents.filter(occa =>
+          occa.categoryId === formValues.categoryId
         );
       }
 
@@ -191,7 +191,7 @@ export const SearchPage: React.FC = () => {
   const LoadingSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {Array.from({length: 1}).map((_, index) => (
-        <EventCard key={index} loading={true} event={{} as EventData}/>
+        <OccaCard key={index} loading={true} occa={{} as OccaCardUnit}/>
       ))}
     </div>
   );
@@ -270,7 +270,7 @@ export const SearchPage: React.FC = () => {
                           >
                             Tất cả
                           </Button>
-                          {mockCategories.map(category => (
+                          {categoriesSectionData.map(category => (
                             <Button
                               key={category.id}
                               type="button"
@@ -295,7 +295,7 @@ export const SearchPage: React.FC = () => {
                           >
                             Tất cả
                           </Button>
-                          {mockVenues.map(venue => (
+                          {venuesSectionData.map(venue => (
                             <Button
                               key={venue.id}
                               type="button"
@@ -364,7 +364,7 @@ export const SearchPage: React.FC = () => {
       ) : events.length > 0 ? (
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {events.map((event) => (
-            <EventCard key={event.id} event={event} loading={false}/>
+            <OccaCard key={event.id} occa={event} loading={false}/>
           ))}
         </div>
       ) : (

@@ -14,9 +14,8 @@ import {NavLayout} from "@/components/global/globallayout/NavLayout.tsx";
 import AuthRoute from "@/router/AuthRoute.tsx";
 import {ProtectedRoute} from "@/router/ProtectedRoute.tsx";
 import NotFoundPage from "@/components/global/NotFoundPage.tsx";
-import EventDetailPage from "@/app/tack&paysystem/components/eventdetails/EventDetail.tsx";
-import {TackPayLayout} from "@/app/tack&paysystem/Tack&PayLayout.tsx";
-import BookingPage from "@/app/tack&paysystem/components/BookingPage.tsx";
+import EventDetailPage from "@/app/detailpage/components/OccaDetail.tsx";
+import {DetailPageLayout} from "@/app/detailpage/DetailPageLayout.tsx";
 import {ScrollToTop} from "@/components/global/ScrollToTop.tsx";
 
 function AppRouter() {
@@ -28,9 +27,8 @@ function AppRouter() {
           <Route element={<SearchResultLayout/>}>
             <Route path="/search" element={<SearchPage/>}/>
           </Route>
-          <Route path="events" element={<TackPayLayout/>}>
+          <Route path="occas" element={<DetailPageLayout/>}>
             <Route path=":id" element={<EventDetailPage/>}/>
-            <Route path=":id/booking" element={<BookingPage/>}/>
           </Route>
           <Route element={<HomeLayout/>}>
             <Route path="/" element={<HomePage/>}/>
