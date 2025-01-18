@@ -17,35 +17,32 @@ export const mockLocationData = {
 
 export const mockShowsData: OccaShowUnit[] = [
   {
-    date: "2025-01-15",
-    time: "20:00",
+    date: '2025-01-20',
+    time: '19:00',
     prices: [
-      { type: "SVIP", price: 3500000, available: 20 },
-      { type: "VIP", price: 2500000, available: 50 },
-      { type: "Standard", price: 1500000, available: 100 },
-      { type: "Economy", price: 800000, available: 200 },
-    ]
+      { type: 'Hạng VIP', price: 2000000, available: 50 },
+      { type: 'Hạng Thường', price: 1000000, available: 100 },
+      { type: 'Hạng Phổ thông', price: 500000, available: 200 },
+    ],
   },
   {
-    date: "16/01/2025",
-    time: "20:00",
+    date: '2025-01-20',
+    time: '21:00',
     prices: [
-      {type: "SVIP", price: 3500000, available: 15},
-      {type: "VIP", price: 2500000, available: 45},
-      {type: "Standard", price: 1500000, available: 90},
-      {type: "Economy", price: 800000, available: 180},
-    ]
+      { type: 'Hạng VIP', price: 2000000, available: 50 },
+      { type: 'Hạng Thường', price: 1000000, available: 100 },
+      { type: 'Hạng Phổ thông', price: 500000, available: 200 },
+    ],
   },
   {
-    date: "17/01/2025",
-    time: "20:00",
+    date: '2025-01-21',
+    time: '19:00',
     prices: [
-      {type: "SVIP", price: 3500000, available: 20},
-      {type: "VIP", price: 2500000, available: 50},
-      {type: "Standard", price: 1500000, available: 100},
-      {type: "Economy", price: 800000, available: 200},
-    ]
-  }
+      { type: 'Hạng VIP', price: 2000000, available: 50 },
+      { type: 'Hạng Thường', price: 1000000, available: 100 },
+      { type: 'Hạng Phổ thông', price: 500000, available: 200 },
+    ],
+  },
 ];
 
 export const mockGalleryData: string[] = [

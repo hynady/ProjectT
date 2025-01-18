@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useNavigate } from 'react-router-dom';
+import {Button} from '@/components/ui/button';
+import {Card} from '@/components/ui/card';
+import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/components/ui/accordion';
+import {useNavigate} from 'react-router-dom';
 
 export interface OccaShowUnit {
   date: string;
@@ -18,11 +18,38 @@ interface OccaShowSelectionProps {
   organizer: string;
 }
 
-export const OccaShowSelection = ({ shows, organizer }: OccaShowSelectionProps) => {
+export const OccaShowSelection = ({shows, organizer}: OccaShowSelectionProps) => {
   const navigate = useNavigate();
 
+  const handleShowSelect = (show: OccaShowUnit, selectedTicket: {
+    type: string;
+    price: number;
+    available: number;
+  }) => {
+    // Lưu thông tin show và vé đã chọn
+    const selectedInfo = {
+      show: {
+        date: show.date,
+        time: show.time
+      },
+      ticket: {
+        type: selectedTicket.type,
+        price: selectedTicket.price.toString(),
+        quantity: 1 // Mặc định chọn 1 vé
+      }
+    };
+
+    // Chuyển đến trang booking với state
+    navigate('booking', {
+      state: {
+        skipToStep: 2,
+        selectedInfo
+      }
+    });
+  };
+
   return (
-    <div className="sticky top-4">
+    <div className="sticky top-16">
       <div className="bg-card rounded-xl p-6">
         <h2 className="text-xl font-semibold text-card-foreground mb-4">Chọn buổi diễn</h2>
         <Accordion type="single" collapsible>
@@ -47,7 +74,12 @@ export const OccaShowSelection = ({ shows, organizer }: OccaShowSelectionProps) 
                           Còn {ticket.available} vé
                         </p>
                       </div>
-                      <Button>Chọn</Button>
+                      <Button
+                        onClick={() => handleShowSelect(show, ticket)}
+                        disabled={ticket.available < 1}
+                      >
+                        Chọn
+                      </Button>
                     </Card>
                   ))}
                 </div>
@@ -55,7 +87,11 @@ export const OccaShowSelection = ({ shows, organizer }: OccaShowSelectionProps) 
             </AccordionItem>
           ))}
         </Accordion>
-        <Button className="w-full mt-6" size="lg" onClick={()=>navigate("booking")}>
+        <Button
+          className="w-full mt-6"
+          size="lg"
+          onClick={() => navigate("booking")}
+        >
           Đặt vé ngay
         </Button>
         <p className="text-center text-sm text-muted-foreground mt-4">

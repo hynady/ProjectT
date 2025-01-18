@@ -17,6 +17,7 @@ import NotFoundPage from "@/components/global/NotFoundPage.tsx";
 import EventDetailPage from "@/app/detailpage/components/OccaDetail.tsx";
 import {DetailPageLayout} from "@/app/detailpage/DetailPageLayout.tsx";
 import {ScrollToTop} from "@/components/global/ScrollToTop.tsx";
+import BookingPage from "@/app/bookingpage/components/BookingPage.tsx";
 
 function AppRouter() {
   return (
@@ -29,6 +30,7 @@ function AppRouter() {
           </Route>
           <Route path="occas" element={<DetailPageLayout/>}>
             <Route path=":id" element={<EventDetailPage/>}/>
+            <Route path=":id/booking" element={<BookingPage/>}/>
           </Route>
           <Route element={<HomeLayout/>}>
             <Route path="/" element={<HomePage/>}/>
