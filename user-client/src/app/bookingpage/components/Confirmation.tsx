@@ -16,7 +16,7 @@ export interface BookingState {
   totalAmount: number;
 }
 
-export interface OccaInfoForConfirmation {
+export interface OccaShortInfo {
   title: string;
   location: string;
   duration: string;
@@ -25,7 +25,7 @@ export interface OccaInfoForConfirmation {
 
 interface ConfirmationProps {
   bookingState: BookingState;
-  occaInfo: OccaInfoForConfirmation;
+  occaInfo: OccaShortInfo;
   onConfirmPayment: () => void;
   onBack: () => void;
 }

@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { InfoIcon } from "lucide-react"
-import { BookingState, OccaInfoForConfirmation } from "@/app/bookingpage/components/Confirmation.tsx";
+import { BookingState, OccaShortInfo } from "@/app/bookingpage/components/Confirmation.tsx";
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Timer } from "lucide-react";
@@ -12,7 +12,7 @@ import { Timer } from "lucide-react";
 interface BookingSummaryProps {
   occaId: string;
   bookingState: BookingState;
-  occaInfo: OccaInfoForConfirmation;
+  occaInfo: OccaShortInfo;
   step: number;
 }
 

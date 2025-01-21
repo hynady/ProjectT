@@ -18,6 +18,7 @@ import EventDetailPage from "@/app/detailpage/components/OccaDetail.tsx";
 import {DetailPageLayout} from "@/app/detailpage/DetailPageLayout.tsx";
 import {ScrollToTop} from "@/components/global/ScrollToTop.tsx";
 import BookingPage from "@/app/bookingpage/components/BookingPage.tsx";
+import {MyTicketsPage} from "@/app/myticket/components/MyTicketsPage.tsx";
 
 function AppRouter() {
   return (
@@ -34,6 +35,7 @@ function AppRouter() {
           </Route>
           <Route element={<HomeLayout/>}>
             <Route path="/" element={<HomePage/>}/>
+            <Route path="my-ticket" element={<MyTicketsPage/>}/>
           </Route>
 
           {/* Settings Routes - Protected */}
