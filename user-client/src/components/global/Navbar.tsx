@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 const Navbar = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const {isAuthenticated, logout} = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -98,7 +98,9 @@ const Navbar = () => {
                     <span>Khuyến mãi</span>
                   </DropdownMenuItem>
                   {isAuthenticated && (
-                    <DropdownMenuItem className="text-sm">
+                    <DropdownMenuItem
+                      className="text-sm"
+                      onClick={() => navigate("my-ticket")}>
                       <Ticket className="h-4 w-4 mr-2"/>
                       <span>Vé của tôi</span>
                     </DropdownMenuItem>
@@ -120,7 +122,10 @@ const Navbar = () => {
               Khuyến mãi
             </Button>
             {isAuthenticated && (
-              <Button variant="default" className="text-sm px-3 h-9">
+              <Button
+                variant="default"
+                className="text-sm px-3 h-9"
+                onClick={() => navigate("my-ticket")}>
                 <Ticket className="w-4 h-4 mr-2"/>
                 Vé của tôi
               </Button>

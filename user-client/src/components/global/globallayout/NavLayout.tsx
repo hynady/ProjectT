@@ -8,7 +8,6 @@ export const NavLayout = () => {
       <Navbar/>
       <Outlet/>
       <Footer/>
-
     </main>
   )
 }
