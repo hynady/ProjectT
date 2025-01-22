@@ -1,8 +1,8 @@
 // hooks/useBooking.ts
 import { useState, useCallback } from 'react';
-import { BookingState } from '../components/Confirmation.tsx';
-import {ShowTime} from "@/app/bookingpage/components/ShowSelection.tsx";
-import {TicketType} from "@/app/bookingpage/components/TicketSelection.tsx";
+import { BookingState } from '../components/fragments/Confirmation.tsx';
+import {ShowTime} from "@/app/bookingpage/components/fragments/ShowSelection.tsx";
+import {TicketType} from "@/app/bookingpage/components/fragments/TicketSelection.tsx";
 
 const useBooking = () => {
   const [bookingState, setBookingState] = useState<BookingState>({

@@ -1,13 +1,13 @@
-import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { InfoIcon } from "lucide-react"
-import { BookingState, OccaShortInfo } from "@/app/bookingpage/components/Confirmation.tsx";
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Timer } from "lucide-react";
+import {format} from 'date-fns';
+import {vi} from 'date-fns/locale';
+import {Card, CardContent} from '@/components/ui/card.tsx';
+import {Separator} from '@/components/ui/separator.tsx';
+import {Alert, AlertDescription} from "@/components/ui/alert.tsx"
+import {InfoIcon} from "lucide-react"
+import {BookingState, OccaShortInfo} from "@/app/bookingpage/components/fragments/Confirmation.tsx";
+import {useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {Timer} from "lucide-react";
 
 interface BookingSummaryProps {
   occaId: string;
@@ -16,7 +16,7 @@ interface BookingSummaryProps {
   step: number;
 }
 
-export const BookingSummary = ({ bookingState, occaInfo, step, occaId }: BookingSummaryProps) => {
+export const BookingSummary = ({bookingState, occaInfo, step, occaId}: BookingSummaryProps) => {
   const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState(300); // 5 phút = 300 giây
 
@@ -41,7 +41,7 @@ export const BookingSummary = ({ bookingState, occaInfo, step, occaId }: Booking
 
   const countdown = (
     <Alert className="mb-4 border-destructive/50 bg-destructive/10">
-      <Timer className="h-4 w-4 text-destructive" />
+      <Timer className="h-4 w-4 text-destructive"/>
       <AlertDescription className="text-sm text-destructive">
         Vui lòng hoàn tất đặt vé trong: {formatTime(timeLeft)}
       </AlertDescription>
@@ -57,7 +57,7 @@ export const BookingSummary = ({ bookingState, occaInfo, step, occaId }: Booking
         <CardContent className="p-4">
           {countdown}
           <Alert className="border-primary/50 bg-primary/10">
-            <InfoIcon className="h-4 w-4 text-primary" />
+            <InfoIcon className="h-4 w-4 text-primary"/>
             <AlertDescription className="text-sm text-primary">
               Vui lòng kiểm tra kỹ các thông tin sau trước khi xác nhận:
               <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground">
@@ -98,7 +98,7 @@ export const BookingSummary = ({ bookingState, occaInfo, step, occaId }: Booking
             </div>
           </div>
 
-          <Separator />
+          <Separator/>
 
           {/* Thông tin đã chọn */}
           <div className="space-y-3 text-sm">
@@ -107,7 +107,7 @@ export const BookingSummary = ({ bookingState, occaInfo, step, occaId }: Booking
               <div className="flex items-start gap-2">
                 <div className="text-muted-foreground min-w-[80px]">Suất:</div>
                 <div>
-                  {format(new Date(bookingState.selectedShow.date), 'EEEE, dd/MM/yyyy', { locale: vi })}
+                  {format(new Date(bookingState.selectedShow.date), 'EEEE, dd/MM/yyyy', {locale: vi})}
                   <span className="mx-1">-</span>
                   {bookingState.selectedShow.time}
                 </div>
@@ -127,14 +127,14 @@ export const BookingSummary = ({ bookingState, occaInfo, step, occaId }: Booking
                         </span>
                         <span className="text-primary ml-4">
                           {(Number(ticket.price.replace(/[^0-9.-]+/g, '')) * ticket.quantity)
-                            .toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                            .toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}
                         </span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <Separator className="my-2" />
+                <Separator className="my-2"/>
 
                 {/* Tổng tiền */}
                 <div className="flex items-center justify-between font-medium">

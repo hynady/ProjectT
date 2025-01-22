@@ -1,7 +1,7 @@
 // components/Payment.tsx
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {ShowTime} from "@/app/bookingpage/components/ShowSelection.tsx";
+import { Card, CardContent, CardHeader } from '@/components/ui/card.tsx';
+import { Button } from '@/components/ui/button.tsx';
+import {ShowTime} from "@/app/bookingpage/components/fragments/ShowSelection.tsx";
 import {format} from "date-fns";
 import {vi} from "date-fns/locale";
 import {Separator} from "@/components/ui/separator.tsx";

@@ -1,30 +1,28 @@
-import { QRCodeSVG } from "qrcode.react";
+import {QRCodeSVG} from "qrcode.react";
 import {format, parseISO} from "date-fns";
-import { Button } from "@/components/ui/button";
+import {Button} from "@/components/ui/button";
 import {
   Download,
   CheckCircle,
   Calendar,
   Clock,
   Tag,
-  DollarSign,
   MapPin,
-  Share2, ExternalLink, XCircle
+  Share2, ExternalLink, XCircle, Banknote
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { TicketDisplay } from "@/app/myticket/components/fragments/TicketList";
+import {cn} from "@/lib/utils";
+import {TicketDisplay} from "@/app/myticket/components/fragments/TicketList";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent } from "@/components/ui/card";
+import {ScrollArea} from "@/components/ui/scroll-area";
+import {Separator} from "@/components/ui/separator";
+import {Card, CardContent} from "@/components/ui/card";
 import React from "react";
-import { isTicketCheckedIn, isTicketExpired } from "@/utils/ticketUtils";
+import {isTicketCheckedIn, isTicketExpired} from "@/utils/ticketUtils";
 
 interface TicketModalProps {
   ticket: TicketDisplay;
@@ -38,9 +36,9 @@ interface InfoItemProps {
   className?: string;
 }
 
-const InfoItem = ({ icon: Icon, label, value, className }: InfoItemProps) => (
+const InfoItem = ({icon: Icon, label, value, className}: InfoItemProps) => (
   <div className={cn("flex items-center space-x-3", className)}>
-    <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+    <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0"/>
     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 flex-1">
       <span className="text-sm text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
@@ -48,7 +46,7 @@ const InfoItem = ({ icon: Icon, label, value, className }: InfoItemProps) => (
   </div>
 );
 
-export const TicketModal = ({ ticket, onClose }: TicketModalProps) => {
+export const TicketModal = ({ticket, onClose}: TicketModalProps) => {
   const currentDate = new Date('2025-01-21 08:41:54');
   const checkedIn = isTicketCheckedIn(ticket);
   const expired = isTicketExpired(ticket, currentDate);
@@ -76,7 +74,7 @@ export const TicketModal = ({ ticket, onClose }: TicketModalProps) => {
                 {checkedIn ? (
                   <div className="text-center">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-3">
-                      <CheckCircle className="w-8 h-8 text-primary" />
+                      <CheckCircle className="w-8 h-8 text-primary"/>
                     </div>
                     <h3 className="text-lg font-semibold text-primary">Checked In</h3>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -85,8 +83,9 @@ export const TicketModal = ({ ticket, onClose }: TicketModalProps) => {
                   </div>
                 ) : expired ? (
                   <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/20 mb-3">
-                      <XCircle className="w-8 h-8 text-destructive" />
+                    <div
+                      className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/20 mb-3">
+                      <XCircle className="w-8 h-8 text-destructive"/>
                     </div>
                     <h3 className="text-lg font-semibold text-destructive">Expired</h3>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -126,32 +125,26 @@ export const TicketModal = ({ ticket, onClose }: TicketModalProps) => {
                   <InfoItem
                     icon={Tag}
                     label="Loại vé"
-                    value={
-                      <Badge variant="secondary">
-                        {ticket.ticketType.type}
-                      </Badge>
-                    }
+                    value={ticket.ticketType.type}
                   />
                   <InfoItem
-                    icon={DollarSign}
+                    icon={Banknote}
                     label="Giá"
                     value={`$${ticket.ticketType.price}`}
                   />
-                  <Separator className="my-2" />
+                  <Separator className="my-2"/>
                   <div className="space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
-                      <div className="flex-1">
-                        <InfoItem
-                          icon={MapPin}
-                          value={
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                              <span className="font-medium">{ticket.occa.location}</span>
-                              <span className="hidden sm:block text-muted-foreground">•</span>
-                              <span className="text-sm text-muted-foreground">{ticket.occa.address}</span>
-                            </div>
-                          }
-                        />
-                      </div>
+                      <InfoItem
+                        icon={MapPin}
+                        value={
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                            <span className="font-medium">{ticket.occa.location}</span>
+                            <span className="hidden sm:block text-muted-foreground">•</span>
+                            <span className="text-sm text-muted-foreground">{ticket.occa.address}</span>
+                          </div>
+                        }
+                      />
                       <Button
                         variant="outline"
                         size="sm"
@@ -161,7 +154,7 @@ export const TicketModal = ({ ticket, onClose }: TicketModalProps) => {
                           window.open(`https://www.google.com/maps/dir/?api=1&destination=${destination}`, '_blank');
                         }}
                       >
-                        <ExternalLink className="w-4 h-4 mr-2" />
+                        <ExternalLink className="w-4 h-4 mr-2"/>
                         Mở trên Bản đồ
                       </Button>
                     </div>
@@ -176,11 +169,11 @@ export const TicketModal = ({ ticket, onClose }: TicketModalProps) => {
                     className="flex-1 h-12"
                     onClick={() => window.print()}
                   >
-                    <Download className="w-4 h-4 mr-2" />
+                    <Download className="w-4 h-4 mr-2"/>
                     Tải vé
                   </Button>
                   <Button className="flex-1 h-12">
-                    <Share2 className="w-4 h-4 mr-2" />
+                    <Share2 className="w-4 h-4 mr-2"/>
                     Chia sẻ vé
                   </Button>
                 </div>

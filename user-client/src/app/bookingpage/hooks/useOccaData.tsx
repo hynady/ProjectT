@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import {OccaShowUnit} from "@/app/bookingpage/components/ShowSelection.tsx";
+import {OccaShowUnit} from "@/app/bookingpage/components/fragments/ShowSelection.tsx";
 
 // Mock data
 const MOCK_OCCA = {

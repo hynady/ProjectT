@@ -1,8 +1,8 @@
 // components/TicketSelection.tsx
-import {Card, CardContent} from '@/components/ui/card';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import { ScrollToTop } from '@/components/global/ScrollToTop';
+import {Card, CardContent} from '@/components/ui/card.tsx';
+import {Button} from '@/components/ui/button.tsx';
+import {Input} from '@/components/ui/input.tsx';
+import { ScrollToTop } from '@/components/global/ScrollToTop.tsx';
 
 export interface TicketType {
   type: string;

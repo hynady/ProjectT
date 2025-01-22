@@ -6,6 +6,7 @@ import {Calendar, MapPin, ArrowRight} from 'lucide-react';
 import Autoplay from "embla-carousel-autoplay";
 import {useNavigate} from 'react-router-dom';
 import {HeroSkeleton} from "@/app/homepage/components/skeletons/HeroSkeleton.tsx";
+import {Card} from "@/components/ui/card.tsx";
 
 export interface HeroSectionUnit {
   id: string;
@@ -55,11 +56,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({occas, loading}) => {
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
               <div
-                className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-primary via-background/70 to-transparent"/>
+                className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-primary via-background/70 to-transparent"/>
               <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
-                <div className="max-w-screen-xl mx-auto">
+                <Card className="max-w-screen-xl mx-auto p-4">
                   <h2
-                    className="text-sm sm:text-base md:text-2xl lg:text-3xl font-bold mb-2 line-clamp-2 text-card-foreground">
+                    className="text-sm sm:text-base md:text-2xl lg:text-3xl font-bold mb-2 line-clamp-1 text-card-foreground">
                     {occa.title}
                   </h2>
                   <div
@@ -74,14 +75,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({occas, loading}) => {
                     </Badge>
                   </div>
                   <Button
-                    variant="secondary"
+                    variant="default"
                     size="sm"
-                    className="hover:bg-secondary/80"
                   >
                     Xem chi tiết
                     <ArrowRight className="w-4 h-4 ml-2"/>
                   </Button>
-                </div>
+                </Card>
               </div>
             </div>
           </CarouselItem>

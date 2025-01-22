@@ -23,7 +23,7 @@ export const mockUserService = {
     });
   },
 
-  sendOtp: async (_email:string ) => {
+  sendOtp: async (_email: string) => {
     return new Promise((resolve) => {
       setTimeout(() => {
         // Trả về phản hồi thành công nếu email chưa đăng ký

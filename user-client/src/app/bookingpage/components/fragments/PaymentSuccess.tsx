@@ -1,9 +1,9 @@
 // components/PaymentSuccess.tsx
 import {Check} from 'lucide-react';
-import {Button} from '@/components/ui/button';
+import {Button} from '@/components/ui/button.tsx';
 import {useNavigate} from 'react-router-dom';
 import Confetti from 'react-confetti';
-import { ScrollToTop } from '@/components/global/ScrollToTop';
+import { ScrollToTop } from '@/components/global/ScrollToTop.tsx';
 
 interface PaymentSuccessProps {
   id: string;

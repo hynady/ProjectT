@@ -1,8 +1,8 @@
 import {useState} from 'react';
-import {Card, CardContent} from '@/components/ui/card';
-import {RadioGroup, RadioGroupItem} from '@/components/ui/radio-group';
-import {Label} from '@/components/ui/label';
-import {Button} from '@/components/ui/button';
+import {Card, CardContent} from '@/components/ui/card.tsx';
+import {RadioGroup, RadioGroupItem} from '@/components/ui/radio-group.tsx';
+import {Label} from '@/components/ui/label.tsx';
+import {Button} from '@/components/ui/button.tsx';
 import {CreditCard, Wallet, QrCode} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 import {ScrollToTop} from "@/components/global/ScrollToTop.tsx";

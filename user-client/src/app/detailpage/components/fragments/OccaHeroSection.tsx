@@ -34,7 +34,7 @@ export const OccaHeroSection = ({ occa }: OccaHeroSectionProps) => {
           <Card className="animate-fade-up animate-ease-in-out p-6 flex flex-col space-y-4 sm:space-y-6 lg:flex-row lg:justify-between lg:items-end lg:space-y-0 lg:gap-6">
             <div className="space-y-2 sm:space-y-4">
               <div className="hidden sm:flex flex-wrap gap-1.5 sm:gap-2">
-                <Badge variant="default" className="bg-primary dark:bg-primary text-xs sm:text-sm">Hot</Badge>
+                <Badge variant="destructive" className="text-xs sm:text-sm">Hot</Badge>
                 <Badge variant="default" className="text-xs sm:text-sm">Music</Badge>
                 <Badge variant="default" className="text-xs sm:text-sm">Concert</Badge>
               </div>

@@ -1,9 +1,9 @@
 // components/ShowSelection.tsx
 import {useState} from 'react';
 import {format} from 'date-fns';
-import {Card, CardContent} from '@/components/ui/card';
-import {Button} from '@/components/ui/button';
-import {TicketType} from "@/app/bookingpage/components/TicketSelection.tsx";
+import {Card, CardContent} from '@/components/ui/card.tsx';
+import {Button} from '@/components/ui/button.tsx';
+import {TicketType} from "@/app/bookingpage/components/fragments/TicketSelection.tsx";
 import {vi} from "date-fns/locale";
 import {ScrollToTop} from "@/components/global/ScrollToTop.tsx";
 
