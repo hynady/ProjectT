@@ -64,7 +64,7 @@ const PaginationLink = ({
 PaginationLink.displayName = "PaginationLink"
 
 type PaginationButtonProps = {
-  disabled?: boolean // Thêm prop disabled
+  disabled?: boolean
 } & React.ComponentProps<typeof PaginationLink>
 
 const PaginationPrevious = ({
@@ -80,7 +80,7 @@ const PaginationPrevious = ({
     {...props}
   >
     <ChevronLeft className="h-4 w-4" />
-    <span>Previous</span>
+    <span>Trang trước</span>
   </PaginationLink>
 )
 PaginationPrevious.displayName = "PaginationPrevious"
@@ -97,7 +97,7 @@ const PaginationNext = ({
     disabled={disabled}
     {...props}
   >
-    <span>Next</span>
+    <span>Trang tiếp</span>
     <ChevronRight className="h-4 w-4" />
   </PaginationLink>
 )

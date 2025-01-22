@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {CategorySkeleton} from "@/app/homepage/components/skeletons/CategorySkeleton.tsx";
+import {useNavigate} from "react-router-dom";
 
 export interface CategorySectionUnit {
   id: string;
@@ -15,6 +16,8 @@ interface CategorySectionProps {
 }
 
 export const CategorySection: React.FC<CategorySectionProps> = ({ categories, loading }) => {
+  const navigate = useNavigate();
+
   if (loading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -33,12 +36,17 @@ export const CategorySection: React.FC<CategorySectionProps> = ({ categories, lo
     "bg-gradient-to-br from-chart-5 to-transparent"
   ];
 
+  const handleCategoryClick = (categoryId: string) => {
+    navigate(`/search?categoryId=${categoryId}`);
+  };
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {categories.map((category, index) => (
         <Card
           key={category.id}
           className={`group hover:-translate-y-2 cursor-pointer transition-all duration-300 ease-out ${gradientClasses[index % 5]}`}
+          onClick={() => handleCategoryClick(category.id)}
         >
           <CardHeader>
             <CardTitle className="text-lg">

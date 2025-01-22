@@ -25,6 +25,7 @@ import {Filter, X} from "lucide-react";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {categoriesSectionData, venuesSectionData} from "@/app/homepage/services/mock/mockData.tsx";
 import {mockAllOcca} from "@/app/searchsystem/services/mock/mockData.tsx";
+import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/components/ui/accordion';
 
 // Define the search params schema
 const searchFormSchema = z.object({
@@ -258,63 +259,74 @@ export const SearchPage: React.FC = () => {
                 </SheetHeader>
                 <ScrollArea className="flex-1 px-6">
                   <div className="space-y-6 py-6">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <h3 className="font-medium">Danh mục</h3>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            type="button"
-                            variant={filters.categoryId === 'all' ? 'default' : 'outline'}
-                            onClick={() => handleFilterChange('categoryId', 'all')}
-                            className="h-auto py-2 px-4"
-                          >
-                            Tất cả
-                          </Button>
-                          {categoriesSectionData.map(category => (
+                    <Accordion type="single" collapsible className="w-full">
+                      {/* Categories Accordion Item */}
+                      <AccordionItem value="categories">
+                        <AccordionTrigger className="font-medium">
+                          Danh mục
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="grid grid-cols-2 gap-2 pt-2">
                             <Button
-                              key={category.id}
                               type="button"
-                              variant={filters.categoryId === category.id ? 'default' : 'outline'}
-                              onClick={() => handleFilterChange('categoryId', category.id)}
+                              variant={filters.categoryId === 'all' ? 'default' : 'outline'}
+                              onClick={() => handleFilterChange('categoryId', 'all')}
                               className="h-auto py-2 px-4"
                             >
-                              {category.name}
+                              Tất cả
                             </Button>
-                          ))}
-                        </div>
-                      </div>
+                            {categoriesSectionData.map(category => (
+                              <Button
+                                key={category.id}
+                                type="button"
+                                variant={filters.categoryId === category.id ? 'default' : 'outline'}
+                                onClick={() => handleFilterChange('categoryId', category.id)}
+                                className="h-auto py-2 px-4"
+                              >
+                                {category.name}
+                              </Button>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
 
-                      <div className="space-y-2">
-                        <h3 className="font-medium">Địa điểm</h3>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            type="button"
-                            variant={filters.venueId === 'all' ? 'default' : 'outline'}
-                            onClick={() => handleFilterChange('venueId', 'all')}
-                            className="h-auto py-2 px-4"
-                          >
-                            Tất cả
-                          </Button>
-                          {venuesSectionData.map(venue => (
+                      {/* Venues Accordion Item */}
+                      <AccordionItem value="venues">
+                        <AccordionTrigger className="font-medium">
+                          Địa điểm
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="grid grid-cols-2 gap-2 pt-2">
                             <Button
-                              key={venue.id}
                               type="button"
-                              variant={filters.venueId === venue.id ? 'default' : 'outline'}
-                              onClick={() => handleFilterChange('venueId', venue.id)}
+                              variant={filters.venueId === 'all' ? 'default' : 'outline'}
+                              onClick={() => handleFilterChange('venueId', 'all')}
                               className="h-auto py-2 px-4"
                             >
-                              {venue.name}
+                              Tất cả
                             </Button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                            {venuesSectionData.map(venue => (
+                              <Button
+                                key={venue.id}
+                                type="button"
+                                variant={filters.venueId === venue.id ? 'default' : 'outline'}
+                                onClick={() => handleFilterChange('venueId', venue.id)}
+                                className="h-auto py-2 px-4"
+                              >
+                                {venue.name}
+                              </Button>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                   </div>
                 </ScrollArea>
               </div>
             </SheetContent>
           </SheetCustomOverlay>
         </div>
+
         {/* Bottom row: Sort buttons */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2">
         <span className="text-sm font-medium text-muted-foreground">
@@ -358,6 +370,7 @@ export const SearchPage: React.FC = () => {
           </div>
         </div>
       </div>
+
       {/* Results Grid */}
       {loading ? (
         <LoadingSkeleton/>
@@ -381,6 +394,7 @@ export const SearchPage: React.FC = () => {
               <PaginationPrevious
                 onClick={() => handlePageChange(pagination.currentPage - 1)}
                 disabled={pagination.currentPage === 0}
+                className="cursor-pointer"
               />
             </PaginationItem>
             {[...Array(pagination.totalPages)].map((_, index) => (
@@ -388,6 +402,7 @@ export const SearchPage: React.FC = () => {
                 <PaginationLink
                   onClick={() => handlePageChange(index)}
                   isActive={pagination.currentPage === index}
+                  className="cursor-pointer"
                 >
                   {index + 1}
                 </PaginationLink>
@@ -397,6 +412,7 @@ export const SearchPage: React.FC = () => {
               <PaginationNext
                 onClick={() => handlePageChange(pagination.currentPage + 1)}
                 disabled={pagination.currentPage === pagination.totalPages - 1}
+                className="cursor-pointer"
               />
             </PaginationItem>
           </PaginationContent>

@@ -27,7 +27,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
   }
 
   const handleCardClick = () => {
-    navigate(`/venue/${venue.id}`)
+    navigate(`/search?venueId=${venue.id}`);
   }
 
   return (
