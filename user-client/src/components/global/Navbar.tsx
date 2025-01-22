@@ -39,7 +39,7 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-10  border shadow-lg bg-card">
-      <div className="container mx-auto">
+      <div className="container mx-auto max-w-screen-xl">
         <div className="h-14 md:h-16 flex items-center justify-between gap-4 px-2 sm:px-4 md:px-8">
           {/* Logo */}
           <div className="flex items-center">
@@ -88,15 +88,6 @@ const Navbar = () => {
                 <DropdownMenuLabel className="text-sm">Menu</DropdownMenuLabel>
                 <DropdownMenuSeparator/>
                 <DropdownMenuGroup>
-                  <DropdownMenuItem className="text-sm">
-                    <span>Sự kiện</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-sm">
-                    <span>Lịch chiếu</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-sm">
-                    <span>Khuyến mãi</span>
-                  </DropdownMenuItem>
                   {isAuthenticated && (
                     <DropdownMenuItem
                       className="text-sm"
@@ -112,15 +103,6 @@ const Navbar = () => {
 
           {/* Navigation Links for Desktop */}
           <nav className="hidden lg:flex items-center gap-2">
-            <Button variant="ghost" className="text-sm px-3 h-9">
-              Sự kiện
-            </Button>
-            <Button variant="ghost" className="text-sm px-3 h-9">
-              Lịch chiếu
-            </Button>
-            <Button variant="ghost" className="text-sm px-3 h-9">
-              Khuyến mãi
-            </Button>
             {isAuthenticated && (
               <Button
                 variant="default"

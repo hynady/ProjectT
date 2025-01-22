@@ -5,7 +5,7 @@ import {useSearch} from "../hooks/useSearch";
 import {useRecentItems} from "@/app/searchsystem/hooks/useRecentItems.tsx";
 import {OccaSearchItemBaseUnit} from "@/app/searchsystem/components/fragments/occaItem/OccaSearchItem.tsx";
 import {cn} from "@/lib/utils";
-import {Flame, Search, ThumbsUp} from "lucide-react";
+import {Flame, Search, ThumbsUp, X} from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {RecentSearches} from "./fragments/RecentSearches.tsx";
 import {RecentOccas} from "./fragments/occaItem/RecentOccas.tsx";
@@ -110,6 +110,11 @@ export function SearchBar() {
     }
   };
 
+  const handleClear = () => {
+    setQuery('');
+    inputRef.current?.focus();
+  };
+
   return (
     <>
       <div className={cn("relative",
@@ -118,7 +123,7 @@ export function SearchBar() {
         <Input
           ref={inputRef}
           placeholder="Tìm kiếm sự kiện..."
-          className="pl-10 pr-4 h-11 rounded-full border border-input bg-background"
+          className="pl-10 pr-9 h-11 rounded-full border border-input bg-background" // Thêm pr-9 để tránh text bị đè bởi nút clear
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => open()}
@@ -127,6 +132,16 @@ export function SearchBar() {
         <Search
           className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
         />
+        {query && (
+          <button
+            onClick={handleClear}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
+            type="button"
+            aria-label="Clear search"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       <Overlay isVisible={isOpen} onClick={close}/>
