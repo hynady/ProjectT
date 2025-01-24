@@ -3,9 +3,9 @@ import {createRoot} from 'react-dom/client'
 import './index.css'
 import {BrowserRouter} from "react-router-dom";
 import AppRouter from "@/router/AppRouter.tsx";
-import {Toaster} from "@/components/ui/toaster.tsx";
-import {ThemeProvider} from "@/components/global/theme-provider.tsx";
-import {AuthProvider} from "@/app/authpage/contexts/AuthContext.tsx";
+import {Toaster} from "@/commons/components/toaster.tsx";
+import {ThemeProvider} from "@/commons/blocks/theme-provider.tsx";
+import {AuthProvider} from "@/features/auth/contexts.tsx";
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

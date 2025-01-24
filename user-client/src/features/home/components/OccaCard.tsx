@@ -1,0 +1,95 @@
+import React from 'react';
+
+import {Card, CardContent, CardHeader, CardTitle, CardFooter} from "@/commons/components/card.tsx";
+import {Button} from "@/commons/components/button.tsx";
+import {Skeleton} from "@/commons/components/skeleton.tsx";
+import {Calendar, MapPin, Clock, ArrowRight} from 'lucide-react';
+import {useNavigate} from "react-router-dom";
+
+export interface OccaCardUnit {
+  id: string;
+  title: string;
+  image: string;
+  date: string;
+  time: string;
+  location: string;
+  price: string;
+  categoryId?: string,
+  venueId?: string,
+}
+interface OccaCardProps {
+  occa: OccaCardUnit;
+  loading: boolean;
+}
+
+export const OccaCard: React.FC<OccaCardProps> = ({occa, loading}) => {
+  const navigate = useNavigate();
+
+  if (loading) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="space-y-2">
+          <Skeleton className="h-48 w-full rounded-lg"/>
+          <Skeleton className="h-4 w-3/4"/>
+          <Skeleton className="h-4 w-1/2"/>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Skeleton className="h-4 w-full"/>
+          <Skeleton className="h-4 w-full"/>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const handleCardClick = () => {
+    navigate(`/occas/${occa.id}`)
+  }
+
+  return (
+    <Card
+      className="group cursor-pointer w-full hover:shadow-lg transition-all duration-300 overflow-hidden"
+      onClick={() => {
+        handleCardClick()
+      }}>
+      <CardHeader className="p-0">
+        <div className="relative overflow-hidden">
+          <img
+            src={occa.image}
+            alt={occa.title}
+            className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={(e) => {
+              e.currentTarget.src = "https://placehold.co/600x400/8b5cf6/f5f3ff?text=No+Image";
+            }}
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4 p-6">
+        <CardTitle className="text-lg font-semibold line-clamp-2 group-hover:text-primary transition-colors">
+          {occa.title}
+        </CardTitle>
+
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4"/>
+            <span>{occa.date}</span>
+            <Clock className="w-4 h-4 ml-2"/>
+            <span>{occa.time}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4"/>
+            <span className="line-clamp-1">{occa.location}</span>
+          </div>
+          <div className="font-medium text-primary">{occa.price}</div>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button className="w-full group-hover:bg-primary/90 " variant="default">
+          <span>Mua vé ngay</span>
+          <ArrowRight className="w-4 h-4 ml-2"/>
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+};

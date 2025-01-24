@@ -1,24 +1,24 @@
 import {Route, Routes} from "react-router-dom";
-import LoginPage from "@/app/authpage/components/Login.tsx";
-import RegisterPage from "@/app/authpage/components/Register.tsx";
-import ResetPasswordPage from "@/app/authpage/components/ResetPassword.tsx";
-import {AuthLayout} from "@/app/authpage/AuthLayout.tsx";
-import {HomeLayout} from "@/app/homepage/HomeLayout.tsx";
-import HomePage from "@/app/homepage/components/HomePage.tsx";
-import SettingsProfilePage from "@/app/settingspage/components/SettingsProfilePage.tsx";
-import SettingsLayout from "@/app/settingspage/SettingsLayout.tsx";
-import SettingsAccountPage from "@/app/settingspage/components/SettingsAccountPage.tsx";
-import {SearchResultLayout} from "@/app/searchsystem/SearchResultLayout.tsx";
-import {SearchPage} from "@/app/searchsystem/components/SearchPage.tsx";
-import {NavLayout} from "@/components/global/globallayout/NavLayout.tsx";
+import HomePage from "@/features/home/HomePage.tsx";
+import SettingsProfilePage from "@/features/setting/blocks/SettingsProfilePage.tsx";
+import SettingsAccountPage from "@/features/setting/blocks/SettingsAccountPage.tsx";
+import {SearchPage} from "@/features/search/blocks/SearchPage.tsx";
+import {NavLayout} from "@/commons/layouts/NavLayout.tsx";
 import AuthRoute from "@/router/AuthRoute.tsx";
 import {ProtectedRoute} from "@/router/ProtectedRoute.tsx";
-import NotFoundPage from "@/components/global/NotFoundPage.tsx";
-import EventDetailPage from "@/app/detailpage/components/OccaDetail.tsx";
-import {DetailPageLayout} from "@/app/detailpage/DetailPageLayout.tsx";
-import {ScrollToTop} from "@/components/global/ScrollToTop.tsx";
-import BookingPage from "@/app/bookingpage/components/BookingPage.tsx";
-import {MyTicketsPage} from "@/app/myticket/components/MyTicketsPage.tsx";
+import NotFoundPage from "@/commons/blocks/NotFoundPage.tsx";
+import EventDetailPage from "@/features/detail/OccaDetail.tsx";
+import {ScrollToTop} from "@/commons/blocks/ScrollToTop.tsx";
+import BookingPage from "@/features/booking/BookingPage.tsx";
+import {MyTicketsPage} from "@/features/my-ticket/MyTicketsPage.tsx";
+import {AuthLayout} from "@/features/auth/layout.tsx";
+import LoginPage from "@/features/auth/blocks/LoginForm.tsx";
+import RegisterPage from "@/features/auth/blocks/RegisterForm.tsx";
+import ResetPassword from "@/features/auth/blocks/ResetPasswordForm.tsx";
+import {HomeLayout} from "@/features/home/layout.tsx";
+import {SearchResultLayout} from "@/features/search/layout.tsx";
+import {DetailPageLayout} from "@/features/detail/layout.tsx";
+import SettingsLayout from "@/features/setting/layout.tsx";
 
 function AppRouter() {
   return (
@@ -53,7 +53,7 @@ function AppRouter() {
         <Route element={<AuthLayout/>}>
           <Route path="/login" element={<AuthRoute><LoginPage/></AuthRoute>}/>
           <Route path="/register" element={<AuthRoute><RegisterPage/></AuthRoute>}/>
-          <Route path="/rs-pw" element={<AuthRoute><ResetPasswordPage/></AuthRoute>}/>
+          <Route path="/rs-pw" element={<AuthRoute><ResetPassword/></AuthRoute>}/>
         </Route>
 
         {/* 404 Not Found Route */}
