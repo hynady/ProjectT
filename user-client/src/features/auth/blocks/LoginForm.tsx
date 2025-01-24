@@ -19,11 +19,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/commons/components/card.tsx";
-import {mockAuthService as authService} from "@/features/auth/hooks/mockAuthService.tsx";
 import {toast} from "@/commons/hooks/use-toast.ts";
 import {useNavigate} from "react-router-dom";
 import {useState} from "react";
 import {useAuth} from "@/features/auth/contexts.tsx";
+import {authService} from "@/features/auth/services/auth.service.ts";
 
 // Define form validation schema
 const formSchema = z.object({
@@ -43,7 +43,6 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Initialize form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -52,36 +51,24 @@ const LoginPage = () => {
     },
   });
 
-  // Handle form submission
   const onSubmit = async (data: FormValues) => {
     try {
       setLoading(true);
-      // Gọi authService để đăng nhập
       const response = await authService.login(data);
       login(response.token);
-      console.log("Đăng nhập thành công:", response);
-      // Hiển thị thông báo đăng nhập thành công
+
       toast({
         title: "Đăng nhập thành công!",
         variant: "success",
       });
       navigate('/');
     } catch (error: any) {
-      // Kiểm tra nếu là lỗi 403
-      if (error.status === 403) {
-        toast({
-          title: "Email hoặc mật khẩu không đúng. Vui lòng thử lại.",
-          variant: "destructive",
-        });
-      } else {
-        // Xử lý các lỗi khác (ví dụ lỗi mạng, lỗi server)
-        toast({
-          title: "Có lỗi khi đăng nhập, thử lại sau!",
-          variant: "destructive",
-        });
-      }
-
-      // Log lỗi ra console để debug
+      toast({
+        title: error.status === 403
+          ? "Email hoặc mật khẩu không đúng. Vui lòng thử lại."
+          : "Có lỗi khi đăng nhập, thử lại sau!",
+        variant: "destructive",
+      });
       console.error("Lỗi đăng nhập:", error);
     } finally {
       setLoading(false);

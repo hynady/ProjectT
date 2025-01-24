@@ -1,6 +1,6 @@
-import { Separator } from "@/commons/components/separator.tsx";
-import { Card } from "@/commons/components/card.tsx";
-import ResetPassword from "@/features/auth/blocks/ResetPasswordForm.tsx";
+import {Separator} from "@/commons/components/separator.tsx";
+import {Card} from "@/commons/components/card.tsx";
+import {ResetPassword} from "@/features/auth/blocks/ResetPasswordForm.tsx";
 
 export default function SettingsAccountPage() {
   return (
@@ -11,7 +11,7 @@ export default function SettingsAccountPage() {
           Quản lý thông tin tài khoản và mật khẩu của bạn.
         </p>
       </div>
-      <Separator className="my-6" />
+      <Separator className="my-6"/>
       <div className="space-y-8">
         {/* Phần thông tin tài khoản */}
         <Card className="p-6">
@@ -24,7 +24,10 @@ export default function SettingsAccountPage() {
             </p>
           </div>
           <div className="mt-6">
-            <ResetPassword hideNavigation noPadding />
+            <ResetPassword
+              hideNavigation={true}
+              noPadding={true}
+            />
           </div>
         </Card>
 

@@ -13,12 +13,12 @@ import BookingPage from "@/features/booking/BookingPage.tsx";
 import {MyTicketsPage} from "@/features/my-ticket/MyTicketsPage.tsx";
 import {AuthLayout} from "@/features/auth/layout.tsx";
 import LoginPage from "@/features/auth/blocks/LoginForm.tsx";
-import RegisterPage from "@/features/auth/blocks/RegisterForm.tsx";
-import ResetPassword from "@/features/auth/blocks/ResetPasswordForm.tsx";
 import {HomeLayout} from "@/features/home/layout.tsx";
 import {SearchResultLayout} from "@/features/search/layout.tsx";
 import {DetailPageLayout} from "@/features/detail/layout.tsx";
 import SettingsLayout from "@/features/setting/layout.tsx";
+import {ResetPassword} from "@/features/auth/blocks/ResetPasswordForm.tsx";
+import {RegisterForm} from "@/features/auth/blocks/RegisterForm.tsx";
 
 function AppRouter() {
   return (
@@ -52,7 +52,7 @@ function AppRouter() {
         {/* Auth Routes */}
         <Route element={<AuthLayout/>}>
           <Route path="/login" element={<AuthRoute><LoginPage/></AuthRoute>}/>
-          <Route path="/register" element={<AuthRoute><RegisterPage/></AuthRoute>}/>
+          <Route path="/register" element={<AuthRoute><RegisterForm/></AuthRoute>}/>
           <Route path="/rs-pw" element={<AuthRoute><ResetPassword/></AuthRoute>}/>
         </Route>
 
