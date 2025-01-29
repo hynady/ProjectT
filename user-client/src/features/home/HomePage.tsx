@@ -1,62 +1,34 @@
 // pages/HomePage.tsx
-import {useState, useEffect} from 'react';
+import {useEffect} from 'react';
 
 import {Button} from "@/commons/components/button.tsx";
 import {ArrowRight} from 'lucide-react';
-import {HeroSection, HeroSectionUnit} from "@/features/home/blocks/HeroSection.tsx";
-import {CategorySection, CategorySectionUnit} from "@/features/home/blocks/CategorySection.tsx";
+import {HeroSection } from "@/features/home/blocks/HeroSection.tsx";
+import {CategorySection} from "@/features/home/blocks/CategorySection.tsx";
 import {VenueSection} from "@/features/home/blocks/VenueSection.tsx";
 import {
   FeatureOccasSection,
-  FeatureOccasSectionUnit
 } from "@/features/home/blocks/FeatureOccasSection.tsx";
 import {
   UpcomingOccasSection,
-  UpcomingOccasSectionUnit
 } from "@/features/home/blocks/UpcomingOccasSection.tsx";
-import {
-  getCategories,
-  getFeaturedOccas,
-  getHeroOccas,
-  getUpcomingOccas, getVenues
-} from "@/features/home/hooks/occaHomePageServices.tsx";
-import {VenueCardUnit} from "@/features/home/components/VenueCard.tsx";
 import {useNavigate} from "react-router-dom";
+import { useHome } from '@/features/home/hooks/useHome';
 
 const HomePage = () => {
-  const [loading, setLoading] = useState(true);
-  const [heroOccas, setHeroOccas] = useState<HeroSectionUnit[]>([]);
-  const [featuredOccas, setFeaturedOccas] = useState<FeatureOccasSectionUnit[]>([]);
-  const [upcomingOccas, setUpcomingOccas] = useState<UpcomingOccasSectionUnit[]>([]);
-  const [categories, setCategories] = useState<CategorySectionUnit[]>([]);
-  const [venues, setVenues] = useState<VenueCardUnit[]>([]);
   const navigate = useNavigate();
+  const { 
+    loading, 
+    heroOccas, 
+    featuredOccas, 
+    upcomingOccas, 
+    categories, 
+    venues, 
+    fetchHomeData 
+  } = useHome();
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [heroData, featuredData, upcomingData, categoriesData, venuesData] = await Promise.all([
-          getHeroOccas(),
-          getFeaturedOccas(),
-          getUpcomingOccas(),
-          getCategories(),
-          getVenues()
-        ]);
-
-        setHeroOccas(heroData);
-        setFeaturedOccas(featuredData);
-        setUpcomingOccas(upcomingData);
-        setCategories(categoriesData);
-        setVenues(venuesData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetchHomeData();
   }, []);
 
   const handleViewAllClick = () => {

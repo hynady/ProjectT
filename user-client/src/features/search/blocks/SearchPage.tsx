@@ -1,47 +1,32 @@
-import React, {useEffect, useState} from 'react';
-import {useSearchParams} from 'react-router-dom';
-import {Button} from "@/commons/components/button.tsx";
-import {
-  SheetCustomOverlay,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/commons/components/sheet-custom-overlay.tsx";
-import {Badge} from "@/commons/components/badge.tsx";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/commons/components/pagination-custom.tsx";
-import {zodResolver} from '@hookform/resolvers/zod';
-import {useForm} from 'react-hook-form';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Button } from "@/commons/components/button.tsx";
+import { SheetCustomOverlay, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/commons/components/sheet-custom-overlay.tsx";
+import { Badge } from "@/commons/components/badge.tsx";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/commons/components/pagination-custom.tsx";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import {OccaCard, OccaCardUnit} from "@/features/home/components/OccaCard.tsx";
-import {Filter, X} from "lucide-react";
-import {ScrollArea} from "@/commons/components/scroll-area.tsx";
-import {categoriesSectionData, venuesSectionData} from "@/features/home/hooks/mockData.tsx";
-import {mockAllOcca} from "@/features/search/hooks/mockData.tsx";
-import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/commons/components/accordion.tsx';
+import { OccaCard, OccaCardUnit } from "@/features/home/components/OccaCard.tsx";
+import { Filter, X } from "lucide-react";
+import { ScrollArea } from "@/commons/components/scroll-area.tsx";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/commons/components/accordion.tsx';
+import { searchService } from "@/features/search/services/search.service.ts";
 
-// Define the search params schema
-const searchFormSchema = z.object({
-  categoryId: z.enum(['all', ...categoriesSectionData.map(c => c.id)]),
-  venueId: z.enum(['all', ...venuesSectionData.map(v => v.id)]),
-  sortBy: z.enum(['date', 'price', 'title']),
-  sortOrder: z.enum(['asc', 'desc']),
-});
-
-type SearchFormValues = z.infer<typeof searchFormSchema>;
+export type SearchFormValues = {
+  categoryId: string;
+  venueId: string;
+  sortBy: 'date' | 'price' | 'title';
+  sortOrder: 'asc' | 'desc';
+};
 
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [events, setEvents] = useState<OccaCardUnit[]>([]);
   const [loading, setLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
+  const [venues, setVenues] = useState<{ id: string, name: string }[]>([]);
   const [filters, setFilters] = useState<SearchFormValues>({
     categoryId: 'all',
     venueId: 'all',
@@ -56,12 +41,35 @@ export const SearchPage: React.FC = () => {
     size: 8,
   });
 
+  const fetchCategoriesAndVenues = async () => {
+    try {
+      const [categoriesData, venuesData] = await Promise.all([
+        searchService.fetchCategories(),
+        searchService.fetchVenues()
+      ]);
+      setCategories(categoriesData);
+      setVenues(venuesData);
+    } catch (error) {
+      console.error('Error fetching categories and venues:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategoriesAndVenues();
+  }, []);
+
+  const searchFormSchema = z.object({
+    categoryId: z.enum(['all', ...categories.map(c => c.id)]),
+    venueId: z.enum(['all', ...venues.map(v => v.id)]),
+    sortBy: z.enum(['date', 'price', 'title']),
+    sortOrder: z.enum(['asc', 'desc']),
+  });
+
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchFormSchema),
     defaultValues: filters
   });
 
-  // Initialize filters from URL params
   useEffect(() => {
     const categoryId = (searchParams.get('categoryId') as SearchFormValues['categoryId']) || 'all';
     const venueId = (searchParams.get('venueId') as SearchFormValues['venueId']) || 'all';
@@ -80,67 +88,22 @@ export const SearchPage: React.FC = () => {
   }, [searchParams, form]);
 
   const getCategoryName = (id: string) =>
-    id === 'all' ? 'Tất cả' : categoriesSectionData.find(c => c.id === id)?.name || '';
+    id === 'all' ? 'Tất cả' : categories.find(c => c.id === id)?.name || '';
 
   const getVenueName = (id: string) =>
-    id === 'all' ? 'Tất cả' : venuesSectionData.find(v => v.id === id)?.name || '';
+    id === 'all' ? 'Tất cả' : venues.find(v => v.id === id)?.name || '';
 
-  const fetchEvents = async (page: number, formValues: SearchFormValues) => {
+  const fetchEventsData = async (page: number, formValues: SearchFormValues) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      let filteredEvents = [...mockAllOcca];
-
-      const keyword = searchParams.get('keyword');
-      if (keyword) {
-        filteredEvents = filteredEvents.filter(occa =>
-          occa.title.toLowerCase().includes(keyword.toLowerCase()) ||
-          occa.location.toLowerCase().includes(keyword.toLowerCase())
-        );
-      }
-
-      if (formValues.categoryId && formValues.categoryId !== 'all') {
-        filteredEvents = filteredEvents.filter(occa =>
-          occa.categoryId === formValues.categoryId
-        );
-      }
-
-      if (formValues.venueId && formValues.venueId !== 'all') {
-        filteredEvents = filteredEvents.filter(event =>
-          event.venueId === formValues.venueId
-        );
-      }
-
-      filteredEvents.sort((a, b) => {
-        let comparison = 0;
-        switch (formValues.sortBy) {
-          case 'date':
-            comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-            break;
-          case 'price':
-            comparison = parseInt(a.price.replace(/\D/g, '')) -
-              parseInt(b.price.replace(/\D/g, ''));
-            break;
-          case 'title':
-            comparison = a.title.localeCompare(b.title);
-            break;
-        }
-        return formValues.sortOrder === 'desc' ? -comparison : comparison;
-      });
-
-      const size = pagination.size;
-      const start = page * size;
-      const paginatedEvents = filteredEvents.slice(start, start + size);
-
-      setEvents(paginatedEvents);
+      const { events, totalPages, totalElements } = await searchService.fetchEvents(page, formValues, searchParams, pagination.size);
+      setEvents(events);
       setPagination(prev => ({
         ...prev,
         currentPage: page,
-        totalPages: Math.ceil(filteredEvents.length / size),
-        totalElements: filteredEvents.length,
+        totalPages,
+        totalElements,
       }));
-
     } catch (error) {
       console.error('Error fetching events:', error);
     } finally {
@@ -149,7 +112,7 @@ export const SearchPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchEvents(0, filters);
+    fetchEventsData(0, filters);
   }, [filters, searchParams]);
 
   type FilterValue = SearchFormValues[keyof SearchFormValues];
@@ -159,7 +122,7 @@ export const SearchPage: React.FC = () => {
     value: FilterValue,
     sortOrder?: 'asc' | 'desc'
   ) => {
-    let newFilters = {...filters};
+    let newFilters = { ...filters };
 
     if (type === 'sortBy' && sortOrder) {
       newFilters = {
@@ -186,13 +149,13 @@ export const SearchPage: React.FC = () => {
   };
 
   const handlePageChange = (page: number) => {
-    fetchEvents(page, filters);
+    fetchEventsData(page, filters);
   };
 
   const LoadingSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {Array.from({length: 1}).map((_, index) => (
-        <OccaCard key={index} loading={true} occa={{} as OccaCardUnit}/>
+      {Array.from({ length: 1 }).map((_, index) => (
+        <OccaCard key={index} loading={true} occa={{} as OccaCardUnit} />
       ))}
     </div>
   );
@@ -215,7 +178,7 @@ export const SearchPage: React.FC = () => {
                 onClick={() => handleFilterChange('categoryId', 'all')}
               >
                 {getCategoryName(filters.categoryId)}
-                <X className="h-3 w-3"/>
+                <X className="h-3 w-3" />
               </Badge>
             )}
 
@@ -226,7 +189,7 @@ export const SearchPage: React.FC = () => {
                 onClick={() => handleFilterChange('venueId', 'all')}
               >
                 {getVenueName(filters.venueId)}
-                <X className="h-3 w-3"/>
+                <X className="h-3 w-3" />
               </Badge>
             )}
           </div>
@@ -238,7 +201,7 @@ export const SearchPage: React.FC = () => {
                 className="gap-2"
                 onClick={() => setIsFilterOpen(true)}
               >
-                <Filter className="h-4 w-4"/>
+                <Filter className="h-4 w-4" />
                 Bộ lọc
                 {(filters.categoryId !== 'all' || filters.venueId !== 'all') && (
                   <Badge variant="secondary" className="ml-1">
@@ -275,7 +238,7 @@ export const SearchPage: React.FC = () => {
                             >
                               Tất cả
                             </Button>
-                            {categoriesSectionData.map(category => (
+                            {categories.map(category => (
                               <Button
                                 key={category.id}
                                 type="button"
@@ -305,7 +268,7 @@ export const SearchPage: React.FC = () => {
                             >
                               Tất cả
                             </Button>
-                            {venuesSectionData.map(venue => (
+                            {venues.map(venue => (
                               <Button
                                 key={venue.id}
                                 type="button"
@@ -329,15 +292,15 @@ export const SearchPage: React.FC = () => {
 
         {/* Bottom row: Sort buttons */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        <span className="text-sm font-medium text-muted-foreground">
-          Sắp xếp theo:
-        </span>
+          <span className="text-sm font-medium text-muted-foreground">
+            Sắp xếp theo:
+          </span>
           <div className="flex gap-2">
             {[
-              {type: 'date', label: 'Ngày'},
-              {type: 'price', label: 'Giá'},
-              {type: 'title', label: 'Tên'}
-            ].map(({type, label}) => (
+              { type: 'date', label: 'Ngày' },
+              { type: 'price', label: 'Giá' },
+              { type: 'title', label: 'Tên' }
+            ].map(({ type, label }) => (
               <div key={type} className="flex items-center">
                 <Button
                   variant={filters.sortBy === type ? "default" : "outline"}
@@ -373,11 +336,11 @@ export const SearchPage: React.FC = () => {
 
       {/* Results Grid */}
       {loading ? (
-        <LoadingSkeleton/>
+        <LoadingSkeleton />
       ) : events.length > 0 ? (
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {events.map((event) => (
-            <OccaCard key={event.id} occa={event} loading={false}/>
+            <OccaCard key={event.id} occa={event} loading={false} />
           ))}
         </div>
       ) : (

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Ticket } from 'lucide-react';
-import {OccaSearchItem, OccaSearchItemBaseUnit} from "@/features/search/components/OccaSearchItem.tsx";
+import {OccaSearchItem} from "@/features/search/components/OccaSearchItem.tsx";
+import {OccaSearchItemBaseUnit} from "@/features/search/internal-types/search.type.ts";
 
 export interface RecentOccaUnit extends OccaSearchItemBaseUnit{
   timestamp: Date;

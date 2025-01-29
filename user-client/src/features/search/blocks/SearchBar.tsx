@@ -3,7 +3,6 @@ import {Overlay, useOverlay} from "@/commons/blocks/Overlay.tsx";
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useSearch} from "../hooks/useSearch.tsx";
 import {useRecentItems} from "@/features/search/hooks/useRecentItems.tsx";
-import {OccaSearchItemBaseUnit} from "@/features/search/components/OccaSearchItem.tsx";
 import {cn} from "@/commons/lib/ultils/utils.ts";
 import {Flame, Search, ThumbsUp, X} from "lucide-react";
 import {Input} from "@/commons/components/input.tsx";
@@ -11,8 +10,8 @@ import {RecentSearches} from "../components/RecentSearches.tsx";
 import {RecentOccas} from "../components/RecentOccas.tsx";
 import {SuggestOccaList} from "./SuggestOccaList.tsx";
 import {SearchResults, SearchResultUnit} from "@/features/search/components/SearchResults.tsx";
-import {recommendData, trendingData} from "@/features/search/hooks/mockData.tsx";
-import {fetchRecommendedData, fetchTrendingData} from "@/features/search/hooks/searchServices.tsx";
+import { searchService } from "../services/search.service.ts";
+import {OccaSearchItemBaseUnit} from "@/features/search/internal-types/search.type.ts";
 
 export function SearchBar() {
   const navigate = useNavigate();
@@ -43,17 +42,14 @@ export function SearchBar() {
       setIsFetchingOccas(true);
       try {
         const [trendingData, recommendData] = await Promise.all([
-          fetchTrendingData(),
-          fetchRecommendedData()
+          searchService.fetchTrendingData(),
+          searchService.fetchRecommendedData()
         ]);
 
         setTrendingOccas(trendingData || trendingData);
         setRecommendOccas(recommendData || recommendData);
       } catch (error) {
         console.error('Lỗi khi tải dữ liệu sự kiện:', error);
-        // Fallback về mock data
-        setTrendingOccas(trendingData);
-        setRecommendOccas(recommendData);
       } finally {
         setIsFetchingOccas(false);
       }

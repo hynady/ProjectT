@@ -6,6 +6,7 @@ import AppRouter from "@/router/AppRouter.tsx";
 import {Toaster} from "@/commons/components/toaster.tsx";
 import {ThemeProvider} from "@/commons/blocks/theme-provider.tsx";
 import {AuthProvider} from "@/features/auth/contexts.tsx";
+import DevToolbar from "@/commons/blocks/DevToolbar.tsx";
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
           <AppRouter/>
           <Toaster/>
         </AuthProvider>
+        <DevToolbar />
       </BrowserRouter>
     </ThemeProvider>
   </StrictMode>,

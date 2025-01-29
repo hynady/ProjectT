@@ -1,8 +1,8 @@
 import { RecentOccaUnit } from "../components/RecentOccas.tsx";
 import { RecentSearchesUnit } from "../components/RecentSearches.tsx";
 import {useCallback} from "react";
-import {OccaSearchItemBaseUnit} from "@/features/search/components/OccaSearchItem.tsx";
 import {useLocalStorage} from "@/features/search/hooks/useLocalStorage.tsx";
+import {OccaSearchItemBaseUnit} from "@/features/search/internal-types/search.type.ts";
 
 export function useRecentItems() {
   // Quản lý danh sách tìm kiếm gần đây

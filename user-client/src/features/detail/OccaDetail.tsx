@@ -1,32 +1,30 @@
-// pages/OccaDetail.tsx
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '@/commons/components/card.tsx';
-import {useOccaGallery, useOccaHero, useOccaLocation, useOccaOverview, useOccaShows} from '@/features/detail/hooks/useOccaDetail.tsx';
 import { OccaHeroSection } from './components/OccaHeroSection.tsx';
-import {OccaOverview} from "@/features/detail/components/OccaOverview.tsx";
-import {OccaShowSelection} from "@/features/detail/components/OccaShowSelection.tsx";
-import {OccaGallery} from "@/features/detail/components/OccaGallery.tsx";
+import { OccaOverview } from "@/features/detail/components/OccaOverview.tsx";
+import { OccaShowSelection } from "@/features/detail/components/OccaShowSelection.tsx";
+import { OccaGallery } from "@/features/detail/components/OccaGallery.tsx";
 import OccaLocation from "@/features/detail/components/OccaLocation.tsx";
-import {OccaFAQs} from "@/features/detail/components/OccaFAQs.tsx";
-import {OccaBottomCTA} from "@/features/detail/components/OccaBottomCTA.tsx";
-import {OccaDetailSkeleton} from "@/features/detail/skeletons/OccaDetailSkeleton.tsx";
-
+import { OccaFAQs } from "@/features/detail/components/OccaFAQs.tsx";
+import { OccaBottomCTA } from "@/features/detail/components/OccaBottomCTA.tsx";
+import { OccaDetailSkeleton } from "@/features/detail/skeletons/OccaDetailSkeleton.tsx";
+import {useOccaDetail} from "@/features/detail/hooks/useOccaDetail.tsx";
 
 export default function OccaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-  // Sử dụng các hooks riêng biệt
-  const { data: heroData, loading: heroLoading } = useOccaHero(id || '');
-  const { data: shows, loading: showsLoading } = useOccaShows(id || '');
-  const { images, loading: galleryLoading } = useOccaGallery(id || '');
-  const { location, address, loading: locationLoading } = useOccaLocation(id || '');
-  const { details, organizer, loading: overviewLoading } = useOccaOverview(id || '');
-
-  // Kiểm tra loading state tổng thể
-  const isLoading = heroLoading || showsLoading || galleryLoading || locationLoading || overviewLoading;
+  const {
+    loading,
+    heroData,
+    showsData: shows,
+    galleryData: images,
+    locationData: { location, address },
+    overviewData: { details, organizer },
+    error
+  } = useOccaDetail(id || '');
 
   useEffect(() => {
     if (!id) {
@@ -34,11 +32,11 @@ export default function OccaDetail() {
     }
   }, [id, navigate]);
 
-  if (isLoading) {
+  if (loading) {
     return <OccaDetailSkeleton />;
   }
 
-  if (!heroData) {
+  if (error || !heroData) {
     return <div>Not found</div>;
   }
 

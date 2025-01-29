@@ -1,13 +1,7 @@
 // components/search/OccaItem.tsx
 import React from 'react';
 import { X } from 'lucide-react';
-
-export interface OccaSearchItemBaseUnit {
-  id: string;
-  title: string;
-  date: string;
-  location: string;
-}
+import {OccaSearchItemBaseUnit} from "@/features/search/internal-types/search.type.ts";
 
 interface OccaSearchItemBaseProps extends OccaSearchItemBaseUnit {
   showRemoveButton?: boolean;

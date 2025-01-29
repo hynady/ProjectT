@@ -13,16 +13,28 @@ export class BaseService {
       url: string;
       data?: any;
       mockResponse?: () => Promise<T>;
+      defaultValue?: T;
     }
   ): Promise<T> {
-    if (this.isMockEnabled && config.mockResponse) {
-      return await config.mockResponse();
-    }
+    try {
+      if (this.isMockEnabled && config.mockResponse) {
+        return await config.mockResponse();
+      }
 
-    return await axiosInstance({
-      method: config.method,
-      url: config.url,
-      data: config.data
-    });
+      const response = await axiosInstance({
+        method: config.method,
+        url: config.url,
+        data: config.data
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error(`API request failed: ${config.url}`, error);
+      // Return default value if provided, otherwise rethrow
+      if (config.defaultValue !== undefined) {
+        return config.defaultValue;
+      }
+      throw error;
+    }
   }
 }
