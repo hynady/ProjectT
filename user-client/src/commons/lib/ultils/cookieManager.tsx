@@ -11,6 +11,7 @@ class CookieManager {
     sameSite: 'strict' as const,
     maxAge: 86400 // 24 hours
   };
+  private static readonly AUTH_TOKEN = 'AUTH-TOKEN';
 
   /**
    * Tạo secret key mới và lưu vào localStorage
@@ -74,6 +75,29 @@ class CookieManager {
   }
 
   /**
+   * Set giá trị cookie auth theo key gốc
+   */
+  public static setAuthToken(token: string): void {
+    // Đặc biệt cho auth token - không mã hóa key name
+    const cookieOptions = Object.entries(this.defaultOptions)
+      .map(([key, value]) => {
+        if (key === 'maxAge') return `max-age=${value}`;
+        return `${key.toLowerCase()}=${value}`;
+      })
+      .join('; ');
+    document.cookie = `${this.AUTH_TOKEN}=${token}; ${cookieOptions}`;
+  }
+
+  /**
+   * Lấy giá trị cookie auth theo key gốc
+   */
+  public static getAuthToken(): string | null {
+    const cookies = document.cookie.split(';');
+    const authCookie = cookies.find(c => c.trim().startsWith(`${this.AUTH_TOKEN}=`));
+    return authCookie ? authCookie.split('=')[1] : null;
+  }
+
+  /**
    * Lấy giá trị cookie theo key gốc
    */
   public static get(originalKey: string): string | null {
@@ -104,6 +128,13 @@ class CookieManager {
         document.cookie = `${key}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
       }
     }
+  }
+
+  /**
+   * Xóa cookie auth
+   */
+  public static removeAuthToken(): void {
+    document.cookie = `${this.AUTH_TOKEN}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
   }
 
   /**

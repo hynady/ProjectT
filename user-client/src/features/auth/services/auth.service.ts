@@ -27,22 +27,36 @@ class AuthService extends BaseService {
     });
   }
 
-  async sendOtp(email: string): Promise<OtpResponse> {
+  async sendRegisterOtp(email: string): Promise<OtpResponse> {
     return this.request({
       method: 'POST',
-      url: '/auth/send-otp',
+      url: '/auth/register/send-otp',
+      data: { email },
+      mockResponse: () => new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (email === authMockData.otp.existingEmail) {
+            reject({
+              status: 409, 
+              message: "Email này đã có tài khoản.",
+            });
+          }
+          resolve({ message: "OTP đã được gửi" });
+        }, 1000);
+      })
+    });
+  }
+
+  async sendResetOtp(email: string): Promise<OtpResponse> {
+    return this.request({
+      method: 'POST', 
+      url: '/auth/reset-password/send-otp',
       data: { email },
       mockResponse: () => new Promise((resolve, reject) => {
         setTimeout(() => {
           if (email === authMockData.otp.blockedEmail) {
             reject({
-              status: 429,
-              message: "Quá số lần yêu cầu OTP. Vui lòng thử lại sau.",
-            });
-          } else if (email === authMockData.otp.existingEmail) {
-            reject({
-              status: 409,
-              message: "Email này đã có tài khoản.",
+              status: 404,
+              message: "Email này chưa đăng ký tài khoản.",
             });
           }
           resolve({ message: "OTP đã được gửi" });

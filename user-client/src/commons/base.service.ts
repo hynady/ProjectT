@@ -20,17 +20,16 @@ export class BaseService {
       if (this.isMockEnabled && config.mockResponse) {
         return await config.mockResponse();
       }
-
+  
       const response = await axiosInstance({
         method: config.method,
         url: config.url,
         data: config.data
-      });
+      }) as T; // Type assertion here since interceptor unwraps to T
       
-      return response.data;
+      return response;
     } catch (error) {
       console.error(`API request failed: ${config.url}`, error);
-      // Return default value if provided, otherwise rethrow
       if (config.defaultValue !== undefined) {
         return config.defaultValue;
       }

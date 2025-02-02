@@ -33,14 +33,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
   }, []);
 
   const login = (newToken: string) => {
-    CookieManager.set('token', newToken);
+    CookieManager.setAuthToken(newToken);
     setToken(newToken);
     setIsAuthenticated(true);
     navigate('/');
   };
 
   const logout = () => {
-    CookieManager.remove('token');
+    CookieManager.removeAuthToken();
     setToken(null);
     setIsAuthenticated(false);
     navigate('/');

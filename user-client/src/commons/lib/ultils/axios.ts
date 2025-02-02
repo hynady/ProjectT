@@ -5,10 +5,20 @@ const axiosInstance = axios.create({
   timeout: 10000,
 });
 
-// Thêm interceptors nếu cần
 axiosInstance.interceptors.response.use(
-  response => response.data,
-  error => Promise.reject(error.response?.data || error)
+  response => {
+    // Return the actual data from the response
+    console.log("Axios response:", response);
+    return response.data;
+  },
+  error => {
+    console.error("Axios error:", error);
+    const apiError = {
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message
+    };
+    return Promise.reject(apiError);
+  }
 );
 
 export default axiosInstance;

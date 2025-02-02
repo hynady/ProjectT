@@ -10,12 +10,18 @@ interface ApiError {
 }
 
 // Định nghĩa một map các error messages
-const ERROR_MESSAGES: Record<number, string> = {
-  409: "Email này đã có tài khoản.",
-  429: "Bạn đã gửi quá nhiều yêu cầu OTP. Vui lòng thử lại sau.",
+const ERROR_MESSAGES: Record<string, Record<number, string>> = {
+  register: {
+    409: "Email này đã có tài khoản.",
+    429: "Bạn đã gửi quá nhiều yêu cầu OTP. Vui lòng thử lại sau.",
+  },
+  reset: {
+    404: "Email này chưa đăng ký tài khoản.",
+    429: "Bạn đã gửi quá nhiều yêu cầu OTP. Vui lòng thử lại sau.",
+  }
 };
 
-export const useOtp = () => {
+export const useOtp = (type: 'register' | 'reset') => {
   const [otpState, setOtpState] = useState<OtpState>({
     isLoading: false,
     cooldown: 0,
@@ -46,12 +52,17 @@ export const useOtp = () => {
 
   const sendOtp = async (email: string) => {
     setOtpState(prev => ({ ...prev, isLoading: true }));
-    console.log("email", email);
     try {
-      await authService.sendOtp(email);
+      if (type === 'register') {
+        await authService.sendRegisterOtp(email);
+      } else {
+        await authService.sendResetOtp(email);
+      }
+      
       toast({
         title: "OTP đã được gửi đến email của bạn!",
       });
+      
       setOtpState(prev => ({
         ...prev,
         isDisabled: true,
@@ -59,9 +70,16 @@ export const useOtp = () => {
       }));
       return true;
     } catch (error) {
-      // Type guard để kiểm tra error
+      console.log('Full error object:', error);
+      console.log('Error response:', (error as any).response);
       const apiError = error as ApiError;
-      const errorMessage = ERROR_MESSAGES[apiError.status] || "Lỗi gửi OTP, thử lại sau.";
+      console.log('API Error status:', apiError.status);
+      
+      // Adjust error handling based on axios error structure
+      const status = apiError.status || (error as any)?.response?.status;
+      console.log('Final status used:', status);
+      
+      const errorMessage = ERROR_MESSAGES[type][status] || "Lỗi gửi OTP, thử lại sau.";
 
       toast({
         variant: "destructive",
@@ -82,6 +100,7 @@ export const useOtp = () => {
       });
       return true;
     } catch (error) {
+      console.error('OTP verification failed:', error);
       toast({
         variant: "destructive",
         title: "Lỗi xác thực OTP, nhập lại hoặc gửi lại mã khác!"

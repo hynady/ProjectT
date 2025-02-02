@@ -41,7 +41,7 @@ const AuthForm = ({type, hideNavigation = false, noPadding = false}: AuthFormPro
 
   const {toast} = useToast();
   const navigate = useNavigate();
-  const {otpState, sendOtp, verifyOtp} = useOtp();
+  const {otpState, sendOtp, verifyOtp} = useOtp(type);
 
   const isRegisterMode = type === 'register';
 
@@ -95,11 +95,27 @@ const AuthForm = ({type, hideNavigation = false, noPadding = false}: AuthFormPro
           email: formData.email,
           password: formData.password
         });
+        if ('credentials' in navigator && 'PasswordCredential' in window) {
+          const credential = new (window as any).PasswordCredential({
+            id: formData.email,
+            password: formData.password
+          });
+
+          await navigator.credentials.store(credential);
+        }
       } else {
         await authService.resetPassword({
           email: formData.email,
           password: formData.password
         });
+        if ('credentials' in navigator && 'PasswordCredential' in window) {
+          const credential = new (window as any).PasswordCredential({
+            id: formData.email,
+            password: formData.password
+          });
+
+          await navigator.credentials.store(credential);
+        }
       }
 
       toast({
@@ -110,10 +126,11 @@ const AuthForm = ({type, hideNavigation = false, noPadding = false}: AuthFormPro
       setTimeout(() => {
         navigate("/login");
       }, 1000);
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Đã xảy ra lỗi';
       toast({
         variant: "destructive",
-        title: `Lỗi ${isRegisterMode ? 'đăng ký' : 'thay đổi mật khẩu'}, vui lòng thử lại sau!`
+        title: `Lỗi ${isRegisterMode ? 'đăng ký' : 'thay đổi mật khẩu'}: ${errorMessage}`
       });
     } finally {
       setLoading(false);
