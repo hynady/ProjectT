@@ -7,11 +7,12 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { OccaCard, OccaCardUnit } from "@/features/home/components/OccaCard.tsx";
+import { OccaCard } from "@/features/home/components/OccaCard.tsx";
 import { Filter, X } from "lucide-react";
 import { ScrollArea } from "@/commons/components/scroll-area.tsx";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/commons/components/accordion.tsx';
 import { searchService } from "@/features/search/services/search.service.ts";
+import {OccaCardUnit} from "@/features/home/internal-types/home.ts";
 
 export type SearchFormValues = {
   categoryId: string;
