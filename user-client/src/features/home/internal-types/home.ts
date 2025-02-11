@@ -32,5 +32,5 @@ export interface HeroSectionUnit {
     occaCount: number;
   }
   
-  export interface FeatureOccasSectionUnit extends OccaCardUnit {}
-  export interface UpcomingOccasSectionUnit extends OccaCardUnit {}
+  export type FeatureOccasSectionUnit = OccaCardUnit;
+  export type UpcomingOccasSectionUnit = OccaCardUnit;

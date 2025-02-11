@@ -1,0 +1,35 @@
+spring:
+  config:
+    #TODO:
+    # nếu root là server-mono chỉ dùng .env[.properties]
+    # nếu root là root khác thì phải chỉ vào file .env[.properties] cụ thể
+    import: optional:file:server-mono/.env[.properties]
+
+  application:
+    name: ${APP_NAME}
+
+  datasource:
+    driver-class-name: ${DB_DRIVER}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    database-platform: ${JPA_DIALECT}
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID}
+      auto-offset-reset: ${KAFKA_CONSUMER_AUTO_OFFSET_RESET}
+
+app:
+  jwtSecret: ${JWT_SECRET}
+  googleClientId: ${GOOGLE_CLIENT_ID}
+
+  mail:
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    sender-name: ${MAIL_SENDER_NAME}

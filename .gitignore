@@ -1,0 +1,31 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+
+# Editor-based HTTP Client requests
+/httpRequests/
+
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+# IDE config (IntelliJ IDEA)
+/.idea/
+/ProjectT.iml
+
+# Node.js dependencies (cho user-client)
+/user-client/node_modules/
+
+# Ignore environment files (nhạy cảm)
+/.env
+/user-client/*.env.*
+
+# VS Code settings
+/.vscode
+
+# Vite cache folder (cho user-client)
+/user-client/.vite
+
+# Ignore build output (nếu có)
+/user-client/dist
+/server-mono/*.env

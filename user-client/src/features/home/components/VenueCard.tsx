@@ -2,14 +2,7 @@ import React from 'react';
 import {Card, CardContent, CardHeader, CardTitle} from "@/commons/components/card.tsx";
 import {MapPin} from 'lucide-react';
 import {useNavigate} from "react-router-dom";
-
-export interface VenueCardUnit {
-  id: string;
-  name: string;
-  image: string;
-  location: string;
-  occaCount: number;
-}
+import { VenueCardUnit } from '@/features/home/internal-types/home';
 
 interface VenueCardProps {
   venue: VenueCardUnit;
@@ -21,8 +14,24 @@ export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
 
   if (loading) {
     return (
-      //Skeleton shadcn be added here
-      <></>
+      // Add skeleton loader Shadcn
+      // Using Shadcn Skeleton
+      <Card className="group cursor-pointer hover:shadow-lg transition-all overflow-hidden">
+        <CardHeader className="p-0">
+          <div className="relative overflow-hidden">
+            <div className="w-full h-48 bg-gray-300 animate-pulse"/>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <MapPin className="w-4 h-4"/>
+              <span className="w-16 h-4 bg-gray-300 animate-pulse"/>
+            </div>
+            <span className="w-16 h-4 bg-gray-300 animate-pulse"/>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 

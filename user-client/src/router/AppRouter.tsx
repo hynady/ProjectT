@@ -19,6 +19,7 @@ import {DetailPageLayout} from "@/features/detail/layout.tsx";
 import SettingsLayout from "@/features/setting/layout.tsx";
 import {ResetPassword} from "@/features/auth/blocks/ResetPasswordForm.tsx";
 import {RegisterForm} from "@/features/auth/blocks/RegisterForm.tsx";
+import AdminPage from "@/features/admin/block/AdminPage.tsx";
 
 function AppRouter() {
   return (
@@ -58,6 +59,7 @@ function AppRouter() {
 
         {/* 404 Not Found Route */}
         <Route path="*" element={<NotFoundPage/>}/>
+        <Route path="/test" element={<AdminPage/>}/>
       </Routes>
     </ScrollToTop>
 

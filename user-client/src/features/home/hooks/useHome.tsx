@@ -1,50 +1,139 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { homeService } from '../services/home.service';
-import { HeroSectionUnit } from '../blocks/HeroSection';
-import { FeatureOccasSectionUnit } from '../blocks/FeatureOccasSection';
-import { UpcomingOccasSectionUnit } from '../blocks/UpcomingOccasSection';
-import { CategorySectionUnit } from '../blocks/CategorySection';
-import { VenueCardUnit } from '../components/VenueCard';
+import { 
+  HeroSectionUnit, 
+  FeatureOccasSectionUnit, 
+  UpcomingOccasSectionUnit,
+  CategorySectionUnit,
+  VenueCardUnit 
+} from '../internal-types/home';
 
+
+interface SectionState<T> {
+  data: T[] | null;
+  isLoading: boolean;
+  error: string | null;
+}
 
 export const useHome = () => {
-  const [loading, setLoading] = useState(true);
-  const [heroOccas, setHeroOccas] = useState<HeroSectionUnit[]>([]);
-  const [featuredOccas, setFeaturedOccas] = useState<FeatureOccasSectionUnit[]>([]);
-  const [upcomingOccas, setUpcomingOccas] = useState<UpcomingOccasSectionUnit[]>([]);
-  const [categories, setCategories] = useState<CategorySectionUnit[]>([]);
-  const [venues, setVenues] = useState<VenueCardUnit[]>([]);
 
-  const fetchHomeData = async () => {
-    setLoading(true);
-    try {
-      const [heroData, featuredData, upcomingData, categoriesData, venuesData] = await Promise.all([
-        homeService.getHeroOccas(),
-        homeService.getFeaturedOccas(),
-        homeService.getUpcomingOccas(),
-        homeService.getCategories(),
-        homeService.getVenues()
-      ]);
+  const [heroSection, setHeroSection] = useState<SectionState<HeroSectionUnit>>({
+    data: null,
+    isLoading: true,
+    error: null
+  });
 
-      setHeroOccas(heroData);
-      setFeaturedOccas(featuredData);
-      setUpcomingOccas(upcomingData);
-      setCategories(categoriesData);  
-      setVenues(venuesData);
-    } catch (error) {
-      console.error('Error fetching home data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [featuredSection, setFeaturedSection] = useState<SectionState<FeatureOccasSectionUnit>>({
+    data: null,
+    isLoading: true,
+    error: null
+  });
+
+  const [upcomingSection, setUpcomingSection] = useState<SectionState<UpcomingOccasSectionUnit>>({
+    data: null,
+    isLoading: true,
+    error: null
+  });
+
+  const [categoriesSection, setCategoriesSection] = useState<SectionState<CategorySectionUnit>>({
+    data: null,
+    isLoading: true,
+    error: null
+  });
+
+  const [venuesSection, setVenuesSection] = useState<SectionState<VenueCardUnit>>({
+    data: null,
+    isLoading: true,
+    error: null
+  });
+
+  useEffect(() => {
+    const fetchHeroSection = async () => {
+      try {
+        const data = await homeService.getHeroOccas();
+        setHeroSection({ data, isLoading: false, error: null });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error) {
+        setHeroSection({ 
+          data: null, 
+          isLoading: false, 
+          error: 'Hệ thống đang bảo trì phần này. Vui lòng thử lại sau.' 
+        });
+      }
+    };
+
+    const fetchFeaturedSection = async () => {
+      try {
+        const data = await homeService.getFeaturedOccas();
+        setFeaturedSection({ data, isLoading: false, error: null });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error) {
+        setFeaturedSection({ 
+          data: null, 
+          isLoading: false, 
+          error: 'Hệ thống đang bảo trì phần này. Vui lòng thử lại sau.' 
+        });
+      }
+    };
+
+    const fetchUpcomingSection = async () => {
+      try {
+        const data = await homeService.getUpcomingOccas();
+        setUpcomingSection({ data, isLoading: false, error: null });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error) {
+        setUpcomingSection({ 
+          data: null, 
+          isLoading: false, 
+          error: 'Hệ thống đang bảo trì phần này. Vui lòng thử lại sau.' 
+        });
+      }
+    };
+
+    const fetchCategoriesSection = async () => {
+      try {
+        const data = await homeService.getCategories();
+        setCategoriesSection({ data, isLoading: false, error: null });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error) {
+        setCategoriesSection({ 
+          data: null, 
+          isLoading: false, 
+          error: 'Hệ thống đang bảo trì phần này. Vui lòng thử lại sau.' 
+        });
+      }
+    };
+
+    const fetchVenuesSection = async () => {
+      try {
+        const data = await homeService.getVenues();
+        setVenuesSection({ data, isLoading: false, error: null });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error) {
+        setVenuesSection({ 
+          data: null, 
+          isLoading: false, 
+          error: 'Hệ thống đang bảo trì phần này. Vui lòng thử lại sau.' 
+        });
+      }
+    };
+
+    //Execute all fetch functions
+    Promise.all([
+      fetchHeroSection(),
+      fetchFeaturedSection(),
+      fetchUpcomingSection(),
+      fetchCategoriesSection(),
+      fetchVenuesSection()
+    ]);
+
+  }, []);
 
   return {
-    loading,
-    heroOccas,
-    featuredOccas, 
-    upcomingOccas,
-    categories,
-    venues,
-    fetchHomeData
+    heroSection,
+    featuredSection,
+    upcomingSection,
+    categoriesSection,
+    venuesSection
   };
 };

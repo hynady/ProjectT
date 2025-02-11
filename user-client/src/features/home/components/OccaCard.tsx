@@ -5,18 +5,8 @@ import {Button} from "@/commons/components/button.tsx";
 import {Skeleton} from "@/commons/components/skeleton.tsx";
 import {Calendar, MapPin, Clock, ArrowRight} from 'lucide-react';
 import {useNavigate} from "react-router-dom";
+import { OccaCardUnit } from '@/features/home/internal-types/home';
 
-export interface OccaCardUnit {
-  id: string;
-  title: string;
-  image: string;
-  date: string;
-  time: string;
-  location: string;
-  price: string;
-  categoryId?: string,
-  venueId?: string,
-}
 interface OccaCardProps {
   occa: OccaCardUnit;
   loading: boolean;

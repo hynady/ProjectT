@@ -19,7 +19,7 @@ class HomeService extends BaseService {
   async getHeroOccas(): Promise<HeroSectionUnit[]> {
     return this.request({
       method: 'GET',
-      url: '/hero-occas',
+      url: 'occas/hero-occas',
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(homeMockData.heroOccas), 1000);
       })
@@ -29,7 +29,7 @@ class HomeService extends BaseService {
   async getFeaturedOccas(): Promise<FeatureOccasSectionUnit[]> {
     return this.request({
       method: 'GET',
-      url: '/featured-occas',
+      url: 'occas/featured-occas',
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(homeMockData.featuredOccas), 1000);
       })
@@ -39,7 +39,7 @@ class HomeService extends BaseService {
   async getUpcomingOccas(): Promise<UpcomingOccasSectionUnit[]> {
     return this.request({
       method: 'GET',
-      url: '/upcoming-occas',
+      url: 'occas/upcoming-occas',
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(homeMockData.upcomingOccas), 1000);
       })
@@ -49,7 +49,7 @@ class HomeService extends BaseService {
   async getCategories(): Promise<CategorySectionUnit[]> {
     return this.request({
       method: 'GET',
-      url: '/categories',
+      url: 'occas/categories',
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(homeMockData.categories), 1000);
       })
@@ -59,7 +59,7 @@ class HomeService extends BaseService {
   async getVenues(): Promise<VenueCardUnit[]> {
     return this.request({
       method: 'GET',
-      url: '/venues',
+      url: 'occas/venues',
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(homeMockData.venues), 1000);
       })
