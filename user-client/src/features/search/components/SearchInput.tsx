@@ -1,7 +1,7 @@
 import React from 'react';
 import {Input} from "@/commons/components/input.tsx";
 import {Search} from "lucide-react";
-import {cn} from "@/commons/lib/ultils/utils.ts";
+import {cn} from "@/commons/lib/utils/utils";
 
 interface SearchInputProps {
   inputRef: React.RefObject<HTMLInputElement>;

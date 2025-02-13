@@ -1,5 +1,5 @@
 import React, {createContext, useContext, useState, ReactNode, useEffect} from "react";
-import CookieManager from "@/commons/lib/ultils/cookieManager.tsx";
+import CookieManager from "@/commons/lib/utils/cookieManager";
 import {useNavigate} from "react-router-dom";
 
 interface AuthContextProps {

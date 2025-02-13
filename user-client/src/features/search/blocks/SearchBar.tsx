@@ -3,7 +3,7 @@ import {Overlay, useOverlay} from "@/commons/blocks/Overlay.tsx";
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useSearch} from "../hooks/useSearch.tsx";
 import {useRecentItems} from "@/features/search/hooks/useRecentItems.tsx";
-import {cn} from "@/commons/lib/ultils/utils.ts";
+import {cn} from "@/commons/lib/utils/utils.ts";
 import {Flame, Search, ThumbsUp, X} from "lucide-react";
 import {Input} from "@/commons/components/input.tsx";
 import {RecentSearches} from "../components/RecentSearches.tsx";

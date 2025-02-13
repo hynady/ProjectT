@@ -1,4 +1,4 @@
-import axiosInstance from "@/commons/lib/ultils/axios.ts";
+import axiosInstance from "@/commons/lib/utils/axios";
 
 export class BaseService {
   protected isMockEnabled: boolean;

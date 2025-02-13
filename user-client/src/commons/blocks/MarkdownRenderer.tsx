@@ -1,6 +1,6 @@
 // components/common/MarkdownContent.tsx
 
-import { cn } from "@/commons/lib/ultils/utils.ts"
+import { cn } from "@/commons/lib/utils/utils"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 

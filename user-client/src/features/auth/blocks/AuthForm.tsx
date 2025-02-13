@@ -10,10 +10,10 @@ import {CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@
 import {REGEXP_ONLY_DIGITS} from "input-otp";
 import {Alert, AlertDescription} from "@/commons/components/alert";
 import {Progress} from "@/commons/components/progress-check-strength";
-import {cn} from "@/commons/lib/ultils/utils";
+import {cn} from "@/commons/lib/utils/utils";
 import {useNavigate} from "react-router-dom";
 import {useOtp} from "@/features/auth/hooks/useOtp";
-import {checkPasswordStrength} from "@/commons/lib/ultils/password.tsx";
+import {checkPasswordStrength} from "@/commons/lib/utils/password";
 
 interface FormData {
   email: string;

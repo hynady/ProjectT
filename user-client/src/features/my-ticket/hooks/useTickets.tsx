@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TicketDisplayUnit } from '../internal-types/ticket.type';
-import { isTicketCheckedIn, isTicketExpired } from '@/commons/lib/ultils/ticketUtils';
+import { isTicketCheckedIn, isTicketExpired } from '@/commons/lib/utils/ticketUtils';
 import { ticketService } from '@/features/my-ticket/services/ticket.service';
 
 export const useTickets = () => {

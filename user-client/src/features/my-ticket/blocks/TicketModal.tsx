@@ -10,7 +10,7 @@ import {
   MapPin,
   Share2, ExternalLink, XCircle, Banknote
 } from "lucide-react";
-import {cn} from "@/commons/lib/ultils/utils.ts";
+import {cn} from "@/commons/lib/utils/utils";
 import {TicketDisplay} from "@/features/my-ticket/blocks/TicketList.tsx";
 import {
   Dialog,
@@ -22,7 +22,7 @@ import {ScrollArea} from "@/commons/components/scroll-area.tsx";
 import {Separator} from "@/commons/components/separator.tsx";
 import {Card, CardContent} from "@/commons/components/card.tsx";
 import React from "react";
-import {isTicketCheckedIn, isTicketExpired} from "@/commons/lib/ultils/ticketUtils.tsx";
+import {isTicketCheckedIn, isTicketExpired} from "@/commons/lib/utils/ticketUtils";
 
 interface TicketModalProps {
   ticket: TicketDisplay;

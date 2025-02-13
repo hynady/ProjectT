@@ -1,6 +1,6 @@
 // CustomSelect.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { cn } from "@/commons/lib/ultils/utils.ts";
+import { cn } from "@/commons/lib/utils/utils";
 import { ChevronDown } from "lucide-react";
 
 interface CustomSelectProps {

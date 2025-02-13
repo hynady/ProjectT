@@ -1,7 +1,7 @@
 import * as React from "react";
 import { format, getMonth, getYear, setMonth, setYear } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
-import { cn } from "@/commons/lib/ultils/utils.ts";
+import { cn } from "@/commons/lib/utils/utils";
 import { Button } from "@/commons/components/button.tsx";
 import { CalendarCustom } from "@/commons/components/calendar-custom.tsx";
 import { Popover, PopoverContent, PopoverTrigger } from "@/commons/components/popover.tsx";

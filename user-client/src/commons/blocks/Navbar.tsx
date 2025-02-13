@@ -13,7 +13,7 @@ import {
 import ThemeSwitcher from "@/commons/blocks/ThemeSwitcher.tsx";
 import {useNavigate} from "react-router-dom";
 import {SearchBar} from "@/features/search/blocks/SearchBar.tsx";
-import {cn} from "@/commons/lib/ultils/utils.ts";
+import {cn} from "@/commons/lib/utils/utils";
 import {useState} from "react";
 import {
   AlertDialog,
