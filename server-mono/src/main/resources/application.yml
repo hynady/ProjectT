@@ -3,7 +3,8 @@ spring:
     #TODO:
     # nếu root là server-mono chỉ dùng .env[.properties]
     # nếu root là root khác thì phải chỉ vào file .env[.properties] cụ thể
-    import: optional:file:server-mono/.env[.properties]
+    #import: optional:file:server-mono/.env[.properties]
+    import: optional:file:.env[.properties]
 
   application:
     name: ${APP_NAME}
@@ -33,3 +34,11 @@ app:
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
     sender-name: ${MAIL_SENDER_NAME}
+
+grpc:
+  client:
+    occa-service:
+      address: static://${GRPC_OCCA_HOST:localhost}:${GRPC_OCCA_PORT:9090}
+      negotiationType: plaintext
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true

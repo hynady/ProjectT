@@ -57,7 +57,7 @@ const LoginPage = () => {
       const response = await authService.login(data);
 
       // Add debug logs
-      console.log("Full API response:", response) ;
+      // console.log("Full API response:", response) ;
 
       if (!response || !response.token) {
         throw new Error("Token không hợp lệ từ server");
@@ -72,7 +72,7 @@ const LoginPage = () => {
       });
       navigate('/');
     } catch (error: any) {
-      console.error("Login error:", error);
+      // console.error("Login error:", error);
       toast({
         title: error.status === 403
           ? "Email hoặc mật khẩu không đúng. Vui lòng thử lại."

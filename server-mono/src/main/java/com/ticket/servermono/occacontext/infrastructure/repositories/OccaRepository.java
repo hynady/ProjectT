@@ -7,13 +7,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface OccaRepository extends JpaRepository<Occa, UUID> {
-    Optional<Occa> findByTitle(String title);
-    
-    List<Occa> findFirst6ByOrderByIdDesc();
+    //TODO: Add logic optimized for user all below methods
 
     @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaResponse(" +
            "o.id, o.title, o.image, o.date, o.time, o.location, o.price, " +
@@ -21,4 +18,27 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
            "FROM Occa o " +
            "ORDER BY o.id DESC")
     List<OccaResponse> findFirst6HeroOccas(Pageable pageable);
+
+    @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaResponse(" +
+           "o.id, o.title, o.image, o.date, o.time, o.location, o.price, " +
+           "o.category.id, o.venue.id) " +
+           "FROM Occa o " +
+           "ORDER BY o.id DESC")
+    List<OccaResponse> findFirst6UpcomingOccas(Pageable pageable);
+    
+
+    @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaResponse(" +
+           "o.id, o.title, o.image, o.date, o.time, o.location, o.price, " +
+           "o.category.id, o.venue.id) " +
+           "FROM Occa o " +
+           "ORDER BY o.id DESC")
+    List<OccaResponse> findFirst3RecommendedOccas(Pageable pageable);
+    
+
+    @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaResponse(" +
+           "o.id, o.title, o.image, o.date, o.time, o.location, o.price, " +
+           "o.category.id, o.venue.id) " +
+           "FROM Occa o " +
+           "ORDER BY o.id DESC")
+    List<OccaResponse> findFirst3TrendingOccas(Pageable pageable);
 }

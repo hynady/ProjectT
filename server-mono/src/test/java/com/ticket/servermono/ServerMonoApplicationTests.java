@@ -3,7 +3,7 @@ package com.ticket.servermono;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.modulith.core.ApplicationModules;
-import org.springframework.modulith.docs.Documenter;
+
 
 @SpringBootTest
 class ServerMonoApplicationTests {
@@ -12,17 +12,11 @@ class ServerMonoApplicationTests {
     void contextLoads() {
     }
 
+    //Test modulith structure
     @Test
-    public void verifyModules() {
-        ApplicationModules modules = ApplicationModules.of(ServerMonoApplication.class);
+    void testModulithStructure() {
+        var modules = ApplicationModules.of(ServerMonoApplication.class);
         modules.verify();
-    }
-
-    @Test
-    public void createDocumentation() {
-        ApplicationModules modules = ApplicationModules.of(ServerMonoApplication.class);
-        new Documenter(modules)
-                .writeModulesAsPlantUml()
-                .writeIndividualModulesAsPlantUml();
+        modules.forEach(System.out::println);
     }
 }

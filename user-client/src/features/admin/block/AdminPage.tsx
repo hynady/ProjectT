@@ -18,7 +18,7 @@ const AdminPage = () => {
         variant: "success",
       });
     } catch (error) {
-      console.error('Ping error:', error);
+      // console.error('Ping error:', error);
       toast({
         title: "Ping failed",
         variant: "destructive",

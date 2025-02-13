@@ -70,14 +70,10 @@ export const useOtp = (type: 'register' | 'reset') => {
       }));
       return true;
     } catch (error) {
-      console.log('Full error object:', error);
-      console.log('Error response:', (error as any).response);
       const apiError = error as ApiError;
-      console.log('API Error status:', apiError.status);
       
       // Adjust error handling based on axios error structure
       const status = apiError.status || (error as any)?.response?.status;
-      console.log('Final status used:', status);
       
       const errorMessage = ERROR_MESSAGES[type][status] || "Lỗi gửi OTP, thử lại sau.";
 
@@ -100,7 +96,7 @@ export const useOtp = (type: 'register' | 'reset') => {
       });
       return true;
     } catch (error) {
-      console.error('OTP verification failed:', error);
+      // console.error('OTP verification failed:', error);
       toast({
         variant: "destructive",
         title: "Lỗi xác thực OTP, nhập lại hoặc gửi lại mã khác!"

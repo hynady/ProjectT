@@ -29,7 +29,7 @@ export class BaseService {
       
       return response;
     } catch (error) {
-      console.error(`API request failed: ${config.url}`, error);
+      // console.error(`API request failed: ${config.url}`, error);
       if (config.defaultValue !== undefined) {
         return config.defaultValue;
       }

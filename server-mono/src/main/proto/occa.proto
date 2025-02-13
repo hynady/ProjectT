@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package occa;
+option java_multiple_files = true;
+
+service OccaSearchService {
+    rpc GetTrendingOccas (Empty) returns (OccaSearchResponse);
+    rpc GetRecommendedOccas (Empty) returns (OccaSearchResponse);
+}
+
+message Empty {}
+
+message OccaSearchResponse {
+    repeated OccaSearchResult results = 1;
+}
+
+message OccaSearchResult {
+    string id = 1;
+    string title = 2;
+    string date = 3;
+    string location = 4;
+}

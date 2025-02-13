@@ -49,7 +49,7 @@ export function SearchBar() {
         setTrendingOccas(trendingData || trendingData);
         setRecommendOccas(recommendData || recommendData);
       } catch (error) {
-        console.error('Lỗi khi tải dữ liệu sự kiện:', error);
+        // console.error('Lỗi khi tải dữ liệu sự kiện:', error);
       } finally {
         setIsFetchingOccas(false);
       }

@@ -9,11 +9,11 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.response.use(
   response => {
     // Return the actual data from the response
-    console.log("Axios response:", response);
+    // console.log("Axios response:", response);
     return response.data;
   },
   error => {
-    console.error("Axios error:", error);
+    // console.error("Axios error:", error);
     const apiError = {
       status: error.response?.status,
       message: error.response?.data?.message || error.message

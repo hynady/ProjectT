@@ -51,7 +51,7 @@ export const SearchPage: React.FC = () => {
       setCategories(categoriesData);
       setVenues(venuesData);
     } catch (error) {
-      console.error('Error fetching categories and venues:', error);
+      // console.error('Error fetching categories and venues:', error);
     }
   };
 
@@ -106,7 +106,7 @@ export const SearchPage: React.FC = () => {
         totalElements,
       }));
     } catch (error) {
-      console.error('Error fetching events:', error);
+      // console.error('Error fetching events:', error);
     } finally {
       setLoading(false);
     }

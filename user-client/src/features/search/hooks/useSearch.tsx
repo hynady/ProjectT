@@ -14,7 +14,7 @@ export function useSearch(query: string) {
       const results = await searchService.searchOccas(query);
       setApiResults(results);
     } catch (error) {
-      console.error('API search error:', error);
+      // console.error('API search error:', error);
       setApiResults([]);
     } finally {
       setIsLoading(false);

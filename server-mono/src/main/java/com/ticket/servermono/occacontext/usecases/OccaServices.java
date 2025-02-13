@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +40,19 @@ public class OccaServices {
     @Transactional(readOnly = true)
     public List<OccaResponse> getUpcomingOccaResponses() {
         // Assuming we want to get the latest 6 occasions
-        return occaRepository.findFirst6HeroOccas(PageRequest.of(0, 6));
+        return occaRepository.findFirst6UpcomingOccas(PageRequest.of(0, 6));
     }
+
+    @Transactional(readOnly = true)
+    public List<OccaResponse> getTrendingOccaResponses() {
+        // Assuming we want to get the latest 3 occasions
+        return occaRepository.findFirst3TrendingOccas(PageRequest.of(0, 3));
+    }
+
+    @Transactional(readOnly = true)
+    public List<OccaResponse> getRecommendedOccaResponses() {
+        // Assuming we want to get the latest 3 occasions
+        return occaRepository.findFirst3RecommendedOccas(PageRequest.of(0, 3));
+    }
+
 }
