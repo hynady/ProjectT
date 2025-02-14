@@ -76,7 +76,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ occas, isLoading, erro
                 <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
                   <Card className="max-w-screen-xl mx-auto p-4">
                     <h2
-                      className="text-sm sm:text-base md:text-2xl lg:text-3xl font-bold mb-2 line-clamp-1 text-card-foreground">
+                      className="text-sm sm:text-base md:text-2xl lg:text-3xl font-bold mb-2 line-clamp-1 text-card-foreground group-hover:text-primary transition-colors duration-300">
                       {occa.title}
                     </h2>
                     <div

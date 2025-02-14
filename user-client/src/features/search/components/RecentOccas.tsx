@@ -26,7 +26,7 @@ export const RecentOccas: React.FC<RecentOccasProps> = ({
         <Ticket className="w-4 h-4"/>
         Sự kiện đã xem gần đây
       </h3>
-      <div className="space-y-2">
+      <div className="space-y-0">
         {occas.map((occa) => (
           <OccaSearchItem
             key={`recent-occa-${occa.id}`}

@@ -4,3 +4,6 @@ export interface OccaSearchItemBaseUnit {
   date: string;
   location: string;
 }
+
+export interface SearchResultUnit extends OccaSearchItemBaseUnit {
+}

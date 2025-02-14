@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { OccaCard } from "@/features/home/components/OccaCard.tsx";
-import { Filter, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Filter, MapPinned, Ribbon, SearchCheck, X } from "lucide-react";
 import { ScrollArea } from "@/commons/components/scroll-area.tsx";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/commons/components/accordion.tsx';
 import { searchService } from "@/features/search/services/search.service.ts";
@@ -23,7 +23,7 @@ export type SearchFormValues = {
 
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [events, setEvents] = useState<OccaCardUnit[]>([]);
+  const [occas, setOccas] = useState<OccaCardUnit[]>([]);
   const [loading, setLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
@@ -94,11 +94,12 @@ export const SearchPage: React.FC = () => {
   const getVenueName = (id: string) =>
     id === 'all' ? 'Tất cả' : venues.find(v => v.id === id)?.name || '';
 
-  const fetchEventsData = async (page: number, formValues: SearchFormValues) => {
+  // Update the fetchOccasData function to store the last count
+  const fetchOccasData = async (page: number, formValues: SearchFormValues) => {
     setLoading(true);
     try {
-      const { events, totalPages, totalElements } = await searchService.fetchEvents(page, formValues, searchParams, pagination.size);
-      setEvents(events);
+      const { occas, totalPages, totalElements } = await searchService.fetchOccas(page, formValues, searchParams, pagination.size);
+      setOccas(occas);
       setPagination(prev => ({
         ...prev,
         currentPage: page,
@@ -106,14 +107,14 @@ export const SearchPage: React.FC = () => {
         totalElements,
       }));
     } catch (error) {
-      // console.error('Error fetching events:', error);
+      // console.error('Error fetching occasions:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchEventsData(0, filters);
+    fetchOccasData(0, filters);
   }, [filters, searchParams]);
 
   type FilterValue = SearchFormValues[keyof SearchFormValues];
@@ -150,12 +151,13 @@ export const SearchPage: React.FC = () => {
   };
 
   const handlePageChange = (page: number) => {
-    fetchEventsData(page, filters);
+    fetchOccasData(page, filters);
   };
 
+  // First, update the LoadingSkeleton component
   const LoadingSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {Array.from({ length: 1 }).map((_, index) => (
+      {Array.from({ length: loading && occas.length ? occas.length : 4 }).map((_, index) => (
         <OccaCard key={index} loading={true} occa={{} as OccaCardUnit} />
       ))}
     </div>
@@ -168,17 +170,34 @@ export const SearchPage: React.FC = () => {
         {/* Top row: Applied filters and filter button */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex flex-wrap gap-2 items-center">
-            <Badge variant="secondary" className="bg-primary text-primary-foreground">
+            <Badge variant="secondary" className="bg-primary text-primary-foreground hover:scale-105 hover:bg-primary cursor-default transition-transform ease-out ">
               {pagination.totalElements} kết quả
             </Badge>
 
             {filters.categoryId !== 'all' && (
               <Badge
                 variant="outline"
-                className="cursor-pointer hover:bg-destructive transition-colors flex items-center gap-1"
+                className="cursor-pointer hover:bg-destructive hover:text-muted transition-colors flex items-center gap-1"
                 onClick={() => handleFilterChange('categoryId', 'all')}
               >
+                <Ribbon className="h-3 w-3"/>
                 {getCategoryName(filters.categoryId)}
+                <X className="h-3 w-3" />
+              </Badge>
+            )}
+            {searchParams.get('keyword') && (
+              <Badge
+                variant="outline"
+                className="cursor-pointer hover:bg-destructive hover:text-muted transition-colors flex items-center gap-1"
+                onClick={() => {
+                  const params = new URLSearchParams(searchParams);
+                  params.delete('keyword');
+                  setSearchParams(params);
+                }}
+              > <SearchCheck className="h-3 w-3"/>
+                <span className="max-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap">
+                  {searchParams.get('keyword')}
+                </span>
                 <X className="h-3 w-3" />
               </Badge>
             )}
@@ -189,6 +208,7 @@ export const SearchPage: React.FC = () => {
                 className="cursor-pointer hover:bg-destructive/10 transition-colors flex items-center gap-1"
                 onClick={() => handleFilterChange('venueId', 'all')}
               >
+                <MapPinned className="h-3 w-3"/>
                 {getVenueName(filters.venueId)}
                 <X className="h-3 w-3" />
               </Badge>
@@ -220,6 +240,48 @@ export const SearchPage: React.FC = () => {
               <div className="flex flex-col h-full">
                 <SheetHeader className="p-6 pb-0">
                   <SheetTitle>Bộ lọc tìm kiếm</SheetTitle>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {/* Show selected filters */}
+                    {filters.categoryId !== 'all' && (
+                      <Badge
+                        variant="outline"
+                        className="cursor-pointer hover:bg-destructive/10 transition-colors flex items-center gap-1"
+                        onClick={() => handleFilterChange('categoryId', 'all')}
+                      >
+                        <Ribbon className="h-3 w-3"/>
+                        {getCategoryName(filters.categoryId)}
+                        <X className="h-3 w-3" />
+                      </Badge>
+                    )}
+                    {searchParams.get('keyword') && (
+                      <Badge
+                        variant="outline"
+                        className="cursor-pointer hover:bg-destructive/10 transition-colors flex items-center gap-1"
+                        onClick={() => {
+                          const params = new URLSearchParams(searchParams);
+                          params.delete('keyword');
+                          setSearchParams(params);
+                        }}
+                      >
+                        <SearchCheck className="h-3 w-3"/>
+                        <span className="max-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap">
+                          {searchParams.get('keyword')}
+                        </span>
+                        <X className="h-3 w-3" />
+                      </Badge>
+                    )}
+                    {filters.venueId !== 'all' && (
+                      <Badge
+                        variant="outline"
+                        className="cursor-pointer hover:bg-destructive/10 transition-colors flex items-center gap-1"
+                        onClick={() => handleFilterChange('venueId', 'all')}
+                      >
+                        <MapPinned className="h-3 w-3"/>
+                        {getVenueName(filters.venueId)}
+                        <X className="h-3 w-3" />
+                      </Badge>
+                    )}
+                  </div>
                 </SheetHeader>
                 <ScrollArea className="flex-1 px-6">
                   <div className="space-y-6 py-6">
@@ -325,9 +387,11 @@ export const SearchPage: React.FC = () => {
                     filters.sortOrder === 'asc' ? 'desc' : 'asc'
                   )}
                 >
-                  {filters.sortBy === type ? (
-                    filters.sortOrder === 'asc' ? '↑' : '↓'
-                  ) : '↓'}
+                    {filters.sortBy === type ? (
+                    filters.sortOrder === 'asc' ? 
+                    <ArrowUp className="h-4 w-4" /> : 
+                    <ArrowDown className="h-4 w-4" />
+                    ) : <ArrowDown className="h-4 w-4 opacity-50" />}
                 </Button>
               </div>
             ))}
@@ -338,10 +402,10 @@ export const SearchPage: React.FC = () => {
       {/* Results Grid */}
       {loading ? (
         <LoadingSkeleton />
-      ) : events.length > 0 ? (
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {events.map((event) => (
-            <OccaCard key={event.id} occa={event} loading={false} />
+      ) : occas.length > 0 ? (
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade">
+          {occas.map((occa) => (
+            <OccaCard key={occa.id} occa={occa} loading={false} />
           ))}
         </div>
       ) : (

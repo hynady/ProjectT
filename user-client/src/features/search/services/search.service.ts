@@ -54,39 +54,39 @@ class SearchService extends BaseService {
     });
   }
 
-  async fetchEvents(page: number, formValues: SearchFormValues, searchParams: URLSearchParams, paginationSize: number): Promise<{
-    events: OccaCardUnit[],
+  async fetchOccas(page: number, formValues: SearchFormValues, searchParams: URLSearchParams, paginationSize: number): Promise<{
+    occas: OccaCardUnit[],
     totalPages: number,
     totalElements: number
   }> {
     return this.request({
       method: 'GET',
-      url: `/events?page=${page}&size=${paginationSize}&${searchParams.toString()}`,
+      url: `/search/occas?page=${page}&size=${paginationSize}&${searchParams.toString()}`,
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => {
-          let filteredEvents = [...searchMockData.allEvents];
+          let filteredOccas = [...searchMockData.allOccas];
 
           const keyword = searchParams.get('keyword');
           if (keyword) {
-            filteredEvents = filteredEvents.filter(occa =>
+            filteredOccas = filteredOccas.filter(occa =>
               occa.title.toLowerCase().includes(keyword.toLowerCase()) ||
               occa.location.toLowerCase().includes(keyword.toLowerCase())
             );
           }
 
           if (formValues.categoryId && formValues.categoryId !== 'all') {
-            filteredEvents = filteredEvents.filter(occa =>
+            filteredOccas = filteredOccas.filter(occa =>
               occa.categoryId === formValues.categoryId
             );
           }
 
           if (formValues.venueId && formValues.venueId !== 'all') {
-            filteredEvents = filteredEvents.filter(event =>
+            filteredOccas = filteredOccas.filter(event =>
               event.venueId === formValues.venueId
             );
           }
 
-          filteredEvents.sort((a, b) => {
+          filteredOccas.sort((a, b) => {
             let comparison = 0;
             switch (formValues.sortBy) {
               case 'date':
@@ -104,12 +104,12 @@ class SearchService extends BaseService {
           });
 
           const start = page * paginationSize;
-          const paginatedEvents = filteredEvents.slice(start, start + paginationSize);
+          const paginatedOccas = filteredOccas.slice(start, start + paginationSize);
 
           resolve({
-            events: paginatedEvents,
-            totalPages: Math.ceil(filteredEvents.length / paginationSize),
-            totalElements: filteredEvents.length,
+            occas: paginatedOccas,
+            totalPages: Math.ceil(filteredOccas.length / paginationSize),
+            totalElements: filteredOccas.length,
           });
         }, 500);
       })
@@ -118,7 +118,7 @@ class SearchService extends BaseService {
   async fetchCategories(): Promise<{ id: string, name: string }[]> {
     return this.request({
       method: 'GET',
-      url: '/categories',
+      url: '/occas/categories',
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(searchMockData.categories), 500);
       })
@@ -127,7 +127,7 @@ class SearchService extends BaseService {
   async fetchVenues(): Promise<{ id: string, name: string }[]> {
     return this.request({
       method: 'GET',
-      url: '/venues',
+      url: '/occas/venues',
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(searchMockData.venues), 500);
       })

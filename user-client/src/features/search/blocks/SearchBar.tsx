@@ -1,6 +1,6 @@
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {Overlay, useOverlay} from "@/commons/blocks/Overlay.tsx";
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import {useSearch} from "../hooks/useSearch.tsx";
 import {useRecentItems} from "@/features/search/hooks/useRecentItems.tsx";
 import {cn} from "@/commons/lib/utils/utils.ts";
@@ -9,9 +9,10 @@ import {Input} from "@/commons/components/input.tsx";
 import {RecentSearches} from "../components/RecentSearches.tsx";
 import {RecentOccas} from "../components/RecentOccas.tsx";
 import {SuggestOccaList} from "./SuggestOccaList.tsx";
-import {SearchResults, SearchResultUnit} from "@/features/search/components/SearchResults.tsx";
+import {SearchResults} from "@/features/search/components/SearchResults.tsx";
 import { searchService } from "../services/search.service.ts";
-import {OccaSearchItemBaseUnit} from "@/features/search/internal-types/search.type.ts";
+import {OccaSearchItemBaseUnit, SearchResultUnit} from "@/features/search/internal-types/search.type.ts";
+import { useDelayedLoading } from "@/features/search/hooks/useDelayedLoading.tsx";
 
 export function SearchBar() {
   const navigate = useNavigate();
@@ -20,13 +21,15 @@ export function SearchBar() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [searchParams] = useSearchParams();
 
-  // State cho từng loại sự kiện
+  // Chỉ giữ lại state cho trending và recommended
   const [trendingOccas, setTrendingOccas] = useState<SearchResultUnit[]>([]);
   const [recommendOccas, setRecommendOccas] = useState<SearchResultUnit[]>([]);
   const [isFetchingOccas, setIsFetchingOccas] = useState(true);
 
   // Custom hooks
   const {apiResults, isLoading: searchLoading} = useSearch(query);
+  const isDelayedLoading = useDelayedLoading(searchLoading);
+
   const {
     recentSearches,
     recentOccas,
@@ -57,22 +60,6 @@ export function SearchBar() {
 
     fetchInitialData();
   }, []);
-
-  // Lọc sự kiện dựa trên query
-  const filteredOccas = useMemo(() => {
-    if (!query) return [];
-
-    const normalizedQuery = query.toLowerCase().trim();
-    const allOccas = [...trendingOccas, ...recommendOccas];
-
-    return allOccas.filter(occa => {
-      const normalizedTitle = occa.title.toLowerCase();
-      const normalizedLocation = occa.location.toLowerCase();
-
-      return normalizedTitle.includes(normalizedQuery) ||
-        normalizedLocation.includes(normalizedQuery);
-    });
-  }, [query, trendingOccas, recommendOccas]);
 
   // Khởi tạo giá trị query từ URL params
   useEffect(() => {
@@ -153,8 +140,8 @@ export function SearchBar() {
             {query ? (
               <SearchResults
                 query={query}
-                results={filteredOccas.length > 0 ? filteredOccas : apiResults}
-                isLoading={searchLoading}
+                results={apiResults} // Chỉ sử dụng kết quả từ API
+                isLoading={isDelayedLoading}
                 onOccaClick={(occa) => {
                   addRecentSearch(occa.title);
                   handleNavigation(occa);
@@ -183,7 +170,7 @@ export function SearchBar() {
 
                 {isFetchingOccas ? (
                   <div className="p-4 text-center">
-                    <span>Đang tải dữ liệu...</span>
+                    <span>Đang cập nhật đề xuất...</span>
                   </div>
                 ) : (
                   <>

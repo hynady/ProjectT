@@ -3,6 +3,7 @@ package com.ticket.servermono.occacontext.entities;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -13,7 +14,12 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "occa")
+@Table(name = "occa", indexes = {
+    @Index(name = "idx_occa_title_location", columnList = "title,location"),
+    @Index(name = "idx_occa_category", columnList = "category_id"),
+    @Index(name = "idx_occa_venue", columnList = "venue_id"),
+    @Index(name = "idx_occa_date", columnList = "date")
+})
 @Data
 @SuperBuilder
 @NoArgsConstructor

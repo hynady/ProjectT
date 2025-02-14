@@ -25,7 +25,7 @@ export const SuggestOccaList: React.FC<SuggestOccaListProps> = ({
         {icon}
         {title}
       </h3>
-      <div className="space-y-2">
+      <div className="space-y-0">
         {occas.map((occa) => (
           <OccaSearchItem
             key={`${title}-${occa.id}`}

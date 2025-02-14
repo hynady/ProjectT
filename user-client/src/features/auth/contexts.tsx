@@ -21,7 +21,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
   // Kiểm tra authentication status khi component mount
   useEffect(() => {
     const initializeAuth = () => {
-      const storedToken = CookieManager.get('token');
+      const storedToken = CookieManager.getAuthToken();
       if (storedToken) {
         setToken(storedToken);
         setIsAuthenticated(true);
