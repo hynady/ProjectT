@@ -3,6 +3,7 @@ package com.ticket.servermono.occacontext.infrastructure.config;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 import com.ticket.servermono.occacontext.entities.Category;
 import com.ticket.servermono.occacontext.infrastructure.repositories.CategoryRepository;
@@ -12,6 +13,7 @@ import java.util.Arrays;
 public class CategoryDataInitializer {
 
     @Bean
+    @Order(1) 
     CommandLineRunner initCategoryData(CategoryRepository repository) {
         return args -> {
             if (repository.count() == 0) {

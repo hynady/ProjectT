@@ -39,7 +39,7 @@ export const VenueSection: React.FC<VenueSectionProps> = ({ venues, isLoading, e
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
       {Array.isArray(venues) ? (
         venues.map((venue) => (
           <VenueCard key={venue.id} venue={venue} loading={isLoading} />

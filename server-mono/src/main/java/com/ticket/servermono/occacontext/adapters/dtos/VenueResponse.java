@@ -6,7 +6,7 @@ import lombok.Value;
 @Value
 public class VenueResponse {
     UUID id;
-    String name;
+    String region;
     String image;
     String location;
     Long occaCount;

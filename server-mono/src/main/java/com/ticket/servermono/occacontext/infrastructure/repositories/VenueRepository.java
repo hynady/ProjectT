@@ -11,11 +11,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface VenueRepository extends JpaRepository<Venue, UUID> {
-    Optional<Venue> findByName(String name);
 
     @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.VenueResponse(" +
-            "v.id, v.name, v.image, v.location, COUNT(o)) " +
+            "v.id, v.region, v.image, v.location, COUNT(o)) " +
             "FROM Venue v LEFT JOIN v.occas o " +
-            "GROUP BY v.id, v.name, v.image, v.location")
+            "GROUP BY v.id, v.region, v.image, v.location")
     List<VenueResponse> findAllVenuesWithCount();
+
+    Optional<Venue> findByLocation(String location);
 }

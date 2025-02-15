@@ -7,6 +7,7 @@ import com.ticket.servermono.occacontext.adapters.dtos.CategoryResponse;
 import com.ticket.servermono.occacontext.entities.Category;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface CategoryRepository extends JpaRepository<Category, UUID> {
@@ -16,4 +17,6 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
             "FROM Category c LEFT JOIN c.occas o " +
             "GROUP BY c.id, c.name")
     List<CategoryResponse> findAllCategoriesWithCount();
+
+    Optional<Category> findByName(String name);
 }

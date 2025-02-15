@@ -27,7 +27,7 @@ export const SearchPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
-  const [venues, setVenues] = useState<{ id: string, name: string }[]>([]);
+  const [venues, setVenues] = useState<{ id: string, region: string }[]>([]);
   const [filters, setFilters] = useState<SearchFormValues>({
     categoryId: 'all',
     venueId: 'all',
@@ -92,7 +92,7 @@ export const SearchPage: React.FC = () => {
     id === 'all' ? 'Tất cả' : categories.find(c => c.id === id)?.name || '';
 
   const getVenueName = (id: string) =>
-    id === 'all' ? 'Tất cả' : venues.find(v => v.id === id)?.name || '';
+    id === 'all' ? 'Tất cả' : venues.find(v => v.id === id)?.region || '';
 
   // Update the fetchOccasData function to store the last count
   const fetchOccasData = async (page: number, formValues: SearchFormValues) => {
@@ -339,7 +339,7 @@ export const SearchPage: React.FC = () => {
                                 onClick={() => handleFilterChange('venueId', venue.id)}
                                 className="h-auto py-2 px-4"
                               >
-                                {venue.name}
+                                {venue.region}
                               </Button>
                             ))}
                           </div>

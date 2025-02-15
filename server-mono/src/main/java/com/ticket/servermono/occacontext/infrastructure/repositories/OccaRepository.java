@@ -17,38 +17,38 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
        // TODO: Add logic optimized for user all below methods
 
        @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaResponse(" +
-              "o.id, o.title, o.image, o.date, o.time, o.location, o.price, " +
+              "o.id, o.title, o.image, o.date, o.time, o.venue.location, o.price, " +
               "o.category.id, o.venue.id) " +
               "FROM Occa o " +
               "ORDER BY o.id DESC")
        List<OccaResponse> findFirst6HeroOccas(Pageable pageable);
 
        @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaResponse(" +
-              "o.id, o.title, o.image, o.date, o.time, o.location, o.price, " +
+              "o.id, o.title, o.image, o.date, o.time, o.venue.location, o.price, " +
               "o.category.id, o.venue.id) " +
               "FROM Occa o " +
               "ORDER BY o.id DESC")
        List<OccaResponse> findFirst6UpcomingOccas(Pageable pageable);
 
        @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaResponse(" +
-              "o.id, o.title, o.image, o.date, o.time, o.location, o.price, " +
+              "o.id, o.title, o.image, o.date, o.time, o.venue.location, o.price, " +
               "o.category.id, o.venue.id) " +
               "FROM Occa o " +
               "ORDER BY o.id DESC")
        List<OccaResponse> findFirst3RecommendedOccas(Pageable pageable);
 
        @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaResponse(" +
-              "o.id, o.title, o.image, o.date, o.time, o.location, o.price, " +
+              "o.id, o.title, o.image, o.date, o.time, o.venue.location, o.price, " +
               "o.category.id, o.venue.id) " +
               "FROM Occa o " +
               "ORDER BY o.id DESC")
        List<OccaResponse> findFirst3TrendingOccas(Pageable pageable);
 
        @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.SearchBarTemplateResponse(" +
-              "o.id, o.title, o.date, o.location) " +
+              "o.id, o.title, o.date, o.venue.location) " +
               "FROM Occa o " +
               "WHERE LOWER(o.title) LIKE %:query% " +
-              "   OR LOWER(o.location) LIKE %:query% " +
+              "   OR LOWER(o.venue.location) LIKE %:query% " +
               "   OR SOUNDEX(o.title) = SOUNDEX(:query) " +
               "ORDER BY " +
               "   CASE " +
@@ -74,12 +74,12 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
        }
 
        // @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaResponse(" +
-       // "o.id, o.title, o.image, o.date, o.time, o.location, o.price, " +
+       // "o.id, o.title, o.image, o.date, o.time, o.venue.location, o.price, " +
        // "o.category.id, o.venue.id) " +
        // "FROM Occa o " +
        // "WHERE (:keyword IS NULL OR " +
        // "      LOWER(o.title) LIKE CONCAT('%',:keyword,'%') OR " +
-       // "      LOWER(o.location) LIKE CONCAT('%',:keyword,'%')) " +
+       // "      LOWER(o.venue.location) LIKE CONCAT('%',:keyword,'%')) " +
        // "AND (:categoryId IS NULL OR o.category.id = :categoryId) " +
        // "AND (:venueId IS NULL OR o.venue.id = :venueId) " +
        // "ORDER BY " +
@@ -98,12 +98,12 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
        // );
 
        @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaResponse(" +
-       "o.id, o.title, o.image, o.date, o.time, o.location, o.price, " +
+       "o.id, o.title, o.image, o.date, o.time, o.venue.location, o.price, " +
        "o.category.id, o.venue.id) " +
        "FROM Occa o " +
        "WHERE (:keyword IS NULL OR " +
        "       LOWER(o.title) LIKE CONCAT('%', :keyword, '%') OR " +
-       "       LOWER(o.location) LIKE CONCAT('%', :keyword, '%')) " +
+       "       LOWER(o.venue.location) LIKE CONCAT('%', :keyword, '%')) " +
        "AND (:categoryId IS NULL OR o.category.id = :categoryId) " +
        "AND (:venueId IS NULL OR o.venue.id = :venueId)")
        Page<OccaResponse> searchOccas(
@@ -117,7 +117,7 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
        "FROM Occa o " +
        "WHERE (:keyword IS NULL OR " +
        "      LOWER(o.title) LIKE %:keyword% OR " +
-       "      LOWER(o.location) LIKE %:keyword%) " +
+       "      LOWER(o.venue.location) LIKE %:keyword%) " +
        "AND (:categoryId IS NULL OR o.category.id = :categoryId) " +
        "AND (:venueId IS NULL OR o.venue.id = :venueId)")
        long countSearchResults(

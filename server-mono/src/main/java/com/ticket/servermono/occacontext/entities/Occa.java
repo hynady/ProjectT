@@ -15,7 +15,7 @@ import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "occa", indexes = {
-    @Index(name = "idx_occa_title_location", columnList = "title,location"),
+    @Index(name = "idx_occa_title", columnList = "title"),
     @Index(name = "idx_occa_category", columnList = "category_id"),
     @Index(name = "idx_occa_venue", columnList = "venue_id"),
     @Index(name = "idx_occa_date", columnList = "date")
@@ -38,9 +38,6 @@ public class Occa extends BaseSQLEntity {
 
     @Column(nullable = false)
     private String time;
-
-    @Column(nullable = false)
-    private String location;
 
     @Column(nullable = false)
     private String price;

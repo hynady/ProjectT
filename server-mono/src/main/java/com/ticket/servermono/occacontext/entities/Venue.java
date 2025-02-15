@@ -25,7 +25,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class Venue extends BaseSQLEntity{
 
-    private String name;
+    private String region;
 
     @Column(length = 1000)
     private String image;
