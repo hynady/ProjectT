@@ -3,6 +3,7 @@ import { Button } from '@/commons/components/button.tsx';
 import {Facebook, MapPin, MessageCircle, Navigation, Share2, Twitter} from 'lucide-react';
 import {useState} from "react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/commons/components/popover.tsx";
+import { toast } from '@/commons/hooks/use-toast';
 
 interface OccaLocationProps {
   location: string;
@@ -39,7 +40,9 @@ export const OccaLocation = ({ location, address, apiKey }: OccaLocationProps) =
       icon: <MessageCircle className="h-5 w-5" />,
       color: 'text-[#0084FF]',
       onClick: () => {
-        const url = `fb-messenger://share/?link=${encodeURIComponent(directionsUrl)}&app_id=YOUR_APP_ID`;
+        // Sử dụng Facebook Send Dialog cho share qua Messenger trên web
+        const redirectUri = encodeURIComponent(window.location.href);
+        const url = `https://www.facebook.com/dialog/send?link=${encodeURIComponent(directionsUrl)}&redirect_uri=${redirectUri}`;
         window.open(url, '_blank');
       }
     },
@@ -49,7 +52,10 @@ export const OccaLocation = ({ location, address, apiKey }: OccaLocationProps) =
       color: 'text-muted-foreground',
       onClick: () => {
         navigator.clipboard.writeText(directionsUrl);
-        alert('Link copied to clipboard');
+        toast({
+          title: "Đã sao chép",
+          description: "Địa chỉ đã được sao chép vào clipboard"
+        });
       }
     }
   ];

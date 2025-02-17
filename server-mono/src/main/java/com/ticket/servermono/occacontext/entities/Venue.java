@@ -25,12 +25,17 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class Venue extends BaseSQLEntity{
 
+    //Province, City, or State
     private String region;
 
     @Column(length = 1000)
     private String image;
 
+    //Name location
     private String location;
+
+    //Address of the location
+    private String address;
 
     @OneToMany(mappedBy = "venue", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default

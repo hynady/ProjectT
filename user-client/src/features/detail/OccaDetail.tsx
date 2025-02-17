@@ -36,7 +36,7 @@ export default function OccaDetail() {
     }
   }, [id, navigate]);
 
-  if (hero.error?.response?.status === 404) {
+  if (hero.error?.status === 404) {
     return <NotFoundPage/>;
   }
 
@@ -59,7 +59,7 @@ export default function OccaDetail() {
               <ErrorMessage message="Không thể tải thông tin chi tiết" />
             ) : overview.data && (
               <OccaOverview
-                details={overview.data.details}
+                details={overview.data.description}
                 organizer={overview.data.organizer}
               />
             )}

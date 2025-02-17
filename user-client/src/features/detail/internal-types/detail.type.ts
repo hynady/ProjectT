@@ -28,6 +28,10 @@ export interface LocationData {
 
 // Define the type for Overview Data
 export interface OverviewData {
-  details: string;
+  description: string;
   organizer: string;
+}
+
+export interface GalleryUnit {
+  image: string;
 }

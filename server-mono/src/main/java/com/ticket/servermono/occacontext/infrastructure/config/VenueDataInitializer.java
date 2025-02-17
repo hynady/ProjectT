@@ -34,6 +34,7 @@ public class VenueDataInitializer {
                                 .region("Tp. Hồ Chí Minh")
                                 .image("https://imgcdn.tapchicongthuong.vn/tcct-media/21/1/3/thanh_pho_hcm.jpg")
                                 .location("SVĐ Quốc gia, TP.HCM")
+                                .address("2A Phan Chu Trinh, Phường 12, Bình Thạnh, Hồ Chí Minh")
                                 .build(),
                         Venue.builder()
                                 .region("Hải Phòng")

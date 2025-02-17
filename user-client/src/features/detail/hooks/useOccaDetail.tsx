@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { detailService } from '../services/detail.service';
-import { OccaHeroSectionUnit, OccaShowUnit } from '../internal-types/detail.type';
+import { GalleryUnit, LocationData, OccaHeroSectionUnit, OccaShowUnit, OverviewData } from '../internal-types/detail.type';
 
 interface ApiError {
-  response?: {
-    status: number;
-  };
+  status: number;
   message: string;
 }
 
@@ -26,18 +24,18 @@ export const useOccaDetail = (occaId: string) => {
     loading: true,
     error: null
   });
-  const [gallery, setGallery] = useState<SectionState<string[]>>({
+  const [gallery, setGallery] = useState<SectionState<GalleryUnit[]>>({
     data: [],
     loading: true,
     error: null
   });
-  const [location, setLocation] = useState<SectionState<{location: string, address: string}>>({
-    data: { location: '', address: '' },
+  const [location, setLocation] = useState<SectionState<LocationData>>({
+    data: null,
     loading: true,
     error: null
   });
-  const [overview, setOverview] = useState<SectionState<{details: string, organizer: string}>>({
-    data: { details: '', organizer: '' },
+  const [overview, setOverview] = useState<SectionState<OverviewData>>({
+    data: null,
     loading: true,
     error: null
   });
@@ -61,12 +59,12 @@ export const useOccaDetail = (occaId: string) => {
     // Fetch location data
     detailService.getLocationData(occaId)
       .then(data => setLocation({ data, loading: false, error: null }))
-      .catch(error => setLocation({ data: { location: '', address: '' }, loading: false, error }));
+      .catch(error => setLocation({ data: null, loading: false, error }));
 
     // Fetch overview data
     detailService.getOverviewData(occaId)
       .then(data => setOverview({ data, loading: false, error: null }))
-      .catch(error => setOverview({ data: { details: '', organizer: '' }, loading: false, error }));
+      .catch(error => setOverview({ data: null, loading: false, error }));
   }, [occaId]);
 
   return {
