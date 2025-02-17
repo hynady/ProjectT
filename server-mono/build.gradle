@@ -67,6 +67,7 @@ dependencies {
     implementation 'javax.annotation:javax.annotation-api:1.3.2'
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
+    implementation "com.google.protobuf:protobuf-java:${protobufVersion}"
 
     // Testing Dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -94,4 +95,16 @@ protobuf {
     generateProtoTasks {
         all()*.plugins { grpc {} }
     }
+}
+
+sourceSets {
+    main {
+        resources {
+            exclude "**/*.proto"
+        }
+    }
+}
+
+tasks.named("processResources") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
