@@ -7,7 +7,11 @@ class DetailService extends BaseService {
     return this.request({
       method: 'GET',
       url: `/detail/hero/${occaId}`,
-      mockResponse: () => new Promise((resolve) => {
+      mockResponse: () => new Promise((resolve, reject) => {
+        // Simulate 404 for testing
+        if (occaId === 'non-existent-id') {
+          reject({ response: { status: 404 } });
+        }
         setTimeout(() => resolve(detailMockData.heroData), 1000);
       })
     });

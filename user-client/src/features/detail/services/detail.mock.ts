@@ -1,4 +1,4 @@
-import {OccaHeroSectionUnit, OccaShowUnit} from "@/features/detail/internal-types/detail.type.ts";
+import {LocationData, OccaHeroSectionUnit, OccaShowUnit, OverviewData} from "@/features/detail/internal-types/detail.type.ts";
 
 
 export const detailMockData = {
@@ -14,7 +14,7 @@ export const detailMockData = {
   locationData: {
     location: "Sân vận động Việt Trì",
     address: "Đ. Hùng Vương, Ph. Thọ Sơn, Việt Trì, Phú Thọ"
-  },
+  } as LocationData,
   showsData: [
     {
       date: '2025-01-20',
@@ -78,5 +78,5 @@ Join us for a special music night with BlackPink, featuring their most popular h
 - Follow the event organizer's regulations
 `,
     organizer: "BlackPink Entertainment"
-  }
+  } as OverviewData
 };

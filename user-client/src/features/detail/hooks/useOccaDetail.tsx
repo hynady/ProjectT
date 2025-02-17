@@ -2,49 +2,78 @@ import { useState, useEffect } from 'react';
 import { detailService } from '../services/detail.service';
 import { OccaHeroSectionUnit, OccaShowUnit } from '../internal-types/detail.type';
 
-export const useOccaDetail = (occaId: string) => {
-  const [loading, setLoading] = useState(true);
-  const [heroData, setHeroData] = useState<OccaHeroSectionUnit | null>(null);
-  const [showsData, setShowsData] = useState<OccaShowUnit[]>([]);
-  const [galleryData, setGalleryData] = useState<string[]>([]);
-  const [locationData, setLocationData] = useState<{ location: string, address: string }>({ location: '', address: '' });
-  const [overviewData, setOverviewData] = useState<{ details: string, organizer: string }>({ details: '', organizer: '' });
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchOccaDetail = async () => {
-    setLoading(true);
-    try {
-      const [hero, shows, gallery, location, overview] = await Promise.all([
-        detailService.getHeroData(occaId),
-        detailService.getShowsData(occaId),
-        detailService.getGalleryData(occaId),
-        detailService.getLocationData(occaId),
-        detailService.getOverviewData(occaId)
-      ]);
-
-      setHeroData(hero);
-      setShowsData(shows);
-      setGalleryData(gallery);
-      setLocationData(location);
-      setOverviewData(overview);
-    } catch (err) {
-      setError(err as Error);
-    } finally {
-      setLoading(false);
-    }
+interface ApiError {
+  response?: {
+    status: number;
   };
+  message: string;
+}
+
+interface SectionState<T> {
+  data: T | null;
+  loading: boolean;
+  error: ApiError | null;
+}
+
+export const useOccaDetail = (occaId: string) => {
+  const [hero, setHero] = useState<SectionState<OccaHeroSectionUnit>>({
+    data: null,
+    loading: true,
+    error: null
+  });
+  const [shows, setShows] = useState<SectionState<OccaShowUnit[]>>({
+    data: [],
+    loading: true,
+    error: null
+  });
+  const [gallery, setGallery] = useState<SectionState<string[]>>({
+    data: [],
+    loading: true,
+    error: null
+  });
+  const [location, setLocation] = useState<SectionState<{location: string, address: string}>>({
+    data: { location: '', address: '' },
+    loading: true,
+    error: null
+  });
+  const [overview, setOverview] = useState<SectionState<{details: string, organizer: string}>>({
+    data: { details: '', organizer: '' },
+    loading: true,
+    error: null
+  });
 
   useEffect(() => {
-    fetchOccaDetail();
+    // Fetch hero data
+    detailService.getHeroData(occaId)
+      .then(data => setHero({ data, loading: false, error: null }))
+      .catch(error => setHero({ data: null, loading: false, error }));
+
+    // Fetch shows data
+    detailService.getShowsData(occaId)
+      .then(data => setShows({ data, loading: false, error: null }))
+      .catch(error => setShows({ data: [], loading: false, error }));
+
+    // Fetch gallery data
+    detailService.getGalleryData(occaId)
+      .then(data => setGallery({ data, loading: false, error: null }))
+      .catch(error => setGallery({ data: [], loading: false, error }));
+
+    // Fetch location data
+    detailService.getLocationData(occaId)
+      .then(data => setLocation({ data, loading: false, error: null }))
+      .catch(error => setLocation({ data: { location: '', address: '' }, loading: false, error }));
+
+    // Fetch overview data
+    detailService.getOverviewData(occaId)
+      .then(data => setOverview({ data, loading: false, error: null }))
+      .catch(error => setOverview({ data: { details: '', organizer: '' }, loading: false, error }));
   }, [occaId]);
 
   return {
-    loading,
-    heroData,
-    showsData,
-    galleryData,
-    locationData,
-    overviewData,
-    error
+    hero,
+    shows,
+    gallery,
+    location,
+    overview
   };
 };

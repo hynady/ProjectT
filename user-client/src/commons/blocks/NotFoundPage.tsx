@@ -63,7 +63,7 @@ const NotFoundPage = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12"
+        className="relative z-0 flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12"
       >
         <AnimatePresence>
           <motion.div
