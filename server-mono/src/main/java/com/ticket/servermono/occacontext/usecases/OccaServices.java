@@ -16,7 +16,6 @@ import com.ticket.servermono.occacontext.adapters.dtos.OccaResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.SearchBarTemplateResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.SearchOccasResult;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.GalleryData;
-import com.ticket.servermono.occacontext.adapters.dtos.DetailData.LocationDataResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OccaHeroDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OverviewData;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaDetailInfoRepository;

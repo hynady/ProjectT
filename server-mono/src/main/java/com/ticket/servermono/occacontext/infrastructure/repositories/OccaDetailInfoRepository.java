@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.ticket.servermono.occacontext.adapters.dtos.DetailData.LocationDataResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OccaHeroDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OverviewData;
 import com.ticket.servermono.occacontext.entities.OccaDetailInfo;

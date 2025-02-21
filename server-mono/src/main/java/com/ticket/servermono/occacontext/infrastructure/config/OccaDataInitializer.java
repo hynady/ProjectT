@@ -27,7 +27,7 @@ public class OccaDataInitializer {
     CommandLineRunner initOccaData(OccaRepository repository, VenueRepository venueRepository,
             CategoryRepository categoryRepository) {
         return args -> {
-            if (repository.count() == 0 || 1 == 1) {
+            if (repository.count() == 0) {
 
                 Optional<Venue> svdHanoiVenue = venueRepository.findByLocation("SVĐ Mỹ Đình, Hà Nội");
                 Optional<Venue> svdHcmVenue = venueRepository.findByLocation("SVĐ Quốc gia, TP.HCM");
