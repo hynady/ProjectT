@@ -12,6 +12,7 @@ import com.ticket.servermono.occacontext.entities.Venue;
 import com.ticket.servermono.occacontext.infrastructure.repositories.CategoryRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.VenueRepository;
+import com.ticket.servermono.occacontext.usecases.OccaServices;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,7 +26,7 @@ public class OccaDataInitializer {
     @Bean
     @Order(2)
     CommandLineRunner initOccaData(OccaRepository repository, VenueRepository venueRepository,
-            CategoryRepository categoryRepository) {
+            CategoryRepository categoryRepository, OccaServices occaServices) {
         return args -> {
             if (repository.count() == 0) {
 
@@ -197,6 +198,16 @@ public class OccaDataInitializer {
 
                 // Create and save corresponding OccaDetailInfo for each Occa
                 savedOccas.forEach(occa -> {
+                        int day = (int) (Math.random() * 28 + 1);
+                        int hour = (int) (Math.random() * 6 + 17);
+                        
+                        occaServices.publishOccaShow(
+                            String.format("2024-03-%02d", day),
+                            String.format("%02d:00", hour),
+                            (int) (Math.random() * 1501 + 500),
+                            occa.getId().toString()
+                        );
+                        
                     OccaDetailInfo detailInfo = OccaDetailInfo.builder()
                             .bannerUrl(occa.getImage()) // Using image as banner for now
                             .description("Experience the magic of " + occa.getTitle())

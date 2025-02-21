@@ -18,14 +18,20 @@ spring:
   jpa:
     database-platform: ${JPA_DIALECT}
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO}
+      ddl-auto: update
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP_ID}
       auto-offset-reset: ${KAFKA_CONSUMER_AUTO_OFFSET_RESET}
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*" # allow all packages
+    producer:
+        value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+      
 app:
   jwtSecret: ${JWT_SECRET}
   googleClientId: ${GOOGLE_CLIENT_ID}

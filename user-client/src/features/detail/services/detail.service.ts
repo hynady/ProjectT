@@ -20,7 +20,7 @@ class DetailService extends BaseService {
   async getShowsData(occaId: string): Promise<OccaShowUnit[]> {
     return this.request({
       method: 'GET',
-      url: `/detail/shows/${occaId}`,
+      url: `/shows/${occaId}`,
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(detailMockData.showsData), 1000);
       })

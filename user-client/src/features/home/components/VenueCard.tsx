@@ -64,6 +64,10 @@ export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
         <img
         src={venue.image}
         alt={venue.region}
+        onError={(e) => {
+          e.currentTarget.src =
+            "https://placehold.co/600x400/8b5cf6/f5f3ff?text=No+Image";
+        }}
         className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <div
