@@ -6,7 +6,6 @@ import {ShowSelection} from './blocks/ShowSelection.tsx';
 import {TicketSelection} from './blocks/TicketSelection.tsx';
 import {Confirmation} from './blocks/Confirmation.tsx';
 import useBooking from './hooks/useBooking.tsx';
-import {useOccaData} from './hooks/useOccaData.tsx';
 import {BookingSummary} from "@/features/booking/blocks/BookingSummary.tsx";
 import {PaymentSuccess} from "@/features/booking/blocks/PaymentSuccess.tsx";
 import {PaymentMethods} from "@/features/booking/blocks/PaymentMethods.tsx";
@@ -14,10 +13,12 @@ import {BookingSkeleton} from "@/features/booking/skeletons/BookingSkeleton.tsx"
 import {ProgressSteps} from "@/features/booking/components/ProgressSteps.tsx";
 import {ScrollToTop} from "@/commons/blocks/ScrollToTop.tsx";
 import {ArrowLeft} from "lucide-react";
+import { useBookingData } from '@/features/booking/hooks/useBookingData.tsx';
+import NotFoundPage from '@/commons/blocks/NotFoundPage.tsx';
 
 const BookingPage = () => {
   const {id} = useParams<{ id: string }>();
-  const {data: occaData, loading} = useOccaData(id || '');
+  const {data: occaData, loading, error} = useBookingData(id || '');
   const [step, setStep] = useState(1);
   const {bookingState, selectShow, updateTickets} = useBooking();
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
@@ -53,7 +54,6 @@ const BookingPage = () => {
     }
   }, [state, occaData]);
 
-
   const handleStepClick = (index: number) => {
     // Chỉ cho phép chuyển đến các bước đã hoàn thành hoặc bước tiếp theo
     if (index < step || (index === step + 1 && steps[step - 1].completed)) {
@@ -84,6 +84,12 @@ const BookingPage = () => {
         <BookingSkeleton/>
       </div>
     );
+  }
+
+  // Handle missing data after loading
+  if (!occaData) {
+    
+    return <NotFoundPage />;
   }
 
   return (

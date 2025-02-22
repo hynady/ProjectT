@@ -20,7 +20,7 @@ import {
   CardTitle,
 } from "@/commons/components/card.tsx";
 import {toast} from "@/commons/hooks/use-toast.ts";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useLocation} from "react-router-dom";
 import {useState} from "react";
 import {useAuth} from "@/features/auth/contexts.tsx";
 import {authService} from "@/features/auth/services/auth.service.ts";
@@ -42,6 +42,7 @@ const LoginPage = () => {
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -51,7 +52,7 @@ const LoginPage = () => {
     },
   });
 
-  const onSubmit = async (data: FormValues) => {
+  const handleLogin = async (data: FormValues) => {
     try {
       setLoading(true);
       const response = await authService.login(data);
@@ -70,7 +71,12 @@ const LoginPage = () => {
         title: "Đăng nhập thành công!",
         variant: "success",
       });
-      navigate('/');
+
+      // Sau khi đăng nhập thành công
+      // Lấy đường dẫn trước đó từ state, nếu không có thì về homepage
+      const from = location.state?.from || "/";
+      navigate(from, { replace: true });
+      
     } catch (error: any) {
       // console.error("Login error:", error);
       toast({
@@ -93,7 +99,7 @@ const LoginPage = () => {
       </CardHeader>
       <CardContent>
         <FormFixColorLabel {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
             <FormField
               control={form.control}
               name="email"
