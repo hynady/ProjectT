@@ -3,20 +3,10 @@ import {useState} from 'react';
 import {format} from 'date-fns';
 import {Card, CardContent} from '@/commons/components/card.tsx';
 import {Button} from '@/commons/components/button.tsx';
-import {TicketType} from "@/features/booking/blocks/TicketSelection.tsx";
 import {vi} from "date-fns/locale";
 import {ScrollToTop} from "@/commons/blocks/ScrollToTop.tsx";
+import { OccaShowUnit } from '@/features/booking/internal-types/booking.type';
 
-export interface ShowTime {
-  date: string;
-  time: string;
-}
-
-export interface OccaShowUnit {
-  date: string;
-  time: string;
-  prices: TicketType[];
-}
 
 interface ShowSelectionProps {
   shows: OccaShowUnit[];

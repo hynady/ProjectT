@@ -33,14 +33,14 @@ function AppRouter() {
           </Route>
           <Route path="occas" element={<DetailPageLayout />}>
             <Route path=":id" element={<EventDetailPage />} />
-            <Route 
-              path=":id/booking" 
-              element={
-                <ProtectedBookingRoute>
-                  <BookingPage />
-                </ProtectedBookingRoute>
-              } 
-            />
+              <Route
+                path=":id/booking"
+                element={
+                  <ProtectedBookingRoute>
+                    <BookingPage />
+                  </ProtectedBookingRoute>
+                }
+              />
           </Route>
           <Route element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />

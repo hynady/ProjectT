@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ticket.servermono.occacontext.adapters.dtos.OccaResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.SearchBarTemplateResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.SearchOccasResult;
+import com.ticket.servermono.occacontext.adapters.dtos.Booking.OccaForBookingResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.GalleryData;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OccaHeroDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OverviewData;
@@ -145,13 +146,20 @@ public class OccaServices {
 
     //Triggigng the creation of Occa event in the system
     @Transactional
-    public void publishOccaShow(String date, String time, Integer numberOfSeats, String occaId) {
+    public void publishOccaShow(String date, String time, String occaId) {
         Map<String, Object> message = new HashMap<>();
         message.put("date", date);
         message.put("time", time);
-        message.put("numberOfSeats", numberOfSeats);
         message.put("occaId", occaId);
 
         kafkaTemplate.send(OCCA_CREATION, message);
+    }
+        @Transactional(readOnly = true)
+    public OccaForBookingResponse getOccaForBooking(UUID occaId) {
+        if (occaId == null) {
+            throw new IllegalArgumentException("Occa ID cannot be null");
+        }
+        return occaRepository.findOccaForBooking(occaId)
+                .orElseThrow(() -> new RuntimeException("Occa not found with id: " + occaId));
     }
 }

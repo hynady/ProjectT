@@ -15,15 +15,16 @@ import {ScrollToTop} from "@/commons/blocks/ScrollToTop.tsx";
 import {ArrowLeft} from "lucide-react";
 import { useBookingData } from '@/features/booking/hooks/useBookingData.tsx';
 import NotFoundPage from '@/commons/blocks/NotFoundPage.tsx';
+import { CalendarNormal } from '@/features/booking/components/Calender.tsx';
+import { OccaShowUnit, TicketType } from '@/features/booking/internal-types/booking.type.ts';
 
 const BookingPage = () => {
   const {id} = useParams<{ id: string }>();
   const { state } = useLocation();
   const [step, setStep] = useState(1);
-  const [shouldFetchData, setShouldFetchData] = useState(!state?.selectedInfo);
-  
+  const [shouldFetchData] = useState(!state?.selectedInfo);
   // Only fetch data if no selectedInfo from detail page
-  const {data: occaData, loading, error, setData: setOccaData} = useBookingData(id || '', shouldFetchData);
+  const {data: occaData, loading, setData: setOccaData} = useBookingData(id || '', shouldFetchData);
   const {bookingState, selectShow, updateTickets} = useBooking();
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
   const navigate = useNavigate();
@@ -43,19 +44,36 @@ const BookingPage = () => {
         });
 
         // Set selected ticket if exists
-        if (selectedTicket) {
-          const currentShow = occa.shows.find(
-            s => s.date === selectedShow.date && s.time === selectedShow.time
-          );
-          
-          updateTickets(
-            {
-              type: selectedTicket.type,
-              price: selectedTicket.price,
-              available: currentShow?.prices.find(p => p.type === selectedTicket.type)?.available || 0
-            },
-            selectedTicket.quantity
-          );
+        if (selectedShow) {
+          selectShow({
+            date: selectedShow.date,
+            time: selectedShow.time
+          });
+        
+          // Set selected ticket if exists
+          if (selectedTicket) {
+            const currentShow = occa.shows.find(
+              (s: OccaShowUnit) => s.date === selectedShow.date && s.time === selectedShow.time
+            );
+                          
+            if (currentShow) {
+              const ticketPrice = currentShow.prices.find(
+                (p: TicketType) => p.type === selectedTicket.type
+              );
+              
+              updateTickets(
+                {
+                  type: selectedTicket.type,
+                  price: selectedTicket.price,
+                  available: ticketPrice?.available ?? 0
+                },
+                selectedTicket.quantity
+              );
+            }
+          }
+        
+          // Move to ticket selection step
+          setStep(state.skipToStep || 2);
         }
 
         // Move to ticket selection step
@@ -105,7 +123,6 @@ const BookingPage = () => {
 
   // Handle missing data after loading
   if (!occaData) {
-    
     return <NotFoundPage />;
   }
 
@@ -154,9 +171,10 @@ const BookingPage = () => {
             <Card className="p-4 md:p-6 mb-6 lg:mb-0">
               {step === 1 && occaData && (
                 <div>
-                  <h2 className="text-xl font-semibold mb-4 text-foreground">
-                    Chọn ngày và giờ diễn
-                  </h2>
+                    <h2 className="text-xl font-semibold mb-4 text-foreground flex gap-2 items-center">
+                      Chọn ngày và giờ diễn
+                      <CalendarNormal />
+                    </h2>
                   <ShowSelection
                     shows={occaData.shows}
                     onSelectShow={selectShow}
@@ -217,7 +235,7 @@ const BookingPage = () => {
               {step === 4 && (
                 <div>
                   {isPaymentSuccess ? (
-                    <PaymentSuccess id={occaData!.id}/>
+                    <PaymentSuccess />
                   ) : (
                     <>
                       <h2 className="text-xl font-semibold mb-4 text-foreground">

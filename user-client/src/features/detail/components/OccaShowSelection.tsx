@@ -95,9 +95,9 @@ export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectio
                       >
                         <div>
                           <h3 className="font-semibold text-primary">{ticket.type}</h3>
-                          <p className="text-muted-foreground">
-                            {ticket.price.toLocaleString('vi-VN')}đ
-                          </p>
+                            <p className="text-muted-foreground">
+                            {ticket.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                            </p>
                           <p className="text-sm text-muted-foreground">
                             Còn {ticket.available} vé
                           </p>

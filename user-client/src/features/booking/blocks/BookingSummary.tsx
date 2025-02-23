@@ -76,12 +76,12 @@ export const BookingSummary = ({bookingState, occaInfo, step, occaId}: BookingSu
   // Hiển thị summary bình thường cho các step khác
   return (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="p-4 md">
         {countdown}
         <div className="space-y-4">
           {/* Thông tin Occa */}
           <div className="space-y-2">
-            <h3 className="font-semibold text-base text-foreground">
+            <h3 className="font-bold text-xl text-foreground">
               {occaInfo.title}
             </h3>
             <div className="flex items-start gap-2">
@@ -92,7 +92,7 @@ export const BookingSummary = ({bookingState, occaInfo, step, occaId}: BookingSu
               <div className="text-muted-foreground min-w-[80px]">Địa điểm:</div>
               <div>{occaInfo.location}</div>
             </div>
-            <div className="text-sm flex items-start gap-2">
+            <div className="flex items-start gap-2">
               <div className="text-muted-foreground min-w-[80px]">Địa chỉ:</div>
               <div className="text-pretty">{occaInfo.address}</div>
             </div>
@@ -139,7 +139,7 @@ export const BookingSummary = ({bookingState, occaInfo, step, occaId}: BookingSu
                 {/* Tổng tiền */}
                 <div className="flex items-center justify-between font-medium">
                   <span className="text-muted-foreground">Tổng tiền:</span>
-                  <span className="text-primary">
+                  <span className="text-primary text-xl">
                     {bookingState.totalAmount.toLocaleString('vi-VN', {
                       style: 'currency',
                       currency: 'VND'

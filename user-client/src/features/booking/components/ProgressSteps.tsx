@@ -91,6 +91,8 @@ export const ProgressSteps = ({
                           whitespace-nowrap
                           text-sm text-center
                           transition-colors duration-300
+                          hidden
+                          sm:block
                           ${isActive ? 'text-primary font-medium' : ''}
                           ${isPassed ? 'text-primary' : 'text-muted-foreground'}
                           ${isClickable && !isActive ? 'group-hover:text-primary' : ''}

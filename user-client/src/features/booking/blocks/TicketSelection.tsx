@@ -34,10 +34,11 @@ export const TicketSelection = ({tickets, onUpdateTickets, selectedTickets}: Tic
         {tickets.map((ticket) => (
           <Card key={ticket.type}>
             <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex sm:items-center justify-between gap-4">
                 <div>
                   <p className="font-semibold">{ticket.type}</p>
-                  <p className="text-sm text-gray-500">{ticket.price}</p>
+                    <p className="text-sm text-gray-500">{ticket.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</p>
+
                   <p className="text-xs text-gray-400">
                     Còn {ticket.available} vé
                   </p>

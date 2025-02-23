@@ -1,47 +1,30 @@
 package com.ticket.servermono.ticketcontext.infrastructure.config;
 
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
-import java.util.ArrayList;
-import java.util.List;
+import org.springframework.stereotype.Component;
 
-import com.ticket.servermono.ticketcontext.entities.Show;
-import com.ticket.servermono.ticketcontext.entities.Ticket;
-import com.ticket.servermono.ticketcontext.entities.TicketClass;
-import com.ticket.servermono.ticketcontext.infrastructure.repositories.ShowRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketRepository;
+import com.ticket.servermono.ticketcontext.usecases.TicketServices;
 
-@Configuration
+import lombok.RequiredArgsConstructor;
+
+@Component
+@RequiredArgsConstructor
 public class TicketDataInitializer {
-    @Bean
-    @Order(4) // Execute after Show and TicketClass initialization
-    CommandLineRunner initTicketData(
-            ShowRepository showRepository,
-            TicketClassRepository ticketClassRepository,
-            TicketRepository ticketRepository) {
-        return args -> {
-            if (ticketRepository.count() == 0) {
+    private final TicketRepository ticketRepository;
+    private final TicketServices ticketServices;
+    private final TicketClassRepository ticketClassRepository;
 
-                List<Show> shows = showRepository.findAll();
-                List<TicketClass> ticketClasses = ticketClassRepository.findAll();
-                List<Ticket> tickets = new ArrayList<>();
-
-                for (Show show : shows) {
-                    for (TicketClass ticketClass : ticketClasses) {
-                        // Create 10 tickets for each show and class combination
-                        for (int i = 0; i < 10; i++) {
-                            tickets.add(Ticket.builder()
-                                    .show(show)
-                                    .ticketClass(ticketClass)
-                                    .build());
-                        }
-                    }
+    public void initializeTickets() {
+        // Check if there are no tickets, then initialize random 2-4 tickets each ticket class through function sellTicket in TicketService
+        if (ticketRepository.count() == 0) {
+            ticketClassRepository.findAll().forEach(ticketClass -> {
+                int ticketCount = (int) (Math.random() * (4 - 2 + 1)) + 2;
+                for (int i = 0; i < ticketCount; i++) {
+                    ticketServices.sellTicket(ticketClass.getId());
                 }
-                ticketRepository.saveAll(tickets);
-            }
-        };
+            });
+        }
+        
     }
 }

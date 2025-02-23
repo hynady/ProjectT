@@ -1,10 +1,10 @@
 // components/Payment.tsx
 import { Card, CardContent, CardHeader } from '@/commons/components/card.tsx';
 import { Button } from '@/commons/components/button.tsx';
-import {ShowTime} from "@/features/booking/blocks/ShowSelection.tsx";
 import {format} from "date-fns";
 import {vi} from "date-fns/locale";
 import {Separator} from "@/commons/components/separator.tsx";
+import { ShowTime } from '@/features/booking/internal-types/booking.type';
 
 export interface BookingState {
   selectedShow: ShowTime | null;

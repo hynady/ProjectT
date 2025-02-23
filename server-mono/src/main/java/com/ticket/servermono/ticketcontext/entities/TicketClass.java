@@ -24,6 +24,13 @@ public class TicketClass extends BaseSQLEntity {
     @Column(name = "price", nullable = false)
     private Double price;
 
+    @Column(name = "capacity", nullable = false)
+    private Integer capacity;
+
+    @ManyToOne
+    @JoinColumn(name = "show_id")
+    private Show show;
+
     @OneToMany(mappedBy = "ticketClass", cascade = CascadeType.ALL)
     private List<Ticket> tickets;
 }

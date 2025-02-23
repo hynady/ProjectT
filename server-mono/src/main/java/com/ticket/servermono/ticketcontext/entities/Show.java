@@ -30,14 +30,7 @@ public class Show extends BaseSQLEntity {
     @Column(name = "time", nullable = false)
     private String time;
 
-    /**
-     * The total number of seats available for this show.
-     * This field represents the maximum capacity of attendees that can be accommodated.
-     * Must not be null.
-     */
-    @Column(name = "total_seats", nullable = false)
-    private Integer numberOfSeats;
-
-    @OneToMany(mappedBy = "show", cascade = CascadeType.ALL)
-    private List<Ticket> tickets;
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "show_id")
+    private List<TicketClass> ticketClasses;
 }

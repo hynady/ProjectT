@@ -1,7 +1,5 @@
 package com.ticket.servermono.ticketcontext.entities;
 
-import java.util.UUID;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,10 +15,6 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class Ticket extends BaseSQLEntity {
-
-    @ManyToOne
-    @JoinColumn(name = "show_id", nullable = false)
-    private Show show;
 
     @ManyToOne
     @JoinColumn(name = "ticket_class_id", nullable = false)
