@@ -12,20 +12,29 @@ export const bookingMockData = {
                 date: '2025-01-20',
                 time: '19:00',
                 prices: [
-                    { type: 'Hạng VIP', price: '2,000,000₫', available: 50 },
-                    { type: 'Hạng Thường', price: '1,000,000₫', available: 100 },
-                    { type: 'Hạng Phổ thông', price: '500,000₫', available: 200 },
+                  { type: 'Hạng VIP', price: 2000000, available: 50 },
+                  { type: 'Hạng Thường', price: 1000000, available: 100 },
+                  { type: 'Hạng Phổ thông', price: 500000, available: 200 },
                 ],
-            },
-            {
+              },
+              {
                 date: '2025-01-20',
                 time: '21:00',
                 prices: [
-                    { type: 'Hạng VIP', price: '2,000,000₫', available: 50 },
-                    { type: 'Hạng Thường', price: '1,000,000₫', available: 100 },
-                    { type: 'Hạng Phổ thông', price: '500,000₫', available: 200 },
+                  { type: 'Hạng VIP', price: 2000000, available: 50 },
+                  { type: 'Hạng Thường', price: 1000000, available: 100 },
+                  { type: 'Hạng Phổ thông', price: 500000, available: 200 },
                 ],
-            }
+              },
+              {
+                date: '2025-01-21',
+                time: '19:00',
+                prices: [
+                  { type: 'Hạng VIP', price: 2000000, available: 50 },
+                  { type: 'Hạng Thường', price: 1000000, available: 100 },
+                  { type: 'Hạng Phổ thông', price: 500000, available: 200 },
+                ],
+              },
         ]
     } as OccaBookingInfo
 };

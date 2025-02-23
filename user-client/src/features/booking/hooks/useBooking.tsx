@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { BookingState } from '../blocks/Confirmation.tsx';
 import {ShowTime} from "@/features/booking/blocks/ShowSelection.tsx";
-import {TicketType} from "@/features/booking/blocks/TicketSelection.tsx";
+import { TicketType } from '@/features/booking/internal-types/booking.type.ts';
 
 const useBooking = () => {
   const [bookingState, setBookingState] = useState<BookingState>({
@@ -45,7 +45,7 @@ const useBooking = () => {
       }
 
       const totalAmount = newTickets.reduce(
-        (sum, ticket) => sum + Number(ticket.price.replace(/[^0-9.-]+/g, '')) * ticket.quantity,
+        (sum, ticket) => sum + ticket.price * ticket.quantity,
         0
       );
 

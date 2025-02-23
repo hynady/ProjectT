@@ -35,3 +35,24 @@ export interface OverviewData {
 export interface GalleryUnit {
   image: string;
 }
+
+
+export interface BookingInfo {
+  occa: {
+    id: string;
+    title: string; 
+    location: string;
+    address: string;
+    duration: string;
+    shows: OccaShowUnit[];
+  };
+  selectedShow?: {
+    date: string;
+    time: string; 
+  };
+  selectedTicket?: {
+    type: string;
+    price: number;
+    quantity: number;
+  };
+}

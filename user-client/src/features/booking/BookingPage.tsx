@@ -18,12 +18,51 @@ import NotFoundPage from '@/commons/blocks/NotFoundPage.tsx';
 
 const BookingPage = () => {
   const {id} = useParams<{ id: string }>();
-  const {data: occaData, loading, error} = useBookingData(id || '');
+  const { state } = useLocation();
   const [step, setStep] = useState(1);
+  const [shouldFetchData, setShouldFetchData] = useState(!state?.selectedInfo);
+  
+  // Only fetch data if no selectedInfo from detail page
+  const {data: occaData, loading, error, setData: setOccaData} = useBookingData(id || '', shouldFetchData);
   const {bookingState, selectShow, updateTickets} = useBooking();
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
-  const { state } = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (state?.selectedInfo) {
+      const { occa, selectedShow, selectedTicket } = state.selectedInfo;
+      
+      // Set occa data from detail page
+      setOccaData(occa);
+
+      // Set selected show if exists
+      if (selectedShow) {
+        selectShow({
+          date: selectedShow.date,
+          time: selectedShow.time
+        });
+
+        // Set selected ticket if exists
+        if (selectedTicket) {
+          const currentShow = occa.shows.find(
+            s => s.date === selectedShow.date && s.time === selectedShow.time
+          );
+          
+          updateTickets(
+            {
+              type: selectedTicket.type,
+              price: selectedTicket.price,
+              available: currentShow?.prices.find(p => p.type === selectedTicket.type)?.available || 0
+            },
+            selectedTicket.quantity
+          );
+        }
+
+        // Move to ticket selection step
+        setStep(state.skipToStep || 2);
+      }
+    }
+  }, [state, setOccaData]);
 
   const steps = [
     {title: 'Chọn suất diễn', completed: !!bookingState.selectedShow},
@@ -31,28 +70,6 @@ const BookingPage = () => {
     {title: 'Kiểm tra', completed: false},
     {title: 'Thanh toán', completed: false}
   ];
-
-  useEffect(() => {
-    if (state?.skipToStep && state?.selectedInfo) {
-      const { show, ticket } = state.selectedInfo;
-
-      // Set selected show
-      selectShow(show);
-
-      // Set selected ticket
-      updateTickets(
-        {
-          type: ticket.type,
-          price: ticket.price,
-          available: getCurrentShow()?.prices.find(p => p.type === ticket.type)?.available || 0
-        },
-        ticket.quantity
-      );
-
-      // Chuyển đến bước 2
-      setStep(2);
-    }
-  }, [state, occaData]);
 
   const handleStepClick = (index: number) => {
     // Chỉ cho phép chuyển đến các bước đã hoàn thành hoặc bước tiếp theo

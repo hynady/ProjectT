@@ -3,12 +3,15 @@ package com.ticket.servermono.ticketcontext.infrastructure.config;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+
 import java.util.Arrays;
 
 import com.ticket.servermono.ticketcontext.entities.TicketClass;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
 
 @Configuration
+@Order(3)
 public class TicketClassDataInitializer {
     @Bean
     CommandLineRunner initTicketClassData(TicketClassRepository repository) {

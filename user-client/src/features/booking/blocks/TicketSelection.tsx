@@ -3,12 +3,7 @@ import {Card, CardContent} from '@/commons/components/card.tsx';
 import {Button} from '@/commons/components/button.tsx';
 import {Input} from '@/commons/components/input.tsx';
 import { ScrollToTop } from '@/commons/blocks/ScrollToTop.tsx';
-
-export interface TicketType {
-  type: string;
-  price: string;
-  available: number;
-}
+import { TicketType } from '@/features/booking/internal-types/booking.type';
 
 interface TicketSelectionProps {
   tickets: TicketType[];
@@ -16,7 +11,7 @@ interface TicketSelectionProps {
   selectedTickets: {
     type: string;
     quantity: number;
-    price: string;
+    price: number;
   }[];
 }
 

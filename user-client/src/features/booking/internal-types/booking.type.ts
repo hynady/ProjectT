@@ -5,7 +5,7 @@ export interface ShowTime {
 
 export interface TicketType {
     type: string;
-    price: string;
+    price: number;
     available: number;
 }
 
@@ -29,7 +29,7 @@ export interface BookingState {
     selectedTickets: {
         type: string;
         quantity: number;
-        price: string;
+        price: number;
     }[];
     totalAmount: number;
 }

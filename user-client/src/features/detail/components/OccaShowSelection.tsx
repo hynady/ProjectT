@@ -11,46 +11,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/commons/components/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/commons/components/dialog";
 import {useNavigate, useLocation} from 'react-router-dom';
 import { useAuth } from "@/features/auth/contexts";
 import { useState } from "react";
-
-export interface OccaShowUnit {
-  date: string;
-  time: string;
-  prices: {
-    type: string;
-    price: number;
-    available: number;
-  }[];
-}
+import { BookingInfo, OccaShowUnit } from '@/features/detail/internal-types/detail.type';
 
 interface OccaShowSelectionProps {
   shows: OccaShowUnit[];
   organizer: string;
+  occaInfo: BookingInfo['occa'];
 }
 
-export const OccaShowSelection = ({shows, organizer}: OccaShowSelectionProps) => {
+
+export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectionProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAuth();
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{
-    show?: OccaShowUnit;
-    ticket?: {
-      type: string;
-      price: number;
-      available: number;
-    };
-  }>({});
 
   const handleNavigateToLogin = () => {
     navigate('/login', { 
@@ -66,25 +43,30 @@ export const OccaShowSelection = ({shows, organizer}: OccaShowSelectionProps) =>
     available: number;
   }) => {
     if (!isAuthenticated) {
-      setPendingAction({ show, ticket: selectedTicket });
       setShowLoginDialog(true);
       return;
     }
-
-    // Lưu thông tin show và vé đã chọn
-    const selectedInfo = {
-      show: {
+  
+    const selectedInfo: BookingInfo = {
+      occa: {
+        id: occaInfo.id,
+        title: occaInfo.title,
+        location: occaInfo.location, 
+        address: occaInfo.address,
+        duration: occaInfo.duration,
+        shows: shows
+      },
+      selectedShow: {
         date: show.date,
         time: show.time
       },
-      ticket: {
+      selectedTicket: {
         type: selectedTicket.type,
-        price: selectedTicket.price.toString(),
-        quantity: 1 // Mặc định chọn 1 vé
+        price: selectedTicket.price,
+        quantity: 1
       }
     };
-
-    // Chuyển đến trang booking với state
+  
     navigate('booking', {
       state: {
         skipToStep: 2,

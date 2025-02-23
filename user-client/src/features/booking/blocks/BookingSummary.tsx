@@ -126,7 +126,7 @@ export const BookingSummary = ({bookingState, occaInfo, step, occaId}: BookingSu
                           {ticket.type} x {ticket.quantity}
                         </span>
                         <span className="text-primary ml-4">
-                          {(Number(ticket.price.replace(/[^0-9.-]+/g, '')) * ticket.quantity)
+                          {(ticket.price * ticket.quantity)
                             .toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}
                         </span>
                       </div>

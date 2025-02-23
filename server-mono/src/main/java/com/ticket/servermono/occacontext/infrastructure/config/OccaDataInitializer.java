@@ -198,16 +198,18 @@ public class OccaDataInitializer {
 
                 // Create and save corresponding OccaDetailInfo for each Occa
                 savedOccas.forEach(occa -> {
-                        int day = (int) (Math.random() * 28 + 1);
-                        int hour = (int) (Math.random() * 6 + 17);
+                    for (int i = 0; i < (int) (Math.random() * 4 + 1); i++) {
+                        int day = (int) (Math.random() * 28 + 1); // Random day from 1-28
+                        int month = (int) (Math.random() * 12 + 1); // Random month from 1-12
+                        int hour = (int) (Math.random() * 6 + 17); // Random hour from 17-22
                         
                         occaServices.publishOccaShow(
-                            String.format("2024-03-%02d", day),
-                            String.format("%02d:00", hour),
-                            (int) (Math.random() * 1501 + 500),
-                            occa.getId().toString()
-                        );
-                        
+                                String.format("2024-%02d-%02d", month, day),
+                                String.format("%02d:00", hour),
+                                (int) (Math.random() * 1501 + 500),
+                                occa.getId().toString());
+                    }
+
                     OccaDetailInfo detailInfo = OccaDetailInfo.builder()
                             .bannerUrl(occa.getImage()) // Using image as banner for now
                             .description("Experience the magic of " + occa.getTitle())

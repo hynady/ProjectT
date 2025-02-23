@@ -11,7 +11,7 @@ export interface BookingState {
   selectedTickets: {
     type: string;
     quantity: number;
-    price: string;
+    price: number;
   }[];
   totalAmount: number;
 }
@@ -110,7 +110,7 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack 
               <div key={index} className="flex justify-between text-sm">
                 <span>{ticket.type} x{ticket.quantity}</span>
                 <span className="font-medium">
-                  {(Number(ticket.price.replace(/[^0-9.-]+/g, '')) * ticket.quantity)
+                  {(ticket.price * ticket.quantity)
                     .toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
                 </span>
               </div>

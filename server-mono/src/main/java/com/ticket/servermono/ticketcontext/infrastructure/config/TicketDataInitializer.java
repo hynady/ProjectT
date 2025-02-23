@@ -17,7 +17,7 @@ import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketRep
 @Configuration
 public class TicketDataInitializer {
     @Bean
-    @Order(3) // Execute after Show and TicketClass initialization
+    @Order(4) // Execute after Show and TicketClass initialization
     CommandLineRunner initTicketData(
             ShowRepository showRepository,
             TicketClassRepository ticketClassRepository,

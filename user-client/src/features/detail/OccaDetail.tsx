@@ -74,6 +74,16 @@ export default function OccaDetail() {
               <OccaShowSelection
                 shows={shows.data}
                 organizer={overview.data?.organizer || ''}
+                occaInfo={
+                  {
+                    id: id ?? '',
+                    title: hero.data?.title ?? '',
+                    location: location.data?.location ?? '',
+                    address: location.data?.address ?? '',
+                    duration: hero.data?.duration ?? '',
+                    shows: shows.data
+                  }
+                }
               />
             )}
           </div>

@@ -5,11 +5,7 @@ import {useNavigate} from 'react-router-dom';
 import Confetti from 'react-confetti';
 import { ScrollToTop } from '@/commons/blocks/ScrollToTop.tsx';
 
-interface PaymentSuccessProps {
-  id: string;
-}
-
-export const PaymentSuccess = ({id}: PaymentSuccessProps) => {
+export const PaymentSuccess = () => {
   const navigate = useNavigate();
 
   return (
@@ -31,12 +27,21 @@ export const PaymentSuccess = ({id}: PaymentSuccessProps) => {
           </p>
         </div>
 
-        <Button
-          className="w-full"
-          onClick={() => navigate(`/${id}`)}
-        >
-          Quay lại trang chủ nè!
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            className="flex-1"
+            onClick={() => navigate('/my-ticket')}
+          >
+            Xem vé của tôi
+          </Button>
+          <Button
+            className="flex-1"
+            variant="outline"
+            onClick={() => navigate('/')}
+          >
+            Quay lại trang chủ
+          </Button>
+        </div>
       </div>
     </ScrollToTop>
   );
