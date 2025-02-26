@@ -1,9 +1,11 @@
 export interface ShowTime {
+    id: string;
     date: string;
     time: string;
 }
 
 export interface TicketType {
+    id: string;
     type: string;
     price: number;
     available: number;
@@ -19,6 +21,7 @@ export interface OccaBookingInfo {
 }
 
 export interface OccaShowUnit {
+    id: string;
     date: string;
     time: string;
     prices: TicketType[];
@@ -27,9 +30,30 @@ export interface OccaShowUnit {
 export interface BookingState {
     selectedShow: ShowTime | null;
     selectedTickets: {
+        id: string;
         type: string;
         quantity: number;
         price: number;
     }[];
     totalAmount: number;
 }
+
+export interface OccaShortInfo {
+    title: string;
+    location: string;
+    duration: string;
+    address: string;
+}
+
+export interface BookingResponse {
+    status: string;
+}
+
+export interface BookingPayload {
+    showId: string;
+    tickets: {
+        type: string;
+        quantity: number;
+    }[];
+}
+  

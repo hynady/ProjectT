@@ -4,24 +4,8 @@ import { Button } from '@/commons/components/button.tsx';
 import {format} from "date-fns";
 import {vi} from "date-fns/locale";
 import {Separator} from "@/commons/components/separator.tsx";
-import { ShowTime } from '@/features/booking/internal-types/booking.type';
+import { BookingState, OccaShortInfo } from '@/features/booking/internal-types/booking.type';
 
-export interface BookingState {
-  selectedShow: ShowTime | null;
-  selectedTickets: {
-    type: string;
-    quantity: number;
-    price: number;
-  }[];
-  totalAmount: number;
-}
-
-export interface OccaShortInfo {
-  title: string;
-  location: string;
-  duration: string;
-  address: string;
-}
 
 interface ConfirmationProps {
   bookingState: BookingState;

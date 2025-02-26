@@ -7,9 +7,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Entity
 @Table(name = "end_user",
-        indexes = {
-                @Index(name = "idx_end_user_email", columnList = "email")
-        }
+    indexes = {
+            @Index(name = "idx_end_user_email", columnList = "email")
+    }
 )
 @Data
 @SuperBuilder

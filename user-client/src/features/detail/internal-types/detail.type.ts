@@ -11,9 +11,11 @@ export interface OccaHeroSectionUnit {
 
 // Define the type for Show Unit
 export interface OccaShowUnit {
+  id: string;
   date: string;
   time: string;
   prices: {
+    id: string;
     type: string;
     price: number;
     available: number;
@@ -47,10 +49,12 @@ export interface BookingInfo {
     shows: OccaShowUnit[];
   };
   selectedShow?: {
+    id: string;
     date: string;
     time: string; 
   };
   selectedTicket?: {
+    id: string;
     type: string;
     price: number;
     quantity: number;

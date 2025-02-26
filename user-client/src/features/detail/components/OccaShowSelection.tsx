@@ -38,6 +38,7 @@ export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectio
   };
 
   const handleShowSelect = (show: OccaShowUnit, selectedTicket: {
+    id: string;
     type: string;
     price: number;
     available: number;
@@ -57,10 +58,12 @@ export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectio
         shows: shows
       },
       selectedShow: {
+        id: show.id,
         date: show.date,
         time: show.time
       },
       selectedTicket: {
+        id: selectedTicket.id,
         type: selectedTicket.type,
         price: selectedTicket.price,
         quantity: 1

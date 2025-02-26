@@ -4,10 +4,10 @@ import {Card, CardContent} from '@/commons/components/card.tsx';
 import {Separator} from '@/commons/components/separator.tsx';
 import {Alert, AlertDescription} from "@/commons/components/alert.tsx"
 import {InfoIcon} from "lucide-react"
-import {BookingState, OccaShortInfo} from "@/features/booking/blocks/Confirmation.tsx";
 import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {Timer} from "lucide-react";
+import { BookingState, OccaShortInfo } from '@/features/booking/internal-types/booking.type';
 
 interface BookingSummaryProps {
   occaId: string;

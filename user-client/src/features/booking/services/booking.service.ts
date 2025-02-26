@@ -1,5 +1,5 @@
 import { BaseService } from "@/commons/base.service";
-import { OccaBookingInfo, OccaShowUnit } from "../internal-types/booking.type";
+import { OccaBookingInfo, OccaShowUnit, BookingResponse, BookingPayload } from "../internal-types/booking.type";
 import { bookingMockData } from "./booking.mock";
 
 class BookingService extends BaseService {
@@ -46,13 +46,13 @@ class BookingService extends BaseService {
         return response;
     }
 
-    async createBooking(bookingData: any): Promise<{ bookingId: string }> {
+    async createBooking(payload: BookingPayload): Promise<BookingResponse> {
         return this.request({
             method: 'POST',
             url: '/booking',
-            data: bookingData,
+            data: payload,
             mockResponse: () => new Promise((resolve) => {
-                setTimeout(() => resolve({ bookingId: crypto.randomUUID() }), 1000);
+                setTimeout(() => resolve({ status: "success" }), 1000);
             })
         });
     }

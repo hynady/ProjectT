@@ -3,24 +3,27 @@ import {Card, CardContent} from '@/commons/components/card.tsx';
 import {RadioGroup, RadioGroupItem} from '@/commons/components/radio-group.tsx';
 import {Label} from '@/commons/components/label.tsx';
 import {Button} from '@/commons/components/button.tsx';
-import {CreditCard, Wallet, QrCode} from 'lucide-react';
+import {QrCode} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 import {ScrollToTop} from "@/commons/blocks/ScrollToTop.tsx";
 import {ConfirmCancelDialog} from "@/features/booking/components/ConfirmCancelDialog.tsx";
+import {useBookingPayment} from "../hooks/useBookingPayment";
+import { toast } from '@/commons/hooks/use-toast';
+import { BookingState } from '@/features/booking/internal-types/booking.type';
 
 const paymentMethods = [
-  {
-    id: 'credit_card',
-    title: 'Thẻ tín dụng/ghi nợ',
-    description: 'Thanh toán bằng Visa, Mastercard, JCB',
-    icon: <CreditCard className="h-5 w-5"/>
-  },
-  {
-    id: 'e_wallet',
-    title: 'Ví điện tử',
-    description: 'Momo, ZaloPay, VNPay',
-    icon: <Wallet className="h-5 w-5"/>
-  },
+  // {
+  //   id: 'credit_card',
+  //   title: 'Thẻ tín dụng/ghi nợ',
+  //   description: 'Thanh toán bằng Visa, Mastercard, JCB',
+  //   icon: <CreditCard className="h-5 w-5"/>
+  // },
+  // {
+  //   id: 'e_wallet',
+  //   title: 'Ví điện tử',
+  //   description: 'Momo',
+  //   icon: <Wallet className="h-5 w-5"/>
+  // },
   {
     id: 'qr_code',
     title: 'Quét mã QR',
@@ -30,25 +33,54 @@ const paymentMethods = [
 ];
 
 interface PaymentMethodsProps {
-  onPaymentComplete: () => void;
   occaId: string;
+  showId: string;
+  tickets: BookingState['selectedTickets'];
   onBack: () => void;
+  onPaymentSuccess: () => void;
 }
 
-export const PaymentMethods = ({onPaymentComplete, occaId, onBack}: PaymentMethodsProps) => {
+export const PaymentMethods = ({
+  occaId,
+  showId,
+  tickets,
+  onBack,
+  onPaymentSuccess
+}: PaymentMethodsProps) => {
   const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState<string>('');
-  const [isProcessing, setIsProcessing] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  const { isProcessing, error, processPayment } = useBookingPayment({
+    bookingData: {
+      showId: showId,
+      tickets: tickets
+    },
+    onSuccess: () => {
+      toast({
+        title: "Thanh toán thành công",
+        description: "Vé của bạn đã được đặt thành công",
+        variant: "success",
+      });
+      onPaymentSuccess();
+    },
+    onError: (error) => {
+      toast({
+        title: "Thanh toán thất bại",
+        description: error.message || "Vui lòng thử lại sau",
+        variant: "destructive",
+      });
+    }
+  });
 
   const handlePayment = async () => {
     if (!selectedMethod) return;
-
-    setIsProcessing(true);
-    // Giả lập quá trình thanh toán
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsProcessing(false);
-    onPaymentComplete();
+    try {
+      await processPayment();
+    } catch (error) {
+      // Error is already handled in the hook
+      console.error("Payment processing error:", error);
+    }
   };
 
   const handleCancelClick = () => {
@@ -93,6 +125,12 @@ export const PaymentMethods = ({onPaymentComplete, occaId, onBack}: PaymentMetho
             </Card>
           ))}
         </RadioGroup>
+
+        {error && (
+          <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">
+            {error.message || "Đã xảy ra lỗi khi thanh toán. Vui lòng thử lại."}
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-4">
           <Button

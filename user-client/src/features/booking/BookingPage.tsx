@@ -1,79 +1,78 @@
-import {useEffect, useState} from 'react';
-import {useLocation, useNavigate, useParams} from 'react-router-dom';
-import {Card} from '@/commons/components/card.tsx';
-import {Button} from '@/commons/components/button.tsx';
-import {ShowSelection} from './blocks/ShowSelection.tsx';
-import {TicketSelection} from './blocks/TicketSelection.tsx';
-import {Confirmation} from './blocks/Confirmation.tsx';
-import useBooking from './hooks/useBooking.tsx';
-import {BookingSummary} from "@/features/booking/blocks/BookingSummary.tsx";
-import {PaymentSuccess} from "@/features/booking/blocks/PaymentSuccess.tsx";
-import {PaymentMethods} from "@/features/booking/blocks/PaymentMethods.tsx";
-import {BookingSkeleton} from "@/features/booking/skeletons/BookingSkeleton.tsx";
-import {ProgressSteps} from "@/features/booking/components/ProgressSteps.tsx";
-import {ScrollToTop} from "@/commons/blocks/ScrollToTop.tsx";
-import {ArrowLeft} from "lucide-react";
-import { useBookingData } from '@/features/booking/hooks/useBookingData.tsx';
-import NotFoundPage from '@/commons/blocks/NotFoundPage.tsx';
-import { CalendarNormal } from '@/features/booking/components/Calender.tsx';
-import { OccaShowUnit, TicketType } from '@/features/booking/internal-types/booking.type.ts';
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Card } from "@/commons/components/card.tsx";
+import { Button } from "@/commons/components/button.tsx";
+import { ShowSelection } from "./blocks/ShowSelection.tsx";
+import { TicketSelection } from "./blocks/TicketSelection.tsx";
+import { Confirmation } from "./blocks/Confirmation.tsx";
+import useBooking from "./hooks/useBooking.tsx";
+import { BookingSummary } from "@/features/booking/blocks/BookingSummary.tsx";
+import { PaymentSuccess } from "@/features/booking/blocks/PaymentSuccess.tsx";
+import { PaymentMethods } from "@/features/booking/blocks/PaymentMethods.tsx";
+import { BookingSkeleton } from "@/features/booking/skeletons/BookingSkeleton.tsx";
+import { ProgressSteps } from "@/features/booking/components/ProgressSteps.tsx";
+import { ScrollToTop } from "@/commons/blocks/ScrollToTop.tsx";
+import { ArrowLeft } from "lucide-react";
+import { useBookingData } from "@/features/booking/hooks/useBookingData.tsx";
+import NotFoundPage from "@/commons/blocks/NotFoundPage.tsx";
+import { CalendarNormal } from "@/features/booking/components/Calender.tsx";
+import {
+  OccaShowUnit,
+  TicketType,
+} from "@/features/booking/internal-types/booking.type.ts";
 
 const BookingPage = () => {
-  const {id} = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const { state } = useLocation();
   const [step, setStep] = useState(1);
   const [shouldFetchData] = useState(!state?.selectedInfo);
   // Only fetch data if no selectedInfo from detail page
-  const {data: occaData, loading, setData: setOccaData} = useBookingData(id || '', shouldFetchData);
-  const {bookingState, selectShow, updateTickets} = useBooking();
+  const {
+    data: occaData,
+    loading,
+    setData: setOccaData,
+  } = useBookingData(id || "", shouldFetchData);
+  const { bookingState, selectShow, updateTickets } = useBooking();
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (state?.selectedInfo) {
       const { occa, selectedShow, selectedTicket } = state.selectedInfo;
-      
+
       // Set occa data from detail page
       setOccaData(occa);
 
-      // Set selected show if exists
+      // Set selected ticket if exists
       if (selectedShow) {
         selectShow({
+          id: selectedShow.id,
           date: selectedShow.date,
-          time: selectedShow.time
+          time: selectedShow.time,
         });
 
         // Set selected ticket if exists
-        if (selectedShow) {
-          selectShow({
-            date: selectedShow.date,
-            time: selectedShow.time
-          });
-        
-          // Set selected ticket if exists
-          if (selectedTicket) {
-            const currentShow = occa.shows.find(
-              (s: OccaShowUnit) => s.date === selectedShow.date && s.time === selectedShow.time
+        if (selectedTicket) {
+          const currentShow = occa.shows.find(
+            (s: OccaShowUnit) =>
+              s.date === selectedShow.date && s.time === selectedShow.time
+          );
+
+          if (currentShow) {
+            const ticketPrice = currentShow.prices.find(
+              (p: TicketType) => p.type === selectedTicket.type
             );
-                          
-            if (currentShow) {
-              const ticketPrice = currentShow.prices.find(
-                (p: TicketType) => p.type === selectedTicket.type
-              );
-              
-              updateTickets(
-                {
-                  type: selectedTicket.type,
-                  price: selectedTicket.price,
-                  available: ticketPrice?.available ?? 0
-                },
-                selectedTicket.quantity
-              );
-            }
+
+            updateTickets(
+              {
+                id: selectedTicket.id,
+                type: selectedTicket.type,
+                price: selectedTicket.price,
+                available: ticketPrice?.available ?? 0,
+              },
+              selectedTicket.quantity
+            );
           }
-        
-          // Move to ticket selection step
-          setStep(state.skipToStep || 2);
         }
 
         // Move to ticket selection step
@@ -83,10 +82,10 @@ const BookingPage = () => {
   }, [state, setOccaData]);
 
   const steps = [
-    {title: 'Chọn suất diễn', completed: !!bookingState.selectedShow},
-    {title: 'Chọn vé', completed: bookingState.selectedTickets.length > 0},
-    {title: 'Kiểm tra', completed: false},
-    {title: 'Thanh toán', completed: false}
+    { title: "Chọn suất diễn", completed: !!bookingState.selectedShow },
+    { title: "Chọn vé", completed: bookingState.selectedTickets.length > 0 },
+    { title: "Kiểm tra", completed: false },
+    { title: "Thanh toán", completed: false },
   ];
 
   const handleStepClick = (index: number) => {
@@ -97,7 +96,7 @@ const BookingPage = () => {
   };
 
   const handleBack = () => {
-    setStep(prev => prev - 1);
+    setStep((prev) => prev - 1);
   };
 
   const handleConfirmPayment = () => {
@@ -107,7 +106,7 @@ const BookingPage = () => {
   const getCurrentShow = () => {
     if (!bookingState.selectedShow) return null;
     return occaData?.shows.find(
-      show =>
+      (show) =>
         show.date === bookingState.selectedShow?.date &&
         show.time === bookingState.selectedShow?.time
     );
@@ -116,7 +115,7 @@ const BookingPage = () => {
   if (loading) {
     return (
       <div className="container mx-auto py-16 px-4 md:px-8">
-        <BookingSkeleton/>
+        <BookingSkeleton />
       </div>
     );
   }
@@ -171,10 +170,10 @@ const BookingPage = () => {
             <Card className="p-4 md:p-6 mb-6 lg:mb-0">
               {step === 1 && occaData && (
                 <div>
-                    <h2 className="text-xl font-semibold mb-4 text-foreground flex gap-2 items-center">
-                      Chọn ngày và giờ diễn
-                      <CalendarNormal />
-                    </h2>
+                  <h2 className="text-xl font-semibold mb-4 text-foreground flex gap-2 items-center">
+                    Chọn ngày và giờ diễn
+                    <CalendarNormal />
+                  </h2>
                   <ShowSelection
                     shows={occaData.shows}
                     onSelectShow={selectShow}
@@ -202,10 +201,7 @@ const BookingPage = () => {
                     selectedTickets={bookingState.selectedTickets}
                   />
                   <div className="flex gap-4 justify-end mt-6">
-                    <Button
-                      variant="outline"
-                      onClick={handleBack}
-                    >
+                    <Button variant="outline" onClick={handleBack}>
                       Quay lại
                     </Button>
                     <Button
@@ -242,9 +238,11 @@ const BookingPage = () => {
                         Chọn phương thức thanh toán
                       </h2>
                       <PaymentMethods
-                        onPaymentComplete={() => setIsPaymentSuccess(true)}
-                        onBack={handleBack}
                         occaId={occaData!.id}
+                        showId={bookingState.selectedShow!.id}
+                        tickets={bookingState.selectedTickets}
+                        onBack={handleBack}
+                        onPaymentSuccess={() => setIsPaymentSuccess(true)}
                       />
                     </>
                   )}

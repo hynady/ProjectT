@@ -1,7 +1,6 @@
 // hooks/useBooking.ts
 import { useState, useCallback } from 'react';
-import { BookingState } from '../blocks/Confirmation.tsx';
-import { ShowTime, TicketType } from '@/features/booking/internal-types/booking.type.ts';
+import { BookingState, ShowTime, TicketType } from '@/features/booking/internal-types/booking.type.ts';
 
 const useBooking = () => {
   const [bookingState, setBookingState] = useState<BookingState>({
@@ -31,12 +30,14 @@ const useBooking = () => {
         newTickets = newTickets.filter(t => t.type !== ticketType.type);
       } else if (existingTicketIndex >= 0) {
         newTickets[existingTicketIndex] = {
+          id: ticketType.id,
           type: ticketType.type,
           quantity,
           price: ticketType.price,
         };
       } else {
         newTickets.push({
+          id: ticketType.id,
           type: ticketType.type,
           quantity,
           price: ticketType.price,

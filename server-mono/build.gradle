@@ -75,6 +75,8 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
     testImplementation 'org.springframework.modulith:spring-modulith-starter-test'
+    testImplementation 'org.slf4j:slf4j-api:2.0.12'
+
 }
 
 dependencyManagement {

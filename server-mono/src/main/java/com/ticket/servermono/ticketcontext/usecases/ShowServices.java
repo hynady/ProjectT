@@ -32,6 +32,7 @@ public class ShowServices {
                 .map(show -> {
                     OccaShowDataResponse response = new OccaShowDataResponse();
                     // Direct mapping since Show entity stores date and time as strings
+                    response.setId(show.getId());
                     response.setDate(show.getDate());
                     response.setTime(show.getTime());
 
@@ -51,6 +52,7 @@ public class ShowServices {
         return show.getTicketClasses().stream()
                 .map(ticketClass -> {
                     PriceInfo priceInfo = new PriceInfo();
+                    priceInfo.setId(ticketClass.getId());
                     priceInfo.setType(ticketClass.getName());
                     priceInfo.setPrice(ticketClass.getPrice());
                     
