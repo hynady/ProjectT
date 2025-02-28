@@ -110,7 +110,7 @@ export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectio
                             onClick={() => handleShowSelect(show, ticket)}
                             disabled={ticket.available < 1}
                           >
-                            Chọn
+                            {ticket.available < 1 ? "Bán hết" : "Chọn"}
                           </Button>
                       </Card>
                     ))}
@@ -125,8 +125,9 @@ export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectio
               className="w-full mt-6"
               size="lg"
               onClick={() => navigate("booking")}
+              disabled={shows.every(show => show.prices.every(ticket => ticket.available < 1))}
             >
-              Đặt vé ngay
+              {shows.every(show => show.prices.every(ticket => ticket.available < 1)) ? "Hết rồi, hẹn bạn lần sau :(" : "Đặt vé ngay"}
             </Button>
           ) : (
             <Button

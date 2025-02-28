@@ -15,12 +15,13 @@ interface ProgressStepsProps {
   steps: Step[];
   currentStep: number;
   onStepClick: (step: number) => void;
+  
 }
 
 export const ProgressSteps = ({
                                 steps,
                                 currentStep,
-                                onStepClick
+                                onStepClick,
                               }: ProgressStepsProps) => {
   const calculateProgress = () => {
     if (currentStep === 1) return 0;
@@ -28,7 +29,7 @@ export const ProgressSteps = ({
   };
 
   return (
-    <div className="relative">
+    <div className={`relative`}>
       {/* Progress Bar */}
       <Progress value={calculateProgress()} className="h-4" />
 

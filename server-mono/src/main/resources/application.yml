@@ -42,9 +42,19 @@ app:
     sender-name: ${MAIL_SENDER_NAME}
 
 grpc:
+  # Cổng mặc định cho gRPC server
+  server:
+    port: 9090
+  
+  # Cấu hình cho client
   client:
     occa-service:
       address: static://${GRPC_OCCA_HOST:localhost}:${GRPC_OCCA_PORT:9090}
+      negotiationType: plaintext
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+    user-service:
+      address: static://${GRPC_AUTH_HOST:localhost}:${GRPC_AUTH_PORT:9090}
       negotiationType: plaintext
       enableKeepAlive: true
       keepAliveWithoutCalls: true

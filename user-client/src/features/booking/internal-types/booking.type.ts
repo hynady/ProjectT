@@ -52,8 +52,8 @@ export interface BookingResponse {
 export interface BookingPayload {
     showId: string;
     tickets: {
+        id: string;
         type: string;
         quantity: number;
     }[];
 }
-  

@@ -2,25 +2,34 @@ package com.ticket.servermono.ticketcontext.usecases;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
+import com.ticket.servermono.ticketcontext.adapters.dtos.BookingPayload;
 import com.ticket.servermono.ticketcontext.adapters.dtos.OccaShowDataResponse;
 import com.ticket.servermono.ticketcontext.adapters.dtos.OccaShowDataResponse.PriceInfo;
 import com.ticket.servermono.ticketcontext.entities.Show;
+import com.ticket.servermono.ticketcontext.entities.Ticket;
 import com.ticket.servermono.ticketcontext.entities.TicketClass;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.ShowRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketRepository;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import net.devh.boot.grpc.client.inject.GrpcClient;
+import user.UserExistsRequest;
+import user.UserServiceGrpc;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ShowServices {
     private final ShowRepository showRepository;
     private final TicketRepository ticketRepository;
+
 
     public List<OccaShowDataResponse> getShowsByOccaId(UUID occaId) {
         List<Show> shows = showRepository.findByOccaId(occaId);
@@ -63,13 +72,14 @@ public class ShowServices {
                 .collect(Collectors.toList());
     }
 
-    private int calculateAvailableTickets(TicketClass ticketClass) {
+    public int calculateAvailableTickets(TicketClass ticketClass) {
         Long soldTickets = ticketRepository.countByTicketClassId(ticketClass.getId());
         return ticketClass.getCapacity() - soldTickets.intValue();
     }
 
+    @Transactional
     boolean isSoldOut(TicketClass ticketClass) {
         return calculateAvailableTickets(ticketClass) == 0;
     }
-
+ 
 }

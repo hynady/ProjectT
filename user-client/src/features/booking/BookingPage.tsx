@@ -89,6 +89,8 @@ const BookingPage = () => {
   ];
 
   const handleStepClick = (index: number) => {
+    if (isPaymentSuccess) return; // Ngăn chặn điều hướng nếu đã thanh toán thành công
+    
     // Chỉ cho phép chuyển đến các bước đã hoàn thành hoặc bước tiếp theo
     if (index < step || (index === step + 1 && steps[step - 1].completed)) {
       setStep(index);
