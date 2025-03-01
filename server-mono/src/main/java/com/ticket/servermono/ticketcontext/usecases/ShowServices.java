@@ -30,7 +30,6 @@ public class ShowServices {
     private final ShowRepository showRepository;
     private final TicketRepository ticketRepository;
 
-
     public List<OccaShowDataResponse> getShowsByOccaId(UUID occaId) {
         List<Show> shows = showRepository.findByOccaId(occaId);
         if (shows.isEmpty()) {

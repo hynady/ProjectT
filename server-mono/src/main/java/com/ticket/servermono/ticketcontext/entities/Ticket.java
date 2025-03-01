@@ -29,6 +29,9 @@ public class Ticket extends BaseSQLEntity {
     @Column(name = "end_user_id", nullable = true)
     private UUID endUserId;
 
+    @Column(name = "checked_in_at", nullable = true)
+    private String checkedInAt;
+
     public Ticket(TicketClass ticketClass) {
         this.ticketClass = ticketClass;
     }

@@ -21,6 +21,7 @@ import com.ticket.servermono.occacontext.adapters.dtos.Booking.OccaForBookingRes
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.GalleryData;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OccaHeroDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OverviewData;
+import com.ticket.servermono.occacontext.entities.Occa;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaDetailInfoRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaRepository;
 
@@ -162,4 +163,10 @@ public class OccaServices {
         return occaRepository.findOccaForBooking(occaId)
                 .orElseThrow(() -> new RuntimeException("Occa not found with id: " + occaId));
     }
+
+    @Transactional(readOnly = true)
+    public Occa getOccaById(UUID occaId) {
+        return occaRepository.findById(occaId)
+                .orElseThrow(() -> new RuntimeException("Occa not found with id: " + occaId));
+    } 
 }

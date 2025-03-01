@@ -1,11 +1,32 @@
 import { parseISO, isAfter } from 'date-fns';
-import {TicketDisplay} from "@/features/my-ticket/blocks/TicketList.tsx";
+import { TicketDisplayUnit } from "@/features/my-ticket/internal-types/ticket.type";
 
-export const isTicketCheckedIn = (ticket: TicketDisplay): boolean => {
+/**
+ * Check if a ticket has been checked in
+ */
+export const isTicketCheckedIn = (ticket: TicketDisplayUnit): boolean => {
   return !!ticket.ticket.checkedInAt;
 };
 
-export const isTicketExpired = (ticket: TicketDisplay, currentDate: Date): boolean => {
-  const showDateTime = parseISO(`${ticket.show.date}T${ticket.show.time}`);
-  return isAfter(currentDate, showDateTime);
+/**
+ * Check if a ticket is expired (show date has passed)
+ */
+export const isTicketExpired = (ticket: TicketDisplayUnit, currentDate: Date): boolean => {
+  const showDate = parseISO(`${ticket.show.date}T${ticket.show.time}`);
+  return isAfter(currentDate, showDate);
+};
+
+/**
+ * Get ticket status text for display
+ */
+export const getTicketStatusText = (ticket: TicketDisplayUnit, currentDate: Date): string => {
+  if (isTicketCheckedIn(ticket)) {
+    return 'Đã check-in';
+  } 
+  
+  if (isTicketExpired(ticket, currentDate)) {
+    return 'Hết hạn';
+  }
+  
+  return 'Hoạt động';
 };

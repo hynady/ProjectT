@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingPayload;
+import com.ticket.servermono.ticketcontext.adapters.dtos.ListTicketsResponse;
 import com.ticket.servermono.ticketcontext.entities.Show;
 import com.ticket.servermono.ticketcontext.entities.Ticket;
 import com.ticket.servermono.ticketcontext.entities.TicketClass;
@@ -21,6 +22,9 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import occa.OccaMyTicketsResponse;
+import occa.OccaMyTicketsServiceGrpc;
+import occa.Payload;
 import user.UserExistsRequest;
 import user.UserServiceGrpc;
 
@@ -32,6 +36,12 @@ public class TicketServices {
     private final TicketRepository ticketRepository;
     private final ShowServices showServices;
     private final ShowRepository showRepository;
+
+    @GrpcClient("user-service")
+    private UserServiceGrpc.UserServiceBlockingStub userStub;
+
+    @GrpcClient("occa-service")
+    private OccaMyTicketsServiceGrpc.OccaMyTicketsServiceBlockingStub occaStub;
 
     @Transactional
     public void sellTicket(UUID ticketClassId) {
@@ -124,9 +134,6 @@ public class TicketServices {
                 createdTickets.size(), userId, show.getId());
     }
 
-    @GrpcClient("user-service")
-    private UserServiceGrpc.UserServiceBlockingStub userStub;
-
     /**
      * Kiểm tra xem người dùng có tồn tại không thông qua gRPC
      * 
@@ -148,6 +155,127 @@ public class TicketServices {
         } catch (Exception e) {
             log.error("Error checking if user exists via gRPC: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to check user existence", e);
+        }
+    }
+
+    /**
+     * Phương thức build response từ ticket entity
+     * 
+     * @param ticket Ticket entity
+     * @return ListTicketsResponse được build từ ticket
+     */
+    private ListTicketsResponse buildTicketResponse(Ticket ticket) {
+        ListTicketsResponse response = new ListTicketsResponse();
+        
+        // Populate ticket info
+        response.setTicket(response.new Ticket(
+            ticket.getId(),
+            ticket.getCheckedInAt() != null ? ticket.getCheckedInAt().toString() : null
+        ));
+
+        // Populate ticket class info
+        TicketClass ticketClass = ticket.getTicketClass();
+        response.setTicketType(response.new TicketClass(
+            ticketClass.getId(),
+            ticketClass.getName(),
+            ticketClass.getPrice()
+        ));
+
+        // Populate show info
+        Show show = ticketClass.getShow();
+        response.setShow(response.new Show(
+            show.getId(),
+            show.getTime().toString(),
+            show.getDate().toString()
+        ));
+
+        // Populate occasion info từ gRPC
+        populateOccaInfo(show, response);
+        
+        return response;
+    }
+    
+    /**
+     * Hàm lấy thông tin Occa từ gRPC service
+     * 
+     * @param show Show object chứa occaId
+     * @param listTicketsResponse Response object để populate thông tin Occa
+     */
+    private void populateOccaInfo(Show show, ListTicketsResponse response) {
+        try {
+            UUID occaId = show.getOccaId();
+            
+            Payload request = Payload.newBuilder()
+                .setOccaId(occaId.toString())
+                .build();
+            
+            OccaMyTicketsResponse occaResponse = occaStub.getOccaInfoForMyTicket(request);
+            
+            // Populate occasion info từ gRPC response
+            response.setOcca(response.new Occa(
+                occaId,
+                occaResponse.getTitle(),
+                occaResponse.getLocation()
+            ));
+            
+            log.debug("Successfully retrieved occa info for ID: {}", occaId);
+        } catch (Exception e) {
+            log.error("Error fetching occa details via gRPC: {}", e.getMessage(), e);
+            // Fallback nếu gRPC call thất bại - sử dụng thông tin show
+            response.setOcca(response.new Occa(
+                show.getOccaId(),
+                "Không thể tải thông tin sự kiện",
+                "N/A"
+            ));
+        }
+    }
+
+    public List<ListTicketsResponse> getActiveTicketsData(UUID userId) {
+        // Kiểm tra user có tồn tại không
+        boolean userExists = checkUserExists(userId);
+        if (!userExists) {
+            throw new EntityNotFoundException("User not found");
+        }
+        try {
+            List<Ticket> tickets = ticketRepository.findActiveTicketsByUserId(userId);
+            List<ListTicketsResponse> responses = new ArrayList<>();
+            
+            // Build response cho mỗi ticket
+            for (Ticket ticket : tickets) {
+                ListTicketsResponse response = buildTicketResponse(ticket);
+                responses.add(response);
+            }
+            
+            return responses;
+        } catch (Exception e) {
+            log.error("Error retrieving active tickets data: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve active tickets data", e);
+        }
+    }
+
+    public List<ListTicketsResponse> getUsedTicketsData(UUID userId) {
+        // Kiểm tra user có tồn tại không
+        boolean userExists = checkUserExists(userId);
+        if (!userExists) {
+            throw new EntityNotFoundException("User not found");
+        }
+        try {
+            List<Ticket> tickets = ticketRepository.findUsedTicketsByUserId(userId);
+
+            log.info("Found {} used tickets for user {}", tickets.size(), userId);
+
+            List<ListTicketsResponse> responses = new ArrayList<>();
+            
+            // Build response cho mỗi ticket
+            for (Ticket ticket : tickets) {
+                ListTicketsResponse response = buildTicketResponse(ticket);
+                responses.add(response);
+            }
+            
+            return responses;
+        } catch (Exception e) {
+            log.error("Error retrieving used tickets data: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve used tickets data", e);
         }
     }
 }
