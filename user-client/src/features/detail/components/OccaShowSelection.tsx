@@ -1,45 +1,75 @@
 import {Button} from '@/commons/components/button.tsx';
 import {Card} from '@/commons/components/card.tsx';
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/commons/components/accordion.tsx';
-import {useNavigate} from 'react-router-dom';
-
-export interface OccaShowUnit {
-  date: string;
-  time: string;
-  prices: {
-    type: string;
-    price: number;
-    available: number;
-  }[];
-}
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/commons/components/alert-dialog";
+import {useNavigate, useLocation} from 'react-router-dom';
+import { useAuth } from "@/features/auth/contexts";
+import { useState } from "react";
+import { BookingInfo, OccaShowUnit } from '@/features/detail/internal-types/detail.type';
 
 interface OccaShowSelectionProps {
   shows: OccaShowUnit[];
   organizer: string;
+  occaInfo: BookingInfo['occa'];
 }
 
-export const OccaShowSelection = ({shows, organizer}: OccaShowSelectionProps) => {
+
+export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectionProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+
+  const handleNavigateToLogin = () => {
+    navigate('/login', { 
+      state: { 
+        from: location.pathname
+      }
+    });
+  };
 
   const handleShowSelect = (show: OccaShowUnit, selectedTicket: {
+    id: string;
     type: string;
     price: number;
     available: number;
   }) => {
-    // Lưu thông tin show và vé đã chọn
-    const selectedInfo = {
-      show: {
+    if (!isAuthenticated) {
+      setShowLoginDialog(true);
+      return;
+    }
+  
+    const selectedInfo: BookingInfo = {
+      occa: {
+        id: occaInfo.id,
+        title: occaInfo.title,
+        location: occaInfo.location, 
+        address: occaInfo.address,
+        duration: occaInfo.duration,
+        shows: shows
+      },
+      selectedShow: {
+        id: show.id,
         date: show.date,
         time: show.time
       },
-      ticket: {
+      selectedTicket: {
+        id: selectedTicket.id,
         type: selectedTicket.type,
-        price: selectedTicket.price.toString(),
-        quantity: 1 // Mặc định chọn 1 vé
+        price: selectedTicket.price,
+        quantity: 1
       }
     };
-
-    // Chuyển đến trang booking với state
+  
     navigate('booking', {
       state: {
         skipToStep: 2,
@@ -49,55 +79,90 @@ export const OccaShowSelection = ({shows, organizer}: OccaShowSelectionProps) =>
   };
 
   return (
-    <div className="sticky top-16">
-      <div className="bg-card rounded-xl p-6">
-        <h2 className="text-xl font-semibold text-card-foreground mb-4">Chọn buổi diễn</h2>
-        <Accordion type="single" collapsible>
-          {shows.map((show, index) => (
-            <AccordionItem key={index} value={`show-${index}`}>
-              <AccordionTrigger>
-                {show.date} - {show.time}
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4">
-                  {show.prices.map((ticket, ticketIndex) => (
-                    <Card
-                      key={ticketIndex}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:border-primary transition-colors cursor-pointer"
-                    >
-                      <div>
-                        <h3 className="font-semibold text-primary">{ticket.type}</h3>
-                        <p className="text-muted-foreground">
-                          {ticket.price.toLocaleString('vi-VN')}đ
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Còn {ticket.available} vé
-                        </p>
-                      </div>
-                      <Button
-                        onClick={() => handleShowSelect(show, ticket)}
-                        disabled={ticket.available < 1}
+    <>
+      <div className="sticky top-16">
+        <div className="bg-card rounded-xl p-6">
+          <h2 className="text-xl font-semibold text-card-foreground mb-4">Chọn buổi diễn</h2>
+          <Accordion type="single" collapsible>
+            {shows.map((show, index) => (
+              <AccordionItem key={index} value={`show-${index}`}>
+                <AccordionTrigger>
+                  {show.date} - {show.time}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4">
+                    {show.prices.map((ticket, ticketIndex) => (
+                      <Card
+                        key={ticketIndex}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:border-primary transition-colors cursor-pointer"
                       >
-                        Chọn
-                      </Button>
-                    </Card>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-        <Button
-          className="w-full mt-6"
-          size="lg"
-          onClick={() => navigate("booking")}
-        >
-          Đặt vé ngay
-        </Button>
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Vé được bán bởi {organizer}
-        </p>
+                        <div>
+                          <h3 className="font-semibold text-primary">{ticket.type}</h3>
+                            <p className="text-muted-foreground">
+                            {ticket.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                            </p>
+                          <p className="text-sm text-muted-foreground">
+                            Còn {ticket.available} vé
+                          </p>
+                        </div>
+                        
+                          <Button
+                            onClick={() => handleShowSelect(show, ticket)}
+                            disabled={ticket.available < 1}
+                          >
+                            {ticket.available < 1 ? "Bán hết" : "Chọn"}
+                          </Button>
+                      </Card>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+          
+          {isAuthenticated ? (
+            <Button
+              className="w-full mt-6"
+              size="lg"
+              onClick={() => navigate("booking")}
+              disabled={shows.every(show => show.prices.every(ticket => ticket.available < 1))}
+            >
+              {shows.every(show => show.prices.every(ticket => ticket.available < 1)) ? "Hết rồi, hẹn bạn lần sau :(" : "Đặt vé ngay"}
+            </Button>
+          ) : (
+            <Button
+              className="w-full mt-6"
+              size="lg"
+              onClick={() => setShowLoginDialog(true)}
+            >
+              Đăng nhập để đặt vé
+            </Button>
+          )}
+
+          <p className="text-center text-sm text-muted-foreground mt-4">
+            Vé được bán bởi {organizer}
+          </p>
+        </div>
       </div>
-    </div>
+
+      <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Đăng nhập để tiếp tục</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn cần đăng nhập để đặt vé. Sau khi đăng nhập thành công, bạn sẽ được chuyển về trang này để tiếp tục đặt vé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowLoginDialog(false)}>
+              Hủy
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleNavigateToLogin}>
+              Đăng nhập ngay
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };

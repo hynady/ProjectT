@@ -1,75 +1,26 @@
-// src/components/MyTickets/TicketList.tsx
-import {useState} from 'react';
-import {Button} from '@/commons/components/button.tsx';
-import {Badge} from '@/commons/components/badge.tsx';
+// src/features/my-ticket/blocks/TicketList.tsx
+import { useState } from 'react';
+import { Button } from '@/commons/components/button.tsx';
+import { Badge } from '@/commons/components/badge.tsx';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/commons/components/accordion.tsx";
-import {motion, AnimatePresence} from 'framer-motion';
-import {Calendar, Clock, Ticket, ChevronRight} from 'lucide-react';
-import {format, isFuture, isPast, isToday} from 'date-fns';
-import {TicketModal} from "@/features/my-ticket/blocks/TicketModal.tsx";
-
-
-export interface Ticket {
-  id: string;
-  occaId: string;
-  showId: string;
-  typeId: string;
-  purchaseDate: string;
-  qrCode: string;
-  purchasedBy: string;
-  checkedInAt?: string;
-}
-
-export interface Occa {
-  id: string;
-  title: string;
-  location: string;
-  duration: string;
-  address: string;
-}
-
-export interface TicketDisplay {
-  ticket: Ticket;
-  occa: Occa;
-  show: Show;
-  ticketType: TicketType;
-}
-
-export interface Show {
-  id: string;
-  occaId: string;
-  date: string;
-  time: string;
-}
-
-export interface TicketType {
-  id: string;
-  showId: string;
-  type: string;
-  price: number;
-}
-
-interface TicketListProps {
-  activeTickets: TicketDisplay[];
-  usedTickets: TicketDisplay[];
-  hasLoadedUsedTickets: boolean;
-  onLoadUsedTickets: () => void;
-  searchQuery: string;
-  filterType: string;
-}
+import { motion, AnimatePresence } from 'framer-motion';
+import { Calendar, Clock, Ticket, ChevronRight } from 'lucide-react';
+import { format, isFuture, isPast, isToday } from 'date-fns';
+import { TicketModal } from "@/features/my-ticket/blocks/TicketModal.tsx";
+import { TicketDisplayUnit } from '@/features/my-ticket/internal-types/ticket.type';
 
 // Helper function to group tickets by Occa and Show
-const groupTickets = (tickets: TicketDisplay[]) => {
+const groupTickets = (tickets: TicketDisplayUnit[]) => {
   const groups = new Map<string, {
-    occa: TicketDisplay['occa'],
+    occa: TicketDisplayUnit['occa'],
     shows: Map<string, {
-      show: TicketDisplay['show'],
-      tickets: TicketDisplay[]
+      show: TicketDisplayUnit['show'],
+      tickets: TicketDisplayUnit[]
     }>
   }>();
 
@@ -98,24 +49,33 @@ const groupTickets = (tickets: TicketDisplay[]) => {
   return groups;
 };
 
-const getTicketStatus = (ticket: TicketDisplay) => {
+const getTicketStatus = (ticket: TicketDisplayUnit) => {
   if (ticket.ticket.checkedInAt) {
     return 'Đã Check-in';
   }
   return isPast(new Date(ticket.show.date)) ? 'Đã hết hạn' : 'Hoạt động';
 };
 
-export const TicketList = ({
-                             activeTickets,
-                             usedTickets,
-                             hasLoadedUsedTickets,
-                             onLoadUsedTickets,
-                             searchQuery,
-                             filterType
-                           }: TicketListProps) => {
-  const [selectedTicket, setSelectedTicket] = useState<TicketDisplay | null>(null);
+interface TicketListProps {
+  activeTickets: TicketDisplayUnit[];
+  usedTickets: TicketDisplayUnit[];
+  hasLoadedUsedTickets: boolean;
+  onLoadUsedTickets: () => void;
+  searchQuery: string;
+  filterType: string;
+}
 
-  const filterTickets = (tickets: TicketDisplay[]) => {
+export const TicketList = ({
+  activeTickets,
+  usedTickets,
+  hasLoadedUsedTickets,
+  onLoadUsedTickets,
+  searchQuery,
+  filterType
+}: TicketListProps) => {
+  const [selectedTicket, setSelectedTicket] = useState<TicketDisplayUnit | null>(null);
+
+  const filterTickets = (tickets: TicketDisplayUnit[]) => {
     return tickets.filter(ticket => {
       const matchesSearch = ticket.occa.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         ticket.occa.location.toLowerCase().includes(searchQuery.toLowerCase());
@@ -142,7 +102,7 @@ export const TicketList = ({
         <AccordionItem
           key={occaId}
           value={occaId}
-          className={`border rounded-lg bg-card ${isUsed ? 'opacity-60' : ''}`}
+          className={`border rounded-lg bg-card ${isUsed ? 'opacity-70 hover:opacity-90 transition-opacity' : ''}`}
         >
           <AccordionTrigger className="px-6 hover:no-underline">
             <div className="flex items-center justify-between flex-1">
@@ -180,10 +140,12 @@ export const TicketList = ({
                           className="w-full p-4 rounded-lg border bg-card hover:bg-accent transition-colors flex items-center justify-between group"
                         >
                           <div className="flex items-center gap-4">
-                            <Badge variant={ticket.ticketType.type === 'VIP' ? 'default' : 'secondary'}>
-                              {ticket.ticketType.type === 'VIP' ? 'VIP' : 'Thường'}
+                            <Badge variant={ticket.ticketType.type.toLowerCase().includes('vip') ? 'default' : 'secondary'}>
+                              {ticket.ticketType.type}
                             </Badge>
-                            <span className="text-sm font-medium">{ticket.ticketType.price}₫</span>
+                            <span className="text-sm font-medium">
+                              {ticket.ticketType.price.toLocaleString('vi-VN')}đ
+                            </span>
                             <Badge variant={
                               ticket.ticket.checkedInAt ? 'default' :
                                 isPast(new Date(ticket.show.date)) ? 'destructive' : 'outline'
@@ -210,10 +172,15 @@ export const TicketList = ({
   return (
     <>
       <div className="space-y-6">
-        {/* Vé đang hoạt động */}
-        {renderTicketGroup(groupedActiveTickets, false)}
+        {/* Active tickets */}
+        {filteredActiveTickets.length > 0 && (
+          <>
+            <h3 className="text-lg font-semibold mb-4">Vé đang hoạt động</h3>
+            {renderTicketGroup(groupedActiveTickets, false)}
+          </>
+        )}
 
-        {/* Vé đã dùng */}
+        {/* Used tickets */}
         {!hasLoadedUsedTickets ? (
           filteredActiveTickets.length > 0 && (
             <div className="text-center py-6">
@@ -245,9 +212,9 @@ export const TicketList = ({
         )}
       </AnimatePresence>
 
-      {filteredActiveTickets.length === 0 && (!hasLoadedUsedTickets || filteredUsedTickets.length === 0) && (
+      {filteredActiveTickets.length === 0 && (!hasLoadedUsedTickets || filteredUsedTickets.length === 0) && searchQuery.length > 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Không tìm thấy vé</p>
+          <p className="text-muted-foreground">Không tìm thấy vé phù hợp với tìm kiếm của bạn</p>
         </div>
       )}
     </>

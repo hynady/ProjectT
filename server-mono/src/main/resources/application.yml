@@ -7,38 +7,59 @@ spring:
     import: optional:file:.env[.properties]
 
   application:
-    name: ${APP_NAME}
+    name: ${APP_NAME:Tack Ticket API}
 
   datasource:
-    driver-class-name: ${DB_DRIVER}
+    driver-class-name: ${DB_DRIVER:com.mysql.cj.jdbc.Driver}
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
   jpa:
-    database-platform: ${JPA_DIALECT}
+    database-platform: ${JPA_DIALECT:org.hibernate.dialect.MySQLDialect}
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO}
+      ddl-auto: update
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     consumer:
-      group-id: ${KAFKA_CONSUMER_GROUP_ID}
-      auto-offset-reset: ${KAFKA_CONSUMER_AUTO_OFFSET_RESET}
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:ticket-service}
+      auto-offset-reset: ${KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*" # allow all packages
+    producer:
+        value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+      
 app:
   jwtSecret: ${JWT_SECRET}
   googleClientId: ${GOOGLE_CLIENT_ID}
 
   mail:
-    username: ${MAIL_USERNAME}
+    username: ${MAIL_USERNAME:Tack Ticket}
     password: ${MAIL_PASSWORD}
     sender-name: ${MAIL_SENDER_NAME}
 
 grpc:
+  # Cổng mặc định cho gRPC server
+  server:
+    port: 9090
+  
+  # Cấu hình cho client
   client:
     occa-service:
       address: static://${GRPC_OCCA_HOST:localhost}:${GRPC_OCCA_PORT:9090}
+      negotiationType: plaintext
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+    user-service:
+      address: static://${GRPC_AUTH_HOST:localhost}:${GRPC_AUTH_PORT:9090}
+      negotiationType: plaintext
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+    ticket-service:
+      address: static://${GRPC_TICKET_HOST:localhost}:${GRPC_TICKET_PORT:9090}
       negotiationType: plaintext
       enableKeepAlive: true
       keepAliveWithoutCalls: true

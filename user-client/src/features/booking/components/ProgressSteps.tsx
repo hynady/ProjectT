@@ -15,12 +15,13 @@ interface ProgressStepsProps {
   steps: Step[];
   currentStep: number;
   onStepClick: (step: number) => void;
+  
 }
 
 export const ProgressSteps = ({
                                 steps,
                                 currentStep,
-                                onStepClick
+                                onStepClick,
                               }: ProgressStepsProps) => {
   const calculateProgress = () => {
     if (currentStep === 1) return 0;
@@ -28,7 +29,7 @@ export const ProgressSteps = ({
   };
 
   return (
-    <div className="relative">
+    <div className={`relative`}>
       {/* Progress Bar */}
       <Progress value={calculateProgress()} className="h-4" />
 
@@ -91,6 +92,8 @@ export const ProgressSteps = ({
                           whitespace-nowrap
                           text-sm text-center
                           transition-colors duration-300
+                          hidden
+                          sm:block
                           ${isActive ? 'text-primary font-medium' : ''}
                           ${isPassed ? 'text-primary' : 'text-muted-foreground'}
                           ${isClickable && !isActive ? 'group-hover:text-primary' : ''}

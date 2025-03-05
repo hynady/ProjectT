@@ -1,9 +1,12 @@
 package com.ticket.servermono.authcontext.usecases;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
+import java.util.UUID;
 
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -11,8 +14,10 @@ import com.ticket.servermono.authcontext.entities.EndUser;
 import com.ticket.servermono.authcontext.infrastructure.config.JWTUtils;
 import com.ticket.servermono.authcontext.infrastructure.repositories.EndUserRepository;
 
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EndUserServices {
 
     private final EndUserRepository eUserRepo;
@@ -56,5 +61,16 @@ public class EndUserServices {
         // Update password
         eFoundUser.get().setPassword(passwordEncoder.encode(password));
         eUserRepo.save(eFoundUser.get());
+    }
+    
+    /**
+     * Kiểm tra xem người dùng có tồn tại không
+     * @param userId ID của người dùng cần kiểm tra
+     * @return true nếu người dùng tồn tại, false nếu không
+     */
+    public boolean isUserExist(UUID userId) {
+        boolean exists = eUserRepo.findById(userId).isPresent();
+        log.info("User existence check for {}: {}", userId, exists);
+        return exists;
     }
 }

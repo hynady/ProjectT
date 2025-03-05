@@ -1,27 +1,11 @@
 // components/Payment.tsx
 import { Card, CardContent, CardHeader } from '@/commons/components/card.tsx';
 import { Button } from '@/commons/components/button.tsx';
-import {ShowTime} from "@/features/booking/blocks/ShowSelection.tsx";
 import {format} from "date-fns";
 import {vi} from "date-fns/locale";
 import {Separator} from "@/commons/components/separator.tsx";
+import { BookingState, OccaShortInfo } from '@/features/booking/internal-types/booking.type';
 
-export interface BookingState {
-  selectedShow: ShowTime | null;
-  selectedTickets: {
-    type: string;
-    quantity: number;
-    price: string;
-  }[];
-  totalAmount: number;
-}
-
-export interface OccaShortInfo {
-  title: string;
-  location: string;
-  duration: string;
-  address: string;
-}
 
 interface ConfirmationProps {
   bookingState: BookingState;
@@ -110,7 +94,7 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack 
               <div key={index} className="flex justify-between text-sm">
                 <span>{ticket.type} x{ticket.quantity}</span>
                 <span className="font-medium">
-                  {(Number(ticket.price.replace(/[^0-9.-]+/g, '')) * ticket.quantity)
+                  {(ticket.price * ticket.quantity)
                     .toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
                 </span>
               </div>

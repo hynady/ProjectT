@@ -1,39 +1,29 @@
-export interface TicketBase {
+export interface Ticket {
   id: string;
-  occaId: string;
-  showId: string;
-  typeId: string;
-  purchaseDate: string;
-  qrCode: string;
-  purchasedBy: string;
-  checkedInAt?: string;
+  checkedInAt: string | null;
 }
 
-export interface OccaBase {
+export interface Occa {
   id: string;
   title: string;
   location: string;
-  duration: string;
-  address: string;
 }
 
-export interface ShowBase {
+export interface Show {
   id: string;
-  occaId: string;
   date: string;
   time: string;
 }
 
-export interface TicketTypeBase {
+export interface TicketType {
   id: string;
-  showId: string;
   type: string;
   price: number;
 }
 
 export interface TicketDisplayUnit {
-  ticket: TicketBase;
-  occa: OccaBase;
-  show: ShowBase;
-  ticketType: TicketTypeBase;
+  ticket: Ticket;
+  occa: Occa;
+  show: Show;
+  ticketType: TicketType;
 }

@@ -1,5 +1,5 @@
 import { BaseService } from "@/commons/base.service";
-import {OccaHeroSectionUnit, OccaShowUnit} from "@/features/detail/internal-types/detail.type.ts";
+import {GalleryUnit, LocationData, OccaHeroSectionUnit, OccaShowUnit, OverviewData} from "@/features/detail/internal-types/detail.type.ts";
 import {detailMockData} from "@/features/detail/services/detail.mock.ts";
 
 class DetailService extends BaseService {
@@ -7,7 +7,11 @@ class DetailService extends BaseService {
     return this.request({
       method: 'GET',
       url: `/detail/hero/${occaId}`,
-      mockResponse: () => new Promise((resolve) => {
+      mockResponse: () => new Promise((resolve, reject) => {
+        // Simulate 404 for testing
+        if (occaId === 'non-existent-id') {
+          reject({ response: { status: 404 } });
+        }
         setTimeout(() => resolve(detailMockData.heroData), 1000);
       })
     });
@@ -16,14 +20,14 @@ class DetailService extends BaseService {
   async getShowsData(occaId: string): Promise<OccaShowUnit[]> {
     return this.request({
       method: 'GET',
-      url: `/detail/shows/${occaId}`,
+      url: `/shows/${occaId}`,
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(detailMockData.showsData), 1000);
       })
     });
   }
 
-  async getGalleryData(occaId: string): Promise<string[]> {
+  async getGalleryData(occaId: string): Promise<GalleryUnit[]> {
     return this.request({
       method: 'GET',
       url: `/detail/gallery/${occaId}`,
@@ -33,7 +37,7 @@ class DetailService extends BaseService {
     });
   }
 
-  async getLocationData(occaId: string): Promise<{ location: string, address: string }> {
+  async getLocationData(occaId: string): Promise<LocationData> {
     return this.request({
       method: 'GET',
       url: `/detail/location/${occaId}`,
@@ -43,7 +47,7 @@ class DetailService extends BaseService {
     });
   }
 
-  async getOverviewData(occaId: string): Promise<{ details: string, organizer: string }> {
+  async getOverviewData(occaId: string): Promise<OverviewData> {
     return this.request({
       method: 'GET',
       url: `/detail/overview/${occaId}`,

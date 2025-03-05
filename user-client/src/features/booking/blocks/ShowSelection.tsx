@@ -3,25 +3,15 @@ import {useState} from 'react';
 import {format} from 'date-fns';
 import {Card, CardContent} from '@/commons/components/card.tsx';
 import {Button} from '@/commons/components/button.tsx';
-import {TicketType} from "@/features/booking/blocks/TicketSelection.tsx";
 import {vi} from "date-fns/locale";
 import {ScrollToTop} from "@/commons/blocks/ScrollToTop.tsx";
+import { OccaShowUnit } from '@/features/booking/internal-types/booking.type';
 
-export interface ShowTime {
-  date: string;
-  time: string;
-}
-
-export interface OccaShowUnit {
-  date: string;
-  time: string;
-  prices: TicketType[];
-}
 
 interface ShowSelectionProps {
   shows: OccaShowUnit[];
-  onSelectShow: (show: { date: string; time: string }) => void;
-  selectedShow: { date: string; time: string } | null;
+  onSelectShow: (show: { id: string; date: string; time: string }) => void;
+  selectedShow: { id: string; date: string; time: string } | null;
 }
 
 export const ShowSelection = ({shows, onSelectShow, selectedShow}: ShowSelectionProps) => {
@@ -59,7 +49,7 @@ export const ShowSelection = ({shows, onSelectShow, selectedShow}: ShowSelection
               >
                 <CardContent
                   className="p-4"
-                  onClick={() => onSelectShow({date: show.date, time: show.time})}
+                  onClick={() => onSelectShow({id: show.id, date: show.date, time: show.time})}
                 >
                   <p className="text-lg font-semibold">{show.time}</p>
                   <p className="text-sm text-gray-500">

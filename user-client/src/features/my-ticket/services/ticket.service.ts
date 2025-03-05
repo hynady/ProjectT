@@ -22,7 +22,8 @@ class TicketService extends BaseService {
       url: '/tickets/active',
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(ticketMockData.tickets), 1000);
-      })
+      }),
+      defaultValue: []
     });
   }
 
@@ -32,7 +33,19 @@ class TicketService extends BaseService {
       url: '/tickets/used',
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(ticketMockData.tickets), 1000);
-      })
+      }),
+      defaultValue: []
+    });
+  }
+  
+  async checkInTicket(ticketId: string): Promise<{ success: boolean }> {
+    return this.request({
+      method: 'POST',
+      url: `/tickets/${ticketId}/check-in`,
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => resolve({ success: true }), 800);
+      }),
+      defaultValue: { success: false }
     });
   }
 }

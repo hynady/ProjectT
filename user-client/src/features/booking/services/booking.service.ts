@@ -1,5 +1,5 @@
 import { BaseService } from "@/commons/base.service";
-import { OccaBookingInfo } from "../internal-types/booking.type";
+import { OccaBookingInfo, OccaShowUnit, BookingResponse, BookingPayload } from "../internal-types/booking.type";
 import { bookingMockData } from "./booking.mock";
 
 class BookingService extends BaseService {
@@ -17,22 +17,42 @@ class BookingService extends BaseService {
     }
 
     async getOccaBookingInfo(occaId: string): Promise<OccaBookingInfo> {
-        return this.request({
+        // Get occa basic info using omit to eject shows from response
+        const occaResponse = await this.request<Omit<OccaBookingInfo, 'shows'>>({
             method: 'GET',
-            url: `/booking/occa/${occaId}`,
+            url: `/occa/forbooking/${occaId}`,
             mockResponse: () => new Promise((resolve) => {
                 setTimeout(() => resolve(bookingMockData.occaInfo), 1000);
             })
         });
+    
+        // Get shows info
+        const bookingResponse = await this.request<OccaShowUnit[]>({
+            method: 'GET',
+            url: `/shows/${occaId}`,
+            mockResponse: () => new Promise((resolve) => {
+                setTimeout(() => resolve(bookingMockData.showsInfo.shows), 1000);
+            })
+        });
+    
+        // Combine responses
+        const response: OccaBookingInfo = {
+            ...occaResponse,
+            shows: bookingResponse
+        };
+        
+        console.log('response', response);
+
+        return response;
     }
 
-    async createBooking(bookingData: any): Promise<{ bookingId: string }> {
+    async createBooking(payload: BookingPayload): Promise<BookingResponse> {
         return this.request({
             method: 'POST',
             url: '/booking',
-            data: bookingData,
+            data: payload,
             mockResponse: () => new Promise((resolve) => {
-                setTimeout(() => resolve({ bookingId: crypto.randomUUID() }), 1000);
+                setTimeout(() => resolve({ status: "success" }), 1000);
             })
         });
     }

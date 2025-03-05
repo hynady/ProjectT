@@ -2,9 +2,10 @@ import { Card, CardContent } from '@/commons/components/card.tsx';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/commons/components/carousel.tsx';
 import { ImageIcon } from 'lucide-react';
 import Autoplay from "embla-carousel-autoplay";
+import { GalleryUnit } from '@/features/detail/internal-types/detail.type';
 
 interface OccaGalleryProps {
-  images: string[];
+  images: GalleryUnit[];
 }
 
 export const OccaGallery = ({ images }: OccaGalleryProps) => {
@@ -36,7 +37,7 @@ export const OccaGallery = ({ images }: OccaGalleryProps) => {
                   <CardContent className="p-0 h-full">
                     <div className="w-full h-full relative">
                       <img
-                        src={image}
+                        src={image.image}
                         alt={`Event image ${index + 1}`}
                         className="absolute inset-0 w-full h-full object-cover"
                         onError={(e) => {

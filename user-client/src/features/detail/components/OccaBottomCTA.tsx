@@ -1,5 +1,5 @@
 import { Button } from '@/commons/components/button.tsx';
-import {OccaShowUnit} from "@/features/detail/components/OccaShowSelection.tsx";
+import { OccaShowUnit } from '@/features/detail/internal-types/detail.type';
 
 interface OccaBottomCTAProps {
   shows: OccaShowUnit[];

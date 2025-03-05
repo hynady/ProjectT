@@ -3,17 +3,23 @@ package com.ticket.servermono.occacontext.usecases;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ticket.servermono.occacontext.adapters.dtos.OccaResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.SearchBarTemplateResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.SearchOccasResult;
+import com.ticket.servermono.occacontext.adapters.dtos.Booking.OccaForBookingResponse;
+import com.ticket.servermono.occacontext.adapters.dtos.DetailData.GalleryData;
+import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OccaHeroDetailResponse;
+import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OverviewData;
+import com.ticket.servermono.occacontext.entities.Occa;
+import com.ticket.servermono.occacontext.infrastructure.repositories.OccaDetailInfoRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class OccaServices {
 
     private final OccaRepository occaRepository;
+    private final OccaDetailInfoRepository occaDetailInfoRepository;
 
     public List<OccaResponse> getHeroOccaResponses(String userId) {
         return Optional.ofNullable(userId)
@@ -66,47 +73,6 @@ public class OccaServices {
         return occaRepository.searchOccasForSearchBar(query.toLowerCase(), PageRequest.of(0, 6));
     }
 
-    // @Transactional(readOnly = true)
-    // public SearchOccasResult searchOccas(
-    // int page,
-    // int size,
-    // String keyword,
-    // String categoryId,
-    // String venueId,
-    // String sortBy,
-    // String sortOrder
-    // ) {
-    // UUID categoryUuid = categoryId != null && !categoryId.isEmpty() ?
-    // UUID.fromString(categoryId) : null;
-    // UUID venueUuid = venueId != null && !venueId.isEmpty() ?
-    // UUID.fromString(venueId) : null;
-    // String searchKeyword = keyword != null && !keyword.isEmpty() ?
-    // keyword.toLowerCase() : null;
-
-    // PageRequest pageable = PageRequest.of(page, size);
-
-    // List<OccaResponse> occas = occaRepository.searchOccas(
-    // searchKeyword,
-    // categoryUuid,
-    // venueUuid,
-    // sortBy,
-    // sortOrder,
-    // pageable
-    // );
-
-    // long totalElements = occaRepository.countSearchResults(
-    // searchKeyword,
-    // categoryUuid,
-    // venueUuid
-    // );
-
-    // return new SearchOccasResult(
-    // occas,
-    // (int) Math.ceil((double) totalElements / size),
-    // totalElements
-    // );
-    // }
-
     private UUID parseUuid(String id) {
         if (id == null || id.trim().isEmpty()) {
             return null;
@@ -118,11 +84,11 @@ public class OccaServices {
     @Transactional(readOnly = true)
     public SearchOccasResult searchOccas(
             int page,
-            int size, 
-            String keyword, 
-            String categoryId, 
-            String venueId, 
-            String sortBy, 
+            int size,
+            String keyword,
+            String categoryId,
+            String venueId,
+            String sortBy,
             String sortOrder) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
@@ -137,5 +103,55 @@ public class OccaServices {
                 .totalPages(resultPage.getTotalPages())
                 .totalElements(resultPage.getTotalElements())
                 .build();
+    }
+
+    public OccaHeroDetailResponse getHeroDetail(String occaId) {
+        try {
+            UUID occaUuid = UUID.fromString(occaId);
+            return occaDetailInfoRepository.findHeroDetailById(occaUuid)
+                    .orElseThrow(() -> new RuntimeException("Hero not found"));
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Hero not found");
+        }
+    }
+
+    public OverviewData getOverviewDetail(String occaId) {
+        try {
+            UUID occaUuid = UUID.fromString(occaId);
+            return occaDetailInfoRepository.findOverviewById(occaUuid)
+                    .orElseThrow(() -> new RuntimeException("Overview not found"));
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid occa ID format");
+        }
+    }
+
+    public List<GalleryData> getGalleryDetail(String occaId) {
+        try {
+            UUID occaUuid = UUID.fromString(occaId);
+            List<String> urls = occaDetailInfoRepository.findGalleryByOccaId(occaUuid)
+                    .orElseThrow(() -> new RuntimeException("Gallery not found"));
+
+            return urls.stream()
+                    .map(url -> GalleryData.builder().image(url).build())
+                    .collect(Collectors.toList());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid occa ID format");
+        }
+    }
+
+
+    @Transactional(readOnly = true)
+    public OccaForBookingResponse getOccaForBooking(UUID occaId) {
+        if (occaId == null) {
+            throw new IllegalArgumentException("Occa ID cannot be null");
+        }
+        return occaRepository.findOccaForBooking(occaId)
+                .orElseThrow(() -> new RuntimeException("Occa not found with id: " + occaId));
+    }
+
+    @Transactional(readOnly = true)
+    public Occa getOccaById(UUID occaId) {
+        return occaRepository.findById(occaId)
+                .orElseThrow(() -> new RuntimeException("Occa not found with id: " + occaId));
     }
 }

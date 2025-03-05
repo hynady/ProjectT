@@ -124,7 +124,7 @@ class SearchService extends BaseService {
       })
     });
   }
-  async fetchVenues(): Promise<{ id: string, name: string }[]> {
+  async fetchVenues(): Promise<{ id: string, region: string }[]> {
     return this.request({
       method: 'GET',
       url: '/occas/venues',

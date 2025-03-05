@@ -3,27 +3,23 @@ import {Card, CardContent} from '@/commons/components/card.tsx';
 import {Button} from '@/commons/components/button.tsx';
 import {Input} from '@/commons/components/input.tsx';
 import { ScrollToTop } from '@/commons/blocks/ScrollToTop.tsx';
-
-export interface TicketType {
-  type: string;
-  price: string;
-  available: number;
-}
+import { TicketType } from '@/features/booking/internal-types/booking.type';
 
 interface TicketSelectionProps {
   tickets: TicketType[];
   onUpdateTickets: (ticket: TicketType, quantity: number) => void;
   selectedTickets: {
+    id: string;
     type: string;
     quantity: number;
-    price: string;
+    price: number;
   }[];
 }
 
 export const TicketSelection = ({tickets, onUpdateTickets, selectedTickets}: TicketSelectionProps) => {
 
-  const getQuantity = (ticketType: string) => {
-    const selected = selectedTickets.find(t => t.type === ticketType);
+  const getQuantity = (ticketId: string) => {
+    const selected = selectedTickets.find(t => t.id === ticketId);
     return selected?.quantity || 0;
   };
 
@@ -37,12 +33,13 @@ export const TicketSelection = ({tickets, onUpdateTickets, selectedTickets}: Tic
     <ScrollToTop>
       <div className="space-y-4">
         {tickets.map((ticket) => (
-          <Card key={ticket.type}>
+          <Card key={ticket.id}>
             <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex sm:items-center justify-between gap-4">
                 <div>
                   <p className="font-semibold">{ticket.type}</p>
-                  <p className="text-sm text-gray-500">{ticket.price}</p>
+                    <p className="text-sm text-gray-500">{ticket.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</p>
+
                   <p className="text-xs text-gray-400">
                     Còn {ticket.available} vé
                   </p>
@@ -54,16 +51,16 @@ export const TicketSelection = ({tickets, onUpdateTickets, selectedTickets}: Tic
                     size="sm"
                     onClick={() => handleQuantityChange(
                       ticket,
-                      getQuantity(ticket.type) - 1
+                      getQuantity(ticket.id) - 1
                     )}
-                    disabled={getQuantity(ticket.type) <= 0}
+                    disabled={getQuantity(ticket.id) <= 0}
                   >
                     -
                   </Button>
 
                   <Input
                     className="w-16 text-center"
-                    value={getQuantity(ticket.type)}
+                    value={getQuantity(ticket.id)}
                     readOnly
                   />
 
@@ -72,9 +69,9 @@ export const TicketSelection = ({tickets, onUpdateTickets, selectedTickets}: Tic
                     size="sm"
                     onClick={() => handleQuantityChange(
                       ticket,
-                      getQuantity(ticket.type) + 1
+                      getQuantity(ticket.id) + 1
                     )}
-                    disabled={getQuantity(ticket.type) >= ticket.available}
+                    disabled={getQuantity(ticket.id) >= ticket.available}
                   >
                     +
                   </Button>
