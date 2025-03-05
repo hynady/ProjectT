@@ -1,10 +1,10 @@
-package com.ticket.servermono.ticketcontext.adapters.controllers;
+package com.ticket.servermono.occacontext.adapters.controllers;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.ticket.servermono.ticketcontext.adapters.dtos.OccaShowDataResponse;
-import com.ticket.servermono.ticketcontext.usecases.ShowServices;
+import com.ticket.servermono.occacontext.adapters.dtos.Show.OccaShowDataResponse;
+import com.ticket.servermono.occacontext.usecases.ShowServices;
 
 import lombok.RequiredArgsConstructor;
 import java.util.List;

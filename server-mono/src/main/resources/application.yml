@@ -58,3 +58,8 @@ grpc:
       negotiationType: plaintext
       enableKeepAlive: true
       keepAliveWithoutCalls: true
+    ticket-service:
+      address: static://${GRPC_TICKET_HOST:localhost}:${GRPC_TICKET_PORT:9090}
+      negotiationType: plaintext
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true

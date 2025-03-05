@@ -29,7 +29,7 @@ class BookingService extends BaseService {
         // Get shows info
         const bookingResponse = await this.request<OccaShowUnit[]>({
             method: 'GET',
-            url: `/booking/getshow/${occaId}`,
+            url: `/shows/${occaId}`,
             mockResponse: () => new Promise((resolve) => {
                 setTimeout(() => resolve(bookingMockData.showsInfo.shows), 1000);
             })

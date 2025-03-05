@@ -1,4 +1,4 @@
-package com.ticket.servermono.ticketcontext.entities;
+package com.ticket.servermono.occacontext.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -6,9 +6,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "shows", indexes = {
@@ -21,16 +18,13 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 public class Show extends BaseSQLEntity {
 
-    @Column(name = "occa_id", nullable = false)
-    private UUID occaId;
+    @ManyToOne
+    @JoinColumn(name = "occa_id", nullable = false)
+    private Occa occa;
 
     @Column(name = "date", nullable = false)
     private String date;
 
     @Column(name = "time", nullable = false)
     private String time;
-
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "show_id")
-    private List<TicketClass> ticketClasses;
 }

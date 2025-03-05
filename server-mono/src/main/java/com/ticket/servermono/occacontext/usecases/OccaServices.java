@@ -1,8 +1,6 @@
 package com.ticket.servermono.occacontext.usecases;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -10,7 +8,6 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,9 +30,6 @@ public class OccaServices {
 
     private final OccaRepository occaRepository;
     private final OccaDetailInfoRepository occaDetailInfoRepository;
-    private final KafkaTemplate<String, Map<String, Object>> kafkaTemplate;
-
-    private final String OCCA_CREATION = "occa_creation";
 
     public List<OccaResponse> getHeroOccaResponses(String userId) {
         return Optional.ofNullable(userId)
@@ -145,17 +139,8 @@ public class OccaServices {
         }
     }
 
-    //Triggigng the creation of Occa event in the system
-    @Transactional
-    public void publishOccaShow(String date, String time, String occaId) {
-        Map<String, Object> message = new HashMap<>();
-        message.put("date", date);
-        message.put("time", time);
-        message.put("occaId", occaId);
 
-        kafkaTemplate.send(OCCA_CREATION, message);
-    }
-        @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public OccaForBookingResponse getOccaForBooking(UUID occaId) {
         if (occaId == null) {
             throw new IllegalArgumentException("Occa ID cannot be null");
@@ -168,5 +153,5 @@ public class OccaServices {
     public Occa getOccaById(UUID occaId) {
         return occaRepository.findById(occaId)
                 .orElseThrow(() -> new RuntimeException("Occa not found with id: " + occaId));
-    } 
+    }
 }

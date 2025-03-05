@@ -27,26 +27,26 @@ public class OccaMyTicketsService extends OccaMyTicketsServiceGrpc.OccaMyTickets
     public void getOccaInfoForMyTicket(Payload request, StreamObserver<OccaMyTicketsResponse> responseObserver) {
         try {
             log.info("Received gRPC request for occa details with ID: {}", request.getOccaId());
-            
+
             // Parse UUID from request
             UUID occaId = UUID.fromString(request.getOccaId());
-            
+
             // Get occa information from service
             Occa occa = occaService.getOccaById(occaId);
 
             // Build location string
             String location = occa.getVenue().getLocation() + ", " + occa.getVenue().getAddress();
-            
+
             // Build the response
             OccaMyTicketsResponse response = OccaMyTicketsResponse.newBuilder()
-                .setTitle(occa.getTitle())
-                .setLocation(location)
-                .build();
-            
+                    .setTitle(occa.getTitle())
+                    .setLocation(location)
+                    .build();
+
             // Send response
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-            
+
             log.info("Successfully sent occa details for ID: {}", occaId);
         } catch (Exception e) {
             log.error("Error processing gRPC request for occa details: {}", e.getMessage(), e);

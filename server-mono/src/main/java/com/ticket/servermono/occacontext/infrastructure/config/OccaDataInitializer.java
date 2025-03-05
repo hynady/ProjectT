@@ -13,6 +13,7 @@ import com.ticket.servermono.occacontext.infrastructure.repositories.CategoryRep
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.VenueRepository;
 import com.ticket.servermono.occacontext.usecases.OccaServices;
+import com.ticket.servermono.occacontext.usecases.ShowServices;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,7 +27,7 @@ public class OccaDataInitializer {
     @Bean
     @Order(2)
     CommandLineRunner initOccaData(OccaRepository repository, VenueRepository venueRepository,
-            CategoryRepository categoryRepository, OccaServices occaServices) {
+            CategoryRepository categoryRepository, OccaServices occaServices, ShowServices showServices) {
         return args -> {
             if (repository.count() == 0) {
 
@@ -198,43 +199,34 @@ public class OccaDataInitializer {
 
                 // Create and save corresponding OccaDetailInfo for each Occa
                 savedOccas.forEach(occa -> {
-                    for (int i = 0; i < (int) (Math.random() * 4 + 1); i++) {
-                        int day = (int) (Math.random() * 28 + 1); // Random day from 1-28
-                        int month = (int) (Math.random() * 12 + 1); // Random month from 1-12
-                        int hour = (int) (Math.random() * 6 + 17); // Random hour from 17-22
-                        
-                        occaServices.publishOccaShow(
-                                String.format("2024-%02d-%02d", month, day),
-                                String.format("%02d:00", hour),
-                                occa.getId().toString());
-                    }
-
                     OccaDetailInfo detailInfo = OccaDetailInfo.builder()
                             .bannerUrl(occa.getImage()) // Using image as banner for now
                             .description("# The Artificial Paradise Tour 2025\r\n" + //
-                                                                        "![The Artificial Paradise Tour 2025](https://salt.tkbcdn.com/ts/ds/f0/ca/7c/6e7dad78e37fd71064f8c6a957570bd1.jpg)\r\n" + //
-                                                                        "\r\n" + //
-                                                                        "### Event Description\r\n" + //
-                                                                        "Join us for a special music night with BlackPink, featuring their most popular hit songs. Experience the thrill of live performances with a full band, meet the artists, and enjoy exclusive fan experiences.\r\n" + //
-                                                                        "\r\n" + //
-                                                                        "### Ticket Prices\r\n" + //
-                                                                        "- **SVIP**: 3,500,000 VND (Available: 20)\r\n" + //
-                                                                        "- **VIP**: 2,500,000 VND (Available: 50)\r\n" + //
-                                                                        "- **Standard**: 1,500,000 VND (Available: 100)\r\n" + //
-                                                                        "- **Economy**: 800,000 VND (Available: 200)\r\n" + //
-                                                                        "\r\n" + //
-                                                                        "### Event Highlights\r\n" + //
-                                                                        "- Live performance with a full band\r\n" + //
-                                                                        "- Meet and greet with the artists\r\n" + //
-                                                                        "- Special gifts for the audience\r\n" + //
-                                                                        "- Photo opportunity with the artists (SVIP)\r\n" + //
-                                                                        "- Soundcheck party (VIP & SVIP)\r\n" + //
-                                                                        "\r\n" + //
-                                                                        "### Terms and Conditions\r\n" + //
-                                                                        "- Tickets are non-refundable and non-exchangeable\r\n" + //
-                                                                        "- Please arrive 30 minutes before the performance\r\n" + //
-                                                                        "- Professional cameras are not allowed\r\n" + //
-                                                                        "- Follow the event organizer's regulations" + occa.getTitle())
+                                    "![The Artificial Paradise Tour 2025](https://salt.tkbcdn.com/ts/ds/f0/ca/7c/6e7dad78e37fd71064f8c6a957570bd1.jpg)\r\n"
+                                    + //
+                                    "\r\n" + //
+                                    "### Event Description\r\n" + //
+                                    "Join us for a special music night with BlackPink, featuring their most popular hit songs. Experience the thrill of live performances with a full band, meet the artists, and enjoy exclusive fan experiences.\r\n"
+                                    + //
+                                    "\r\n" + //
+                                    "### Ticket Prices\r\n" + //
+                                    "- **SVIP**: 3,500,000 VND (Available: 20)\r\n" + //
+                                    "- **VIP**: 2,500,000 VND (Available: 50)\r\n" + //
+                                    "- **Standard**: 1,500,000 VND (Available: 100)\r\n" + //
+                                    "- **Economy**: 800,000 VND (Available: 200)\r\n" + //
+                                    "\r\n" + //
+                                    "### Event Highlights\r\n" + //
+                                    "- Live performance with a full band\r\n" + //
+                                    "- Meet and greet with the artists\r\n" + //
+                                    "- Special gifts for the audience\r\n" + //
+                                    "- Photo opportunity with the artists (SVIP)\r\n" + //
+                                    "- Soundcheck party (VIP & SVIP)\r\n" + //
+                                    "\r\n" + //
+                                    "### Terms and Conditions\r\n" + //
+                                    "- Tickets are non-refundable and non-exchangeable\r\n" + //
+                                    "- Please arrive 30 minutes before the performance\r\n" + //
+                                    "- Professional cameras are not allowed\r\n" + //
+                                    "- Follow the event organizer's regulations" + occa.getTitle())
                             .organizer("VinGroup Entertainment")
                             .galleryUrls(Arrays.asList(
                                     occa.getImage(),

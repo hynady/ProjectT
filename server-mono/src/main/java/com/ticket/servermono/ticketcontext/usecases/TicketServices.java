@@ -5,16 +5,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingPayload;
 import com.ticket.servermono.ticketcontext.adapters.dtos.ListTicketsResponse;
-import com.ticket.servermono.ticketcontext.entities.Show;
 import com.ticket.servermono.ticketcontext.entities.Ticket;
 import com.ticket.servermono.ticketcontext.entities.TicketClass;
-import com.ticket.servermono.ticketcontext.infrastructure.repositories.ShowRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketRepository;
 
@@ -22,9 +21,13 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
-import occa.OccaMyTicketsResponse;
-import occa.OccaMyTicketsServiceGrpc;
-import occa.Payload;
+import occa.OccaDataResponse;
+import occa.OccaResquest;
+import occa.ShowDataResponse;
+import occa.ShowRequest;
+import occa.ShowResponse;
+import occa.ShowServicesGrpc.ShowServicesBlockingStub;
+import occa.OccaServicesGrpc.OccaServicesBlockingStub;
 import user.UserExistsRequest;
 import user.UserServiceGrpc;
 
@@ -34,14 +37,25 @@ import user.UserServiceGrpc;
 public class TicketServices {
     private final TicketClassRepository ticketClassRepository;
     private final TicketRepository ticketRepository;
-    private final ShowServices showServices;
-    private final ShowRepository showRepository;
 
     @GrpcClient("user-service")
     private UserServiceGrpc.UserServiceBlockingStub userStub;
 
     @GrpcClient("occa-service")
-    private OccaMyTicketsServiceGrpc.OccaMyTicketsServiceBlockingStub occaStub;
+    private ShowServicesBlockingStub showStub;
+
+    @GrpcClient("occa-service")
+    private OccaServicesBlockingStub occaStub;
+
+    public int calculateAvailableTickets(TicketClass ticketClass) {
+        Long soldTickets = ticketRepository.countByTicketClassId(ticketClass.getId());
+        return ticketClass.getCapacity() - soldTickets.intValue();
+    }
+
+    @Transactional
+    boolean isSoldOut(TicketClass ticketClass) {
+        return calculateAvailableTickets(ticketClass) == 0;
+    }
 
     @Transactional
     public void sellTicket(UUID ticketClassId) {
@@ -50,7 +64,7 @@ public class TicketServices {
             TicketClass ticketClass = ticketClassRepository.findById(ticketClassId)
                     .orElseThrow(() -> new IllegalStateException("Ticket class not found"));
             // check if ticket is available
-            if (showServices.isSoldOut(ticketClass)) {
+            if (isSoldOut(ticketClass)) {
                 throw new IllegalStateException("Ticket class is sold out");
             }
             // Generate ticket for user and save
@@ -65,9 +79,15 @@ public class TicketServices {
 
     @Transactional
     public void bookTicket(BookingPayload payload, UUID userId) {
-        // Kiểm tra xem show có tồn tại không
-        Show show = showRepository.findById(payload.getShowId())
-                .orElseThrow(() -> new EntityNotFoundException("Show not found"));
+
+        // Kiểm tra xem show có tồn tại không thông qua
+        ShowRequest showRequest = ShowRequest.newBuilder()
+                .setShowId(payload.getShowId().toString())
+                .build();
+        ShowResponse showResponse = showStub.isShowExist(showRequest);
+        if (!showResponse.getIsShowExist()) {
+            throw new EntityNotFoundException("Show not found");
+        }
 
         // Kiểm tra người dùng có tồn tại không sử dụng gRPC
         boolean userExists = checkUserExists(userId);
@@ -92,13 +112,11 @@ public class TicketServices {
             }
 
             // Tìm hạng vé trong show
-            TicketClass ticketClass = show.getTicketClasses().stream()
-                    .filter(tc -> tc.getId().equals(item.getId()))
-                    .findFirst()
-                    .orElseThrow(() -> new EntityNotFoundException("Hạng vé không tồn tại: " + item.getId()));
+            TicketClass ticketClass = ticketClassRepository.findById(item.getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Ticket class not found"));
 
             // Kiểm tra số lượng vé còn lại
-            int availableTickets = showServices.calculateAvailableTickets(ticketClass);
+            int availableTickets = calculateAvailableTickets(ticketClass);
             if (availableTickets < item.getQuantity()) {
                 throw new IllegalStateException(
                         String.format("Không đủ vé hạng %s. Yêu cầu: %d, Còn lại: %d",
@@ -131,7 +149,7 @@ public class TicketServices {
         ticketRepository.saveAll(createdTickets);
 
         log.info("Successfully booked {} tickets for user {} in show {}",
-                createdTickets.size(), userId, show.getId());
+                createdTickets.size(), userId, payload.getShowId());
     }
 
     /**
@@ -158,121 +176,184 @@ public class TicketServices {
         }
     }
 
-    /**
-     * Phương thức build response từ ticket entity
-     * 
-     * @param ticket Ticket entity
-     * @return ListTicketsResponse được build từ ticket
-     */
-    private ListTicketsResponse buildTicketResponse(Ticket ticket) {
-        ListTicketsResponse response = new ListTicketsResponse();
-        
-        // Populate ticket info
-        response.setTicket(response.new Ticket(
-            ticket.getId(),
-            ticket.getCheckedInAt() != null ? ticket.getCheckedInAt().toString() : null
-        ));
-
-        // Populate ticket class info
-        TicketClass ticketClass = ticket.getTicketClass();
-        response.setTicketType(response.new TicketClass(
-            ticketClass.getId(),
-            ticketClass.getName(),
-            ticketClass.getPrice()
-        ));
-
-        // Populate show info
-        Show show = ticketClass.getShow();
-        response.setShow(response.new Show(
-            show.getId(),
-            show.getTime().toString(),
-            show.getDate().toString()
-        ));
-
-        // Populate occasion info từ gRPC
-        populateOccaInfo(show, response);
-        
-        return response;
-    }
-    
-    /**
-     * Hàm lấy thông tin Occa từ gRPC service
-     * 
-     * @param show Show object chứa occaId
-     * @param listTicketsResponse Response object để populate thông tin Occa
-     */
-    private void populateOccaInfo(Show show, ListTicketsResponse response) {
-        try {
-            UUID occaId = show.getOccaId();
-            
-            Payload request = Payload.newBuilder()
-                .setOccaId(occaId.toString())
-                .build();
-            
-            OccaMyTicketsResponse occaResponse = occaStub.getOccaInfoForMyTicket(request);
-            
-            // Populate occasion info từ gRPC response
-            response.setOcca(response.new Occa(
-                occaId,
-                occaResponse.getTitle(),
-                occaResponse.getLocation()
-            ));
-            
-            log.debug("Successfully retrieved occa info for ID: {}", occaId);
-        } catch (Exception e) {
-            log.error("Error fetching occa details via gRPC: {}", e.getMessage(), e);
-            // Fallback nếu gRPC call thất bại - sử dụng thông tin show
-            response.setOcca(response.new Occa(
-                show.getOccaId(),
-                "Không thể tải thông tin sự kiện",
-                "N/A"
-            ));
+    private List<ListTicketsResponse> buildTicketsResponse(List<Ticket> tickets) {
+        if (tickets == null || tickets.isEmpty()) {
+            return new ArrayList<>();
         }
+        
+        // Nhóm vé theo showId để giảm số lượng gRPC calls
+        Map<UUID, List<Ticket>> ticketsByShowId = new HashMap<>();
+        
+        // Tạo map để lưu thông tin ticketClass cho truy cập nhanh
+        Map<UUID, TicketClass> ticketClassMap = new HashMap<>();
+        
+        // Phân loại tickets theo showId
+        for (Ticket ticket : tickets) {
+            TicketClass ticketClass = ticket.getTicketClass();
+            ticketClassMap.put(ticketClass.getId(), ticketClass);
+            
+            UUID showId = ticketClass.getShowId();
+            if (!ticketsByShowId.containsKey(showId)) {
+                ticketsByShowId.put(showId, new ArrayList<>());
+            }
+            ticketsByShowId.get(showId).add(ticket);
+        }
+        
+        List<ListTicketsResponse> responses = new ArrayList<>();
+        
+        // Xử lý từng showId để giảm số lượng gRPC calls
+        for (Map.Entry<UUID, List<Ticket>> entry : ticketsByShowId.entrySet()) {
+            UUID showId = entry.getKey();
+            List<Ticket> showTickets = entry.getValue();
+            
+            try {
+                // Lấy thông tin show từ gRPC
+                ShowRequest showRequest = ShowRequest.newBuilder()
+                    .setShowId(showId.toString())
+                    .build();
+                
+                ShowDataResponse showData = showStub.getShowById(showRequest);
+                
+                // Lấy thông tin occa từ gRPC
+                OccaResquest occaRequest = OccaResquest.newBuilder()
+                    .setOccaId(showData.getOccaId())
+                    .build();
+                
+                OccaDataResponse occaData = occaStub.getOccaById(occaRequest);
+                
+                // Tạo response cho mỗi vé trong show
+                for (Ticket ticket : showTickets) {
+                    ListTicketsResponse response = new ListTicketsResponse();
+                    
+                    // Thông tin vé
+                    response.setTicket(response.new Ticket(
+                        ticket.getId(),
+                        ticket.getCheckedInAt() != null ? ticket.getCheckedInAt().toString() : null
+                    ));
+                    
+                    // Thông tin ticket class
+                    TicketClass ticketClass = ticketClassMap.get(ticket.getTicketClass().getId());
+                    response.setTicketType(response.new TicketClass(
+                        ticketClass.getId(),
+                        ticketClass.getName(),
+                        ticketClass.getPrice()
+                    ));
+                    
+                    // Thông tin show
+                    response.setShow(response.new Show(
+                        showId,
+                        showData.getTime(),
+                        showData.getDate()
+                    ));
+                    
+                    // Thông tin occa
+                    response.setOcca(response.new Occa(
+                        UUID.fromString(showData.getOccaId()),
+                        occaData.getTitle(),
+                        occaData.getLocation()
+                    ));
+                    
+                    responses.add(response);
+                }
+            } catch (Exception e) {
+                log.error("Error fetching show/occa data for showId {}: {}", showId, e.getMessage(), e);
+                // Tiếp tục với show tiếp theo nếu có lỗi
+            }
+        }
+        
+        return responses;
     }
 
+    /**
+     * Lấy vé active (chưa diễn ra) của người dùng
+     */
     public List<ListTicketsResponse> getActiveTicketsData(UUID userId) {
-        // Kiểm tra user có tồn tại không
+        // Sử dụng isActive từ gRPC response
         boolean userExists = checkUserExists(userId);
         if (!userExists) {
             throw new EntityNotFoundException("User not found");
         }
+
         try {
-            List<Ticket> tickets = ticketRepository.findActiveTicketsByUserId(userId);
-            List<ListTicketsResponse> responses = new ArrayList<>();
-            
-            // Build response cho mỗi ticket
-            for (Ticket ticket : tickets) {
-                ListTicketsResponse response = buildTicketResponse(ticket);
-                responses.add(response);
+            List<Ticket> tickets = ticketRepository.findByEndUserIdAndCheckedInAtIsNull(userId);
+
+            if (tickets.isEmpty()) {
+                return new ArrayList<>();
             }
-            
-            return responses;
+
+            List<ListTicketsResponse> allResponses = buildTicketsResponse(tickets);
+
+            // Lọc chỉ lấy các vé active theo kết quả từ gRPC
+            return allResponses.stream()
+                    .filter(response -> {
+                        String ticketClassId = response.getTicketType().getId().toString();
+
+                        // Lấy thông tin ngày giờ show
+                        String dateTimeStr = response.getShow().getDate() + " " + response.getShow().getTime();
+                        java.time.LocalDateTime showDateTime;
+                        try {
+                            showDateTime = java.time.LocalDateTime.parse(
+                                    dateTimeStr,
+                                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+                        } catch (Exception e) {
+                            log.warn("Unable to parse show date/time: {} for ticket: {}", dateTimeStr, ticketClassId);
+                            return false;
+                        }
+
+                        // Kiểm tra xem show còn active không (chưa diễn ra)
+                        return showDateTime.isAfter(java.time.LocalDateTime.now());
+                    })
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Error retrieving active tickets data: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to retrieve active tickets data", e);
         }
     }
 
+    /**
+     * Lấy vé đã sử dụng (đã check-in hoặc show đã diễn ra) của người dùng
+     */
     public List<ListTicketsResponse> getUsedTicketsData(UUID userId) {
-        // Kiểm tra user có tồn tại không
         boolean userExists = checkUserExists(userId);
         if (!userExists) {
             throw new EntityNotFoundException("User not found");
         }
+
         try {
-            List<Ticket> tickets = ticketRepository.findUsedTicketsByUserId(userId);
+            // Lấy tất cả vé của user
+            List<Ticket> tickets = ticketRepository.findByEndUserId(userId);
 
-            log.info("Found {} used tickets for user {}", tickets.size(), userId);
-
-            List<ListTicketsResponse> responses = new ArrayList<>();
-            
-            // Build response cho mỗi ticket
-            for (Ticket ticket : tickets) {
-                ListTicketsResponse response = buildTicketResponse(ticket);
-                responses.add(response);
+            if (tickets.isEmpty()) {
+                return new ArrayList<>();
             }
-            
-            return responses;
+
+            List<ListTicketsResponse> allResponses = buildTicketsResponse(tickets);
+
+            // Lọc lấy các vé đã sử dụng (đã check-in hoặc show đã diễn ra)
+            return allResponses.stream()
+                    .filter(response -> {
+                        // Vé đã check-in được coi là đã sử dụng
+                        if (response.getTicket().getCheckedInAt() != null) {
+                            return true;
+                        }
+
+                        // Lấy thông tin ngày giờ show
+                        String dateTimeStr = response.getShow().getDate() + " " + response.getShow().getTime();
+                        java.time.LocalDateTime showDateTime;
+                        try {
+                            showDateTime = java.time.LocalDateTime.parse(
+                                    dateTimeStr,
+                                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+                        } catch (Exception e) {
+                            log.warn("Unable to parse show date/time: {} for ticket: {}",
+                                    dateTimeStr, response.getTicket().getId());
+                            return false;
+                        }
+
+                        // Nếu show đã diễn ra, vé cũng được coi là đã sử dụng
+                        return showDateTime.isBefore(java.time.LocalDateTime.now());
+                    })
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Error retrieving used tickets data: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to retrieve used tickets data", e);

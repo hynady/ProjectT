@@ -37,9 +37,7 @@ export const useTickets = () => {
     }
   };
 
-  const fetchUsedTickets = async () => {
-    if (hasLoadedUsedTickets) return;
-    
+  const fetchUsedTickets = async () => {    
     try {
       setLoading(true);
       const tickets = await ticketService.getUsedTickets();

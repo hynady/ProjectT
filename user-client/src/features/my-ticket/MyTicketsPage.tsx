@@ -35,8 +35,19 @@ export const MyTicketsPage = () => {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await refreshTickets();
-    setTimeout(() => setIsRefreshing(false), 500); // Give visual feedback
+    try {
+      // Nếu đã load usedTickets, refresh cả active và used tickets
+      // Nếu chưa load usedTickets, chỉ refresh active tickets
+      if (hasLoadedUsedTickets) {
+        await Promise.all([refreshTickets(), loadUsedTickets()]);
+      } else {
+        await refreshTickets();
+      }
+    } catch (error) {
+      console.error("Lỗi khi làm mới dữ liệu:", error);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500); // Give visual feedback
+    }
   };
 
   if (loading && !isRefreshing) {
