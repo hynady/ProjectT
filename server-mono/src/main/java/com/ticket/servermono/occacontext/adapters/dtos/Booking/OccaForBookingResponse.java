@@ -10,6 +10,5 @@ public class OccaForBookingResponse {
     private UUID id;
     private String title;
     private String address;
-    private String duration;
     private String location;
 }

@@ -93,8 +93,7 @@ class SearchService extends BaseService {
                 comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
                 break;
               case 'price':
-                comparison = parseInt(a.price.replace(/\D/g, '')) -
-                  parseInt(b.price.replace(/\D/g, ''));
+                comparison = a.price - b.price;
                 break;
               case 'title':
                 comparison = a.title.localeCompare(b.title);

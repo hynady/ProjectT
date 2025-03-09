@@ -1,5 +1,8 @@
 package com.ticket.servermono.occacontext.entities;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,8 +26,8 @@ public class Show extends BaseSQLEntity {
     private Occa occa;
 
     @Column(name = "date", nullable = false)
-    private String date;
+    private LocalDate date;
 
     @Column(name = "time", nullable = false)
-    private String time;
+    private LocalTime time;
 }

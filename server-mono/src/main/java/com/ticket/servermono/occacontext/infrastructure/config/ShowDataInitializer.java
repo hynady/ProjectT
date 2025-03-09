@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -50,8 +50,8 @@ public class ShowDataInitializer {
                         LocalDate showDate = currentDate.plusDays(random.nextInt(90) + 1); // Show trong 90 ngày tới
                         
                         int hour = random.nextInt(6) + 17; // Giờ từ 17-22
-                        String date = showDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-                        String time = String.format("%02d:00", hour);
+                        LocalDate date = showDate;
+                        LocalTime time = LocalTime.of(hour, 0);
                         
                         // Tạo đối tượng Show
                         Show show = Show.builder()

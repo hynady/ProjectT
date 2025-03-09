@@ -39,7 +39,7 @@ export const homeMockData = {
       date: "15/01/2025",
       location: "SVĐ Mỹ Đình, Hà Nội",
       time: "18:00",
-      price: "1.000.000đ - 6.500.000đ",
+      price: 1000000,
     },
     {
       id: "2",
@@ -48,7 +48,7 @@ export const homeMockData = {
       date: "10/02/2025",
       location: "Nhà hát Lớn, Hà Nội",
       time: "20:00",
-      price: "800.000đ - 4.000.000đ",
+      price: 2000000,
     },
     {
       id: "3",
@@ -57,7 +57,7 @@ export const homeMockData = {
       date: "20/02/2025",
       location: "SVĐ Quốc gia, TP.HCM",
       time: "19:00",
-      price: "2.000.000đ - 10.000.000đ",
+      price: 1500000,
     },
     {
       id: "4",
@@ -77,7 +77,7 @@ export const homeMockData = {
       date: "20/02/2025",
       location: "Sân vận động Hàng Đẫy, Hà Nội",
       time: "19:30",
-      price: "500.000đ - 3.000.000đ",
+      price: 1000000,
     },
     {
       id: "2",
@@ -86,7 +86,7 @@ export const homeMockData = {
       date: "25/03/2025",
       location: "MGM Grand, Las Vegas",
       time: "21:00",
-      price: "1.000.000đ - 5.000.000đ",
+      price: 5000000,
     },
     {
       id: "3",
@@ -95,7 +95,7 @@ export const homeMockData = {
       date: "05/04/2025",
       location: "SVĐ Mỹ Đình, Hà Nội",
       time: "20:00",
-      price: "1.500.000đ - 7.000.000đ",
+      price: 2000000,
     },
     {
       id: "4",
@@ -104,7 +104,7 @@ export const homeMockData = {
       date: "15/05/2025",
       location: "SVĐ Quốc gia, TP.HCM",
       time: "19:30",
-      price: "1.000.000đ - 6.000.000đ",
+      price: 3000000,
     },
     {
       id: "5",
@@ -113,7 +113,7 @@ export const homeMockData = {
       date: "15/05/2025",
       location: "SVĐ Quốc gia, TP.HCM",
       time: "19:30",
-      price: "1.000.000đ - 6.000.000đ",
+      price:  500000,
     },
   ] as UpcomingOccasSectionUnit[],
   categories: [

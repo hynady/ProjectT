@@ -1,5 +1,9 @@
 package com.ticket.servermono.occacontext.usecases;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -8,9 +12,11 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ticket.servermono.occacontext.adapters.dtos.OccaProjection;
 import com.ticket.servermono.occacontext.adapters.dtos.OccaResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.SearchBarTemplateResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.SearchOccasResult;
@@ -19,17 +25,24 @@ import com.ticket.servermono.occacontext.adapters.dtos.DetailData.GalleryData;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OccaHeroDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.DetailData.OverviewData;
 import com.ticket.servermono.occacontext.entities.Occa;
+import com.ticket.servermono.occacontext.entities.Show;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaDetailInfoRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaRepository;
+import com.ticket.servermono.occacontext.infrastructure.repositories.ShowRepository;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OccaServices {
 
     private final OccaRepository occaRepository;
     private final OccaDetailInfoRepository occaDetailInfoRepository;
+    private final ShowServices showServices;
+    private final ShowRepository showRepository;
 
     public List<OccaResponse> getHeroOccaResponses(String userId) {
         return Optional.ofNullable(userId)
@@ -39,38 +52,64 @@ public class OccaServices {
                     // TODO: Add logic to fetch hero occa optimized for user
                     return List.<OccaResponse>of();
                 })
-                .orElseGet(() -> occaRepository.findFirst6HeroOccas(PageRequest.of(0, 6)));
+                .orElseGet(() -> {
+                    List<OccaProjection> projections = occaRepository.findFirst6HeroOccas(PageRequest.of(0, 6));
+                    return convertToOccaResponses(projections);
+                });
     }
 
     @Transactional(readOnly = true)
     public List<OccaResponse> getFeaturedOccaResponses() {
-        return occaRepository.findFirst6HeroOccas(PageRequest.of(0, 6));
+        List<OccaProjection> projections = occaRepository.findFirst6HeroOccas(PageRequest.of(0, 6));
+        return convertToOccaResponses(projections);
     }
 
     @Transactional(readOnly = true)
     public List<OccaResponse> getUpcomingOccaResponses() {
-        // Assuming we want to get the latest 6 occasions
-        return occaRepository.findFirst6UpcomingOccas(PageRequest.of(0, 6));
+        List<OccaProjection> projections = occaRepository.findFirst6UpcomingOccas(PageRequest.of(0, 6));
+        return convertToOccaResponses(projections);
     }
 
     @Transactional(readOnly = true)
     public List<OccaResponse> getTrendingOccaResponses() {
-        // Assuming we want to get the latest 3 occasions
-        return occaRepository.findFirst3TrendingOccas(PageRequest.of(0, 3));
+        List<OccaProjection> projections = occaRepository.findFirst3TrendingOccas(PageRequest.of(0, 3));
+        return convertToOccaResponses(projections);
     }
 
     @Transactional(readOnly = true)
     public List<OccaResponse> getRecommendedOccaResponses() {
-        // Assuming we want to get the latest 3 occasions
-        return occaRepository.findFirst3RecommendedOccas(PageRequest.of(0, 3));
+        List<OccaProjection> projections = occaRepository.findFirst3RecommendedOccas(PageRequest.of(0, 3));
+        return convertToOccaResponses(projections);
     }
 
     @Transactional(readOnly = true)
     public List<SearchBarTemplateResponse> searchOccasForSearchBar(String query) {
-        if (query == null || query.trim().isEmpty()) {
-            return List.of();
-        }
-        return occaRepository.searchOccasForSearchBar(query.toLowerCase(), PageRequest.of(0, 6));
+        List<SearchBarTemplateResponse> results = occaRepository.searchOccasForSearchBar(
+                query.toLowerCase(),
+                query.toLowerCase() + "%",
+                PageRequest.of(0, 10));
+
+        return results.stream()
+                .map(r -> {
+                    if (r.getShowDateTime() == null) {
+                        // Tìm nextShowDateTime cho Occa này
+                        Occa occa = occaRepository.findById(r.getId()).orElse(null);
+                        LocalDateTime dateTimeToUse = LocalDateTime.now();
+
+                        if (occa != null && occa.getNextShowDateTime() != null) {
+                            // Nếu có nextShowDateTime, sử dụng giá trị đó
+                            dateTimeToUse = occa.getNextShowDateTime();
+                        }
+
+                        return new SearchBarTemplateResponse(
+                                r.getId(),
+                                r.getTitle(),
+                                dateTimeToUse,
+                                r.getLocation());
+                    }
+                    return r;
+                })
+                .collect(Collectors.toList());
     }
 
     private UUID parseUuid(String id) {
@@ -78,6 +117,30 @@ public class OccaServices {
             return null;
         }
         return UUID.fromString(id);
+    }
+
+    // Helper method to convert OccaProjection to OccaResponse with price
+    private List<OccaResponse> convertToOccaResponses(List<OccaProjection> projections) {
+        return projections.stream()
+                .map(p -> {
+                    // Sử dụng ngày hiện tại nếu date là null
+                    LocalDate date = p.getDate() != null ? p.getDate() : LocalDate.now();
+                    // Sử dụng thời gian mặc định nếu time là null
+                    LocalTime time = p.getTime() != null ? p.getTime() : LocalTime.of(0, 0);
+
+                    return OccaResponse.builder()
+                            .id(p.getId())
+                            .title(p.getTitle())
+                            .image(p.getImage())
+                            .date(date)
+                            .time(time)
+                            .location(p.getLocation())
+                            .price(p.getMinPrice())
+                            .categoryId(p.getCategoryId())
+                            .venueId(p.getVenueId())
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     // TODO: Tối ưu lại cái này khi điều chỉnh kiểu dữ liệu của ngày và giá
@@ -90,16 +153,27 @@ public class OccaServices {
             String venueId,
             String sortBy,
             String sortOrder) {
+
+        // Nếu sortBy là "date", thì chuyển thành "nextShowDateTime"
+        if (sortBy != null && sortBy.equals("date")) {
+            sortBy = "nextShowDateTime";
+        }
+
+        // Bây giờ có thể sắp xếp trực tiếp bằng Pageable
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        var resultPage = occaRepository.searchOccas(keyword, parseUuid(categoryId), parseUuid(venueId), pageable);
+        var resultPage = occaRepository.searchOccas(
+                keyword,
+                parseUuid(categoryId),
+                parseUuid(venueId),
+                pageable);
 
-        // Print out the resultPage
-        System.out.println(resultPage.getContent());
+        // Chuyển đổi projections thành responses với các thông tin giá từ show
+        List<OccaResponse> responses = convertToOccaResponses(resultPage.getContent());
 
         return SearchOccasResult.builder()
-                .occas(resultPage.getContent())
+                .occas(responses)
                 .totalPages(resultPage.getTotalPages())
                 .totalElements(resultPage.getTotalElements())
                 .build();
@@ -139,7 +213,6 @@ public class OccaServices {
         }
     }
 
-
     @Transactional(readOnly = true)
     public OccaForBookingResponse getOccaForBooking(UUID occaId) {
         if (occaId == null) {
@@ -153,5 +226,62 @@ public class OccaServices {
     public Occa getOccaById(UUID occaId) {
         return occaRepository.findById(occaId)
                 .orElseThrow(() -> new RuntimeException("Occa not found with id: " + occaId));
+    }
+
+    @Transactional
+    public void updateNextShowDateTime(UUID occaId) {
+        Occa occa = occaRepository.findById(occaId)
+                .orElseThrow(() -> new EntityNotFoundException("Occa not found with ID: " + occaId));
+
+        List<Show> shows = showRepository.findByOccaId(occaId);
+        if (shows.isEmpty()) {
+            occa.setNextShowDateTime(null);
+            occa.setMinPrice(null);
+        } else {
+            // Find the earliest future show or the latest past show
+            LocalDate today = LocalDate.now();
+            Optional<Show> nextShow = shows.stream()
+                    .filter(show -> !show.getDate().isBefore(today))
+                    .min(Comparator.comparing(Show::getDate)
+                            .thenComparing(Show::getTime));
+
+            Show targetShow = null;
+
+            if (nextShow.isPresent()) {
+                // There is a future show
+                targetShow = nextShow.get();
+                LocalDateTime nextDateTime = LocalDateTime.of(targetShow.getDate(), targetShow.getTime());
+                occa.setNextShowDateTime(nextDateTime);
+            } else {
+                // Only past shows exist, get the latest one
+                Optional<Show> latestShow = shows.stream()
+                        .max(Comparator.comparing(Show::getDate)
+                                .thenComparing(Show::getTime));
+
+                if (latestShow.isPresent()) {
+                    targetShow = latestShow.get();
+                    LocalDateTime latestDateTime = LocalDateTime.of(targetShow.getDate(), targetShow.getTime());
+                    occa.setNextShowDateTime(latestDateTime);
+                }
+            }
+
+            // Tính toán minPrice từ targetShow (show tiếp theo hoặc show gần đây nhất)
+            if (targetShow != null) {
+                // Lấy danh sách các loại vé của show này và tìm giá thấp nhất
+                Double minPrice = showServices.getMinPriceForShow(targetShow.getId());
+                occa.setMinPrice(minPrice);
+            } else {
+                occa.setMinPrice(null);
+            }
+        }
+        occaRepository.save(occa);
+    }
+
+    @KafkaListener(topics = "update-next-show-datetime")
+    public void listenUpdateNextShowDateTime(String showId) {
+        log.info("Received message to update next show date time for Show ID: {}", showId);
+        Show show = showRepository.findById(UUID.fromString(showId))
+                .orElseThrow(() -> new RuntimeException("Show not found with ID: " + showId));
+        updateNextShowDateTime(show.getOcca().getId());
     }
 }

@@ -2,6 +2,9 @@ package com.ticket.servermono.occacontext.adapters.dtos.DetailData;
 
 import lombok.Builder;
 import lombok.Data;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Data
@@ -11,8 +14,7 @@ public class OccaHeroDetailResponse {
     private String title;
     private String artist;
     private String bannerUrl;
-    private String date;
-    private String time;
-    private String duration;
+    private LocalDate date;
+    private LocalTime time;
     private String location;
 }

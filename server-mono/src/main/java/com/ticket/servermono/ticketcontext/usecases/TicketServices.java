@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,8 @@ import user.UserServiceGrpc;
 public class TicketServices {
     private final TicketClassRepository ticketClassRepository;
     private final TicketRepository ticketRepository;
+
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @GrpcClient("user-service")
     private UserServiceGrpc.UserServiceBlockingStub userStub;
@@ -358,5 +361,23 @@ public class TicketServices {
             log.error("Error retrieving used tickets data: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to retrieve used tickets data", e);
         }
+    }
+
+    public Double getMinPriceForShow(UUID showId) {
+        List<TicketClass> ticketClasses = ticketClassRepository.findByShowId(showId);
+        return ticketClasses.stream()
+            .mapToDouble(TicketClass::getPrice)
+            .min()
+            .orElse(0);
+    }
+
+    public void publishNextShowDateTime(UUID showId) {
+        if (showId == null) {
+            log.warn("Attempted to publish null showId to Kafka");
+            return;
+        }
+        
+        log.info("Publishing show ID {} to update-next-show-datetime topic", showId);
+        kafkaTemplate.send("update-next-show-datetime", showId.toString());
     }
 }

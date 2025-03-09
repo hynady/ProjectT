@@ -1,17 +1,24 @@
 package com.ticket.servermono.occacontext.adapters.dtos;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class SearchBarTemplateResponse {
-    UUID id;
-    String title;
-    String date;
-    String location;
+    private UUID id;
+    private String title;
+    private LocalDateTime showDateTime;
+    private String location;
+    
+    // Để tương thích ngược với mã hiện có
+    public LocalDate getDate() {
+        return showDateTime != null ? showDateTime.toLocalDate() : null;
+    }
 }

@@ -84,8 +84,8 @@ public class ShowServicesGrpc extends ShowServicesImplBase {
                                     .setTicketClassId(entry.getKey())
                                     .setShowId(showId)
                                     .setIsActive(isActive)
-                                    .setShowDate(show.getDate())
-                                    .setShowTime(show.getTime());
+                                    .setShowDate(show.getDate().toString())
+                                    .setShowTime(show.getTime().toString());
 
                             if (occaOpt.isPresent()) {
                                 Occa occa = occaOpt.get();
@@ -176,8 +176,8 @@ public class ShowServicesGrpc extends ShowServicesImplBase {
             Show show = showOpt.get();
 
             ShowDataResponse response = ShowDataResponse.newBuilder()
-                    .setTime(show.getTime())
-                    .setDate(show.getDate())
+                    .setTime(show.getTime().toString())
+                    .setDate(show.getDate().toString())
                     .setOccaId(show.getOcca().getId().toString())
                     .build();
 

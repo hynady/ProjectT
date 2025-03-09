@@ -1,5 +1,6 @@
 package com.ticket.servermono.occacontext.entities;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -23,7 +24,6 @@ import lombok.experimental.SuperBuilder;
     @Index(name = "idx_occa_title", columnList = "title"),
     @Index(name = "idx_occa_category", columnList = "category_id"),
     @Index(name = "idx_occa_venue", columnList = "venue_id"),
-    @Index(name = "idx_occa_date", columnList = "date"),
     @Index(name = "idx_occa_artist", columnList = "artist")
 })
 @Data
@@ -39,23 +39,15 @@ public class Occa extends BaseSQLEntity {
     @Column(nullable = false, length = 1000)
     private String image;
 
-    @Column(nullable = false)
-    private String date;
-
-    @Column(nullable = false)
-    private String time;
-
-    @Column(nullable = false)
-    private String price;
-
-    // Null in case of no artist ocassion such as workshop, seminar, etc
     @Column(nullable = true)
     private String artist;
 
-    // TODO fix duration data type to number
-    @Column(nullable = true)
-    private String duration;
+    @Column(name = "next_show_date_time")
+    private LocalDateTime nextShowDateTime;
 
+    @Column(name = "min_price")
+    private Double minPrice;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;

@@ -1,5 +1,6 @@
 package com.ticket.servermono.searchcontext.adapters.dtos;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -12,6 +13,6 @@ import lombok.Data;
 public class SearchBarTemplateResponse {
     UUID id;
     String title;
-    String date;
+    LocalDate date;
     String location;
 }

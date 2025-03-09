@@ -17,6 +17,8 @@ import occa.SearchRequest;
 
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -50,12 +52,14 @@ public class SearchService {
 
     private List<SearchBarTemplateResponse> mapToSearchBarResponses(OccaSearchResponse response) {
         return response.getResultsList().stream()
-            .map(result -> SearchBarTemplateResponse.builder()
-                .id(UUID.fromString(result.getId()))
-                .title(result.getTitle())
-                .date(result.getDate())
-                .location(result.getLocation())
-                .build())
+            .map(result -> {
+                return SearchBarTemplateResponse.builder()
+                    .id(UUID.fromString(result.getId()))
+                    .title(result.getTitle())
+                    .date(result.getDate().isEmpty() ? null : LocalDate.parse(result.getDate()))
+                    .location(result.getLocation())
+                    .build();
+            })
             .collect(Collectors.toList());
     }
 
@@ -112,8 +116,8 @@ public class SearchService {
             .id(UUID.fromString(occa.getId()))
             .title(occa.getTitle())
             .image(occa.getImage())
-            .date(occa.getDate())
-            .time(occa.getTime())
+            .date(occa.getDate().isEmpty() ? null : LocalDate.parse(occa.getDate()))
+            .time(occa.getTime().isEmpty() ? null : LocalTime.parse(occa.getTime()))
             .location(occa.getLocation())
             .price(occa.getPrice())
             .categoryId(occa.getCategoryId().isEmpty() ? null : UUID.fromString(occa.getCategoryId()))

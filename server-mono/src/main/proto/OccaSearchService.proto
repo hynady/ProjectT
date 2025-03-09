@@ -53,7 +53,7 @@ message OccaCardResponse {
     string date = 4;
     string time = 5;
     string location = 6;
-    string price = 7;
+    double price = 7;
     string category_id = 8;
     string venue_id = 9;
 }

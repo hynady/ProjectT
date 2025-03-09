@@ -33,7 +33,7 @@ public class OccaSearchGrpcService extends OccaSearchServiceGrpc.OccaSearchServi
                     .map(dto -> OccaSearchResult.newBuilder()
                         .setId(dto.getId().toString())
                         .setTitle(dto.getTitle())
-                        .setDate(dto.getDate())
+                        .setDate(dto.getDate().toString())
                         .setLocation(dto.getLocation())
                         .build())
                     .collect(Collectors.toList()))
@@ -57,7 +57,7 @@ public class OccaSearchGrpcService extends OccaSearchServiceGrpc.OccaSearchServi
                     .map(dto -> OccaSearchResult.newBuilder()
                         .setId(dto.getId().toString())
                         .setTitle(dto.getTitle())
-                        .setDate(dto.getDate())
+                        .setDate(dto.getDate().toString())
                         .setLocation(dto.getLocation())
                         .build())
                     .collect(Collectors.toList()))
@@ -81,7 +81,7 @@ public class OccaSearchGrpcService extends OccaSearchServiceGrpc.OccaSearchServi
                     .map(dto -> OccaSearchResult.newBuilder()
                         .setId(dto.getId().toString())
                         .setTitle(dto.getTitle())
-                        .setDate(dto.getDate())
+                        .setDate(dto.getDate().toString())
                         .setLocation(dto.getLocation())
                         .build())
                     .collect(Collectors.toList()))
@@ -98,6 +98,7 @@ public class OccaSearchGrpcService extends OccaSearchServiceGrpc.OccaSearchServi
     @Override
     public void searchOccas(SearchOccasRequest request, StreamObserver<SearchOccasResponse> responseObserver) {
         try {
+            log.info("Searching occas with request: {}", request);
             var searchResult = occaServices.searchOccas(
                 request.getPage(),
                 request.getSize(),
@@ -114,8 +115,8 @@ public class OccaSearchGrpcService extends OccaSearchServiceGrpc.OccaSearchServi
                         .setId(occa.getId().toString())
                         .setTitle(occa.getTitle())
                         .setImage(occa.getImage())
-                        .setDate(occa.getDate())
-                        .setTime(occa.getTime())
+                        .setDate(occa.getDate().toString())
+                        .setTime(occa.getTime().toString())
                         .setLocation(occa.getLocation())
                         .setPrice(occa.getPrice())
                         .setCategoryId(occa.getCategoryId() != null ? occa.getCategoryId().toString() : "")

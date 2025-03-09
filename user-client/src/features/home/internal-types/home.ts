@@ -13,7 +13,7 @@ export interface HeroSectionUnit {
     date: string;
     time: string;
     location: string;
-    price: string;
+    price: number;
     categoryId?: string;
     venueId?: string;
   }

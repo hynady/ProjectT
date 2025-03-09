@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ticket.servermono.occacontext.adapters.dtos.Show.OccaShowDataResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.Show.OccaShowDataResponse.PriceInfo;
@@ -16,6 +17,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import ticket.GetMinPriceForShowRequest;
+import ticket.GetMinPriceForShowResponse;
 import ticket.TicketShowServicesGrpc.TicketShowServicesBlockingStub;
 
 @Service
@@ -78,6 +81,24 @@ public class ShowServices {
             log.error("Failed to get ticket classes for show: " + showId, e);
             throw new RuntimeException("Failed to get ticket classes for show: " + showId);
         }
+    }
+
+    /**
+     * Lấy giá thấp nhất cho một show cụ thể thông qua gRPC
+     * @param showId ID của show cần lấy giá
+     * @return Giá thấp nhất hoặc null nếu không có giá
+     */
+    @Transactional(readOnly = true)
+    public Double getMinPriceForShow(UUID showId) {
+        // Giả sử bạn có một phương thức để lấy tất cả các loại vé của một show
+        List<PriceInfo> priceInfos = getTicketClassesForShow(showId);
+        
+        // Tìm giá thấp nhất trong các loại vé
+        return priceInfos.stream()
+                .map(PriceInfo::getPrice)
+                .filter(price -> price != null && price > 0) // Lọc ra các giá hợp lệ
+                .min(Double::compare)
+                .orElse(null);
     }
 
     public void initializeTicketClasses(UUID showId) {
