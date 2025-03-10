@@ -36,6 +36,7 @@ export interface BookingState {
         price: number;
     }[];
     totalAmount: number;
+    selectedProfile?: UserProfileCard;
 }
 
 export interface OccaShortInfo {
@@ -57,3 +58,5 @@ export interface BookingPayload {
         quantity: number;
     }[];
 }
+
+import { UserProfileCard } from '@/features/setting/internal-types/settings.types';

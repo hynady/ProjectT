@@ -1,23 +1,25 @@
 package com.ticket.servermono.authcontext.usecases;
 
+import com.ticket.servermono.authcontext.adapters.dtos.UpdateProfileRequest;
+import com.ticket.servermono.authcontext.adapters.dtos.UpdateProfileResponse;
+import com.ticket.servermono.authcontext.adapters.dtos.UserInfoDTO;
+import com.ticket.servermono.authcontext.entities.EndUser;
+import com.ticket.servermono.authcontext.infrastructure.repositories.EndUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.ticket.servermono.authcontext.entities.EndUser;
 import com.ticket.servermono.authcontext.infrastructure.config.JWTUtils;
-import com.ticket.servermono.authcontext.infrastructure.repositories.EndUserRepository;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class EndUserServices {
 
     private final EndUserRepository eUserRepo;
@@ -72,5 +74,64 @@ public class EndUserServices {
         boolean exists = eUserRepo.findById(userId).isPresent();
         log.info("User existence check for {}: {}", userId, exists);
         return exists;
+    }
+
+    /**
+     * Updates user profile information
+     * @param userId The ID of the user to update
+     * @param request The profile data to update
+     * @return A response containing the updated user information
+     */
+    @Transactional
+    public UpdateProfileResponse updateUserProfile(UUID userId, UpdateProfileRequest request) {
+        // Find the user by ID
+        EndUser user = eUserRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Update the user fields if they're provided in the request
+        if (request.getName() != null) {
+            user.setName(request.getName());
+        }
+        
+        if (request.getAvatar() != null) {
+            user.setAvatar(request.getAvatar());
+        }
+        
+        // Birthday might be null explicitly (user clears birthday field)
+        user.setBirthday(request.getBirthday());
+        
+        // Save the updated user
+        EndUser updatedUser = eUserRepo.save(user);
+        
+        // Convert to DTO and return response
+        UserInfoDTO userInfoDTO = convertToUserInfoDTO(updatedUser);
+        
+        return UpdateProfileResponse.builder()
+                .success(true)
+                .message("Cập nhật thông tin thành công")
+                .data(userInfoDTO)
+                .build();
+    }
+    
+    // Helper method to convert Entity to DTO
+    private UserInfoDTO convertToUserInfoDTO(EndUser user) {
+        return UserInfoDTO.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .birthday(user.getBirthday())
+                .build();
+    }
+    
+    public UserInfoDTO getUserInfo(UUID userId) {
+        EndUser user = eUserRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return convertToUserInfoDTO(user);
+    }
+
+    public String getAvatar(UUID userId) {
+        return eUserRepo.findAvatarById(userId);
     }
 }

@@ -27,9 +27,11 @@ import {
   AlertDialogTrigger,
 } from "@/commons/components/alert-dialog.tsx"
 import {useAuth} from "@/features/auth/contexts.tsx";
+import {useUser} from "@/features/auth/hooks/useUser.tsx";
 
 const Navbar = () => {
   const {isAuthenticated, logout} = useAuth();
+  const {displayName, avatarUrl} = useUser();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -120,13 +122,15 @@ const Navbar = () => {
               <DropdownMenuPointerCursor modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="h-8 w-8 md:h-9 md:w-9">
-                    <AvatarImage src="https://github.com/shadcn.png"/>
-                    <AvatarFallback>CN</AvatarFallback>
+                    <AvatarImage src={avatarUrl} />
+                    <AvatarFallback>
+                      {displayName ? displayName.charAt(0).toUpperCase() : 'U'}
+                    </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
                   <DropdownMenuLabel className="text-sm">
-                    Tài khoản của tôi
+                    {displayName || 'Tài khoản của tôi'}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator/>
                   <DropdownMenuGroup>

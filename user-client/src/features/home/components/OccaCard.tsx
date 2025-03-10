@@ -93,7 +93,7 @@ export const OccaCard: React.FC<OccaCardProps> = ({ occa, loading }) => {
 
         <div className="font-bold text-xl text-primary pt-3 pb-3 text-right">
           <Separator orientation="horizontal" className="my-2" />
-          <span className="text-xl font-mono">Từ</span> {occa.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+          <span className="text-xl font-mono">Từ</span> {isNaN(occa.price) ? "NaN" : occa.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
         </div>
       </CardContent>
 
