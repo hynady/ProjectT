@@ -14,7 +14,7 @@ import ThemeSwitcher from "@/commons/blocks/ThemeSwitcher.tsx";
 import {useNavigate} from "react-router-dom";
 import {SearchBar} from "@/features/search/blocks/SearchBar.tsx";
 import {cn} from "@/commons/lib/utils/utils";
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,20 +27,96 @@ import {
   AlertDialogTrigger,
 } from "@/commons/components/alert-dialog.tsx"
 import {useAuth} from "@/features/auth/contexts.tsx";
-import {useUser} from "@/features/auth/hooks/useUser.tsx";
+import { useUser } from '@/features/auth/contexts/UserContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "@/commons/components/dialog.tsx";
 
 const Navbar = () => {
   const {isAuthenticated, logout} = useAuth();
-  const {displayName, avatarUrl} = useUser();
+  const {
+    displayName, 
+    avatarUrl, 
+    showProfileCompletion, 
+    dismissProfileCompletion, 
+    refreshTrigger
+  } = useUser();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  
+  // This effect will run whenever user data is refreshed
+  useEffect(() => {
+    // The refresh trigger changing will cause this component to re-evaluate
+    // with the latest user data
+    console.log("Navbar: User data refreshed");
+  }, [refreshTrigger]);
 
   const handleLogout = () => {
     logout();
   };
+  
+  // Show dialog when showProfileCompletion changes
+  useEffect(() => {
+    if (isAuthenticated && showProfileCompletion) {
+      setShowProfileDialog(true);
+    }
+  }, [isAuthenticated, showProfileCompletion]);
+  
+  const handleGoToSettings = () => {
+    navigate('/settings');
+    setShowProfileDialog(false);
+  };
+  
+  const handleDismiss = () => {
+    dismissProfileCompletion(); // Always dismiss when clicking "Không nhắc lại"
+    setShowProfileDialog(false);
+  };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-10  border shadow-lg bg-card">
+    <nav className="fixed top-0 left-0 right-0 z-10 border shadow-lg bg-card">
+      {/* Profile Completion Dialog */}
+      <Dialog 
+        open={showProfileDialog} 
+        onOpenChange={setShowProfileDialog}
+        // Fix the focus issue by setting these props
+        modal={true}
+      >
+        <DialogContent 
+          className="sm:max-w-[425px]"
+          // Prevent auto focus on elements inside the dialog
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          // Ensure the dialog doesn't trap focus
+          onEscapeKeyDown={() => setShowProfileDialog(false)}
+          // Add tabIndex to make the dialog focusable but not automatically focused
+          tabIndex={-1}
+        >
+          <DialogHeader>
+            <DialogTitle>Hoàn thiện hồ sơ</DialogTitle>
+            <DialogDescription>
+              Vui lòng cập nhật tên của bạn để hoàn thiện hồ sơ người dùng.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter className="flex sm:justify-between">
+            <Button variant="outline" onClick={handleDismiss}>
+              Không nhắc lại
+            </Button>
+            <DialogClose asChild>
+              <Button variant="default" onClick={handleGoToSettings}>
+                Đến trang cài đặt
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <div className="container mx-auto max-w-screen-xl">
         <div className="h-14 md:h-16 flex items-center justify-between gap-4 px-2 sm:px-4 md:px-8">
           {/* Logo */}

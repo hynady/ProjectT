@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useAuth } from '@/features/auth/contexts';
 import { getAvatarUrl } from '@/utils/cloudinary.utils';
 import { userService } from '../services/user.service';
@@ -12,7 +12,22 @@ export interface UserData {
   username?: string;
 }
 
-export function useUser() {
+interface UserContextType {
+  userData: UserData | null;
+  loading: boolean;
+  error: Error | null;
+  displayName: string;
+  avatarUrl: string;
+  showProfileCompletion: boolean;
+  dismissProfileCompletion: () => void;
+  isProfileComplete: boolean;
+  refreshUserData: () => Promise<void>;
+  refreshTrigger: number;
+}
+
+const UserContext = createContext<UserContextType | undefined>(undefined);
+
+export function UserProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -32,6 +47,7 @@ export function useUser() {
   const fetchUserData = useCallback(async () => {
     if (!isAuthenticated) {
       setLoading(false);
+      setUserData(null);
       return;
     }
 
@@ -78,7 +94,7 @@ export function useUser() {
   // More robust profile completion check
   const isProfileComplete = !!(userData?.name && userData.name.trim() !== '');
 
-  return {
+  const value = {
     userData,
     loading,
     error,
@@ -87,7 +103,17 @@ export function useUser() {
     showProfileCompletion,
     dismissProfileCompletion,
     isProfileComplete,
-    refreshUserData: fetchUserData, // Expose the refresh function
-    refreshTrigger // Expose the refresh trigger for components to listen to
+    refreshUserData: fetchUserData,
+    refreshTrigger
   };
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+}
+
+export function useUser() {
+  const context = useContext(UserContext);
+  if (context === undefined) {
+    throw new Error('useUser must be used within a UserProvider');
+  }
+  return context;
 }

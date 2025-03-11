@@ -18,8 +18,17 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { Popover } from "@/commons/components/popover.tsx";
 import { UserInfo, UpdateProfileRequest } from "../internal-types/settings.types";
 import { settingsService } from "../services/settings.service";
-import { uploadImageToCloudinary, getAvatarUrl } from "@/utils/cloudinary.utils";
-import { Loader2 } from "lucide-react";
+import { uploadImageToCloudinary, getAvatarUrl as getNameAvatarUrl } from "@/utils/cloudinary.utils";
+import { Loader2, Pencil, Upload } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/commons/components/dialog.tsx";
+import { useUser } from '@/features/auth/contexts/UserContext';
 
 const accountFormSchema = z.object({
   name: z
@@ -57,11 +66,18 @@ interface AccountFormProps {
   isLoading?: boolean;
 }
 
+// Base URL for avatar images
+const AVATAR_BASE_URL = "https://www.rophim.tv/images/avatars/pack1/";
+// Number of available avatars
+const AVATAR_COUNT = 15;
+
 export function AccountForm({ initialData, isLoading = false }: AccountFormProps) {
   const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const { refreshUserData } = useUser(); // Get the refresh function from useUser hook
 
   const methods = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
@@ -96,10 +112,10 @@ export function AccountForm({ initialData, isLoading = false }: AccountFormProps
       if (initialData.avatar) {
         setAvatarPreview(initialData.avatar);
       } else if (initialData.name) {
-        setAvatarPreview(getAvatarUrl(initialData.name));
+        setAvatarPreview(getNameAvatarUrl(initialData.name));
       } else {
         // Default fallback when both avatar and name are missing
-        setAvatarPreview(getAvatarUrl('U'));
+        setAvatarPreview(getNameAvatarUrl('U'));
       }
     }
   }, [initialData, reset]);
@@ -115,6 +131,7 @@ export function AccountForm({ initialData, isLoading = false }: AccountFormProps
     reader.onloadend = () => {
       const base64String = reader.result as string;
       setAvatarPreview(base64String);
+      setIsAvatarDialogOpen(false); // Close dialog after selection
     };
     reader.readAsDataURL(file);
   };
@@ -140,6 +157,20 @@ export function AccountForm({ initialData, isLoading = false }: AccountFormProps
     } finally {
       setIsUploadingImage(false);
     }
+  };
+
+  const handleSelectPredefinedAvatar = (avatarUrl: string) => {
+    setAvatarPreview(avatarUrl);
+    setValue('avatar', avatarUrl);
+    setSelectedFile(null);
+    setIsAvatarDialogOpen(false);
+  };
+
+  // Generate numbered avatar URLs
+  const getNumberedAvatarUrl = (index: number): string => {
+    // Ensure the index is padded with a leading zero if it's a single digit
+    const paddedIndex = String(index).padStart(2, '0'); 
+    return `${AVATAR_BASE_URL}${paddedIndex}.jpg`;
   };
 
   async function onSubmit(data: AccountFormValues) {
@@ -172,6 +203,9 @@ export function AccountForm({ initialData, isLoading = false }: AccountFormProps
       // Clear selected file after successful update
       setSelectedFile(null);
       
+      // Refresh user data to update the navbar
+      await refreshUserData();
+      
       toast({
         title: "Thành công!",
         description: result.message,
@@ -194,7 +228,7 @@ export function AccountForm({ initialData, isLoading = false }: AccountFormProps
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Card Ảnh đại diện */}
+        {/* Avatar section */}
         <div className="space-y-6">
           <FormField
             control={control}
@@ -204,29 +238,84 @@ export function AccountForm({ initialData, isLoading = false }: AccountFormProps
                 <FormLabel className="text-base">Ảnh đại diện</FormLabel>
                 <FormControl>
                   <div className="flex items-center gap-4">
-                    <Avatar className="w-24 h-24">
-                      {isUploadingImage ? (
-                        <div className="flex items-center justify-center w-full h-full bg-muted">
-                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
+                      <DialogTrigger asChild>
+                        <div className="relative cursor-pointer group">
+                          <Avatar className="w-24 h-24">
+                            {isUploadingImage ? (
+                              <div className="flex items-center justify-center w-full h-full bg-muted">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                              </div>
+                            ) : avatarPreview ? (
+                              <>
+                                <AvatarImage src={avatarPreview} />
+                                <AvatarFallback>
+                                  {methods.getValues('name')?.charAt(0)?.toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </>
+                            ) : (
+                              <div className="flex items-center justify-center w-full h-full bg-muted">
+                                <Pencil className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            )}
+                          </Avatar>
+                          <div className="absolute inset-0 bg-black/30 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <Pencil className="h-6 w-6 text-white" />
+                          </div>
                         </div>
-                      ) : (
-                        <>
-                          <AvatarImage src={avatarPreview} />
-                          <AvatarFallback>
-                            {methods.getValues('name')?.charAt(0)?.toUpperCase() || 'U'}
-                          </AvatarFallback>
-                        </>
-                      )}
-                    </Avatar>
-                    <div className="flex flex-col gap-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="w-full"
-                      />
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Chọn avatar</DialogTitle>
+                          <DialogDescription>
+                            Chọn một avatar có sẵn hoặc tải lên avatar của riêng bạn.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-4 gap-4 py-4">
+                          {/* Upload option */}
+                          <div className="relative">
+                            <div className="aspect-square rounded-full border border-dashed border-muted-foreground flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleAvatarChange}
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                title="Tải ảnh lên"
+                              />
+                              <Upload className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          </div>
+
+                          {/* Predefined avatars using a loop - removed titles */}
+                          {Array.from({ length: AVATAR_COUNT }, (_, index) => (
+                            <div 
+                              key={index} 
+                              className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                              onClick={() => handleSelectPredefinedAvatar(getNumberedAvatarUrl(index + 1))}
+                            >
+                              <img 
+                                src={getNumberedAvatarUrl(index + 1)} 
+                                alt={`Avatar option ${index + 1}`} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Fallback if image fails to load
+                                  e.currentTarget.src = `https://ui-avatars.com/api/?background=random&color=fff&name=${index + 1}&size=256`;
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <div>
+                      <p className="text-sm font-medium mb-1">
+                        {avatarPreview ? 'Nhấn vào avatar để thay đổi' : 'Nhấn vào để thiết lập avatar'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Bạn có thể chọn avatar có sẵn hoặc tải lên ảnh của riêng bạn
+                      </p>
                       {selectedFile && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-primary mt-1">
                           {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)
                         </p>
                       )}
@@ -234,7 +323,7 @@ export function AccountForm({ initialData, isLoading = false }: AccountFormProps
                   </div>
                 </FormControl>
                 <FormDescription>
-                  Chọn ảnh đại diện của bạn. Định dạng cho phép: JPG, PNG, GIF.
+                  Ảnh đại diện sẽ hiển thị khi bạn đăng nhập và trong các hoạt động trên hệ thống.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
