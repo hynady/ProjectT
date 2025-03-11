@@ -116,12 +116,12 @@ public class EndUserServices {
     // Helper method to convert Entity to DTO
     private UserInfoDTO convertToUserInfoDTO(EndUser user) {
         return UserInfoDTO.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .avatar(user.getAvatar())
-                .birthday(user.getBirthday())
-                .build();
+            .id(user.getId())
+            .name(user.getName() != null ? user.getName() : "")
+            .email(user.getEmail() != null ? user.getEmail() : "")
+            .avatar(user.getAvatar() != null ? user.getAvatar() : "")
+            .birthday(user.getBirthday())
+            .build();
     }
     
     public UserInfoDTO getUserInfo(UUID userId) {

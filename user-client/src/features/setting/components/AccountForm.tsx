@@ -95,8 +95,11 @@ export function AccountForm({ initialData, isLoading = false }: AccountFormProps
       
       if (initialData.avatar) {
         setAvatarPreview(initialData.avatar);
-      } else {
+      } else if (initialData.name) {
         setAvatarPreview(getAvatarUrl(initialData.name));
+      } else {
+        // Default fallback when both avatar and name are missing
+        setAvatarPreview(getAvatarUrl('U'));
       }
     }
   }, [initialData, reset]);

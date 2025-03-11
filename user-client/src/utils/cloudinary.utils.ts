@@ -146,13 +146,16 @@ export async function uploadImageToCloudinary(
 export function getAvatarUrl(name: string = '', avatarUrl?: string): string {
   if (avatarUrl) return avatarUrl;
   
+  // Ensure name is a string
+  const nameStr = name || '';
+  
   // Generate a UI Avatar URL with the user's initials
-  const initials = name
+  const initials = nameStr
     .split(' ')
     .map(part => part.charAt(0))
     .join('')
     .toUpperCase()
-    .substring(0, 2);
+    .substring(0, 2) || 'U';
   
   // Use UI Avatars to generate an avatar with initials
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=random&color=fff&size=256`;
