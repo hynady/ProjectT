@@ -1,69 +1,58 @@
 import { useState } from "react";
-import { Button } from "@/commons/components/button";
-import { Card, CardContent } from "@/commons/components/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/commons/components/tabs";
-import { PlusCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { OccaList } from "./components/OccaList";
+import { DashboardLayout } from "./layouts/DashboardLayout";
+import { EventsTable } from "./components/OccaList";
+import { Button } from "@/commons/components/button";
+import { Input } from "@/commons/components/input";
+import {
+  PlusCircle,
+  Search,
+} from "lucide-react";
 
 const OrganizePage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("upcoming");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleCreateNew = () => {
     navigate("/organize/create");
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Quản lý sự kiện</h1>
-          <p className="text-muted-foreground">
-            Tạo và quản lý các sự kiện của bạn
-          </p>
+    <DashboardLayout>
+      <div className="h-fit flex flex-col gap-4">
+        <header className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold tracking-tight">Quản lý sự kiện</h2>
+            <p className="text-muted-foreground">
+              Tạo và quản lý các sự kiện của bạn
+            </p>
+          </div>
+          <div>
+            <Button onClick={handleCreateNew} className="gap-1.5">
+              <PlusCircle className="h-4 w-4" />
+              Tạo sự kiện mới
+            </Button>
+          </div>
+        </header>
+        
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Tìm kiếm sự kiện..."
+            className="pl-8 w-full"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        <Button onClick={handleCreateNew} className="gap-2">
-          <PlusCircle className="h-4 w-4" />
-          Tạo sự kiện mới
-        </Button>
+        
+        <div className="rounded-md border flex-1 flex flex-col h-[calc(100vh-13rem)] bg-background overflow-hidden">
+          <EventsTable 
+            searchQuery={searchQuery}
+          />
+        </div>
       </div>
-
-      <Card>
-        <CardContent className="p-6">
-          <Tabs
-            defaultValue="upcoming"
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="upcoming">Sắp diễn ra</TabsTrigger>
-              <TabsTrigger value="past">Đã kết thúc</TabsTrigger>
-              <TabsTrigger value="draft">Bản nháp</TabsTrigger>
-            </TabsList>
-            <TabsContent value="upcoming">
-              <OccaList 
-                type="upcoming" 
-                organizerId="current-user-id" 
-              />
-            </TabsContent>
-            <TabsContent value="past">
-              <OccaList 
-                type="past" 
-                organizerId="current-user-id" 
-              />
-            </TabsContent>
-            <TabsContent value="draft">
-              <OccaList 
-                type="draft" 
-                organizerId="current-user-id" 
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+    </DashboardLayout>
   );
 };
 

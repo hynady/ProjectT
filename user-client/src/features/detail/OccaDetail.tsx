@@ -15,7 +15,7 @@ import { OccaOverviewSkeleton } from "./skeletons/OccaOverviewSkeleton";
 import { OccaShowsSkeleton } from "./skeletons/OccaShowsSkeleton";
 import { OccaGallerySkeleton, OccaLocationSkeleton } from "./skeletons/OccaLocationSkeleton";
 import NotFoundPage from '@/commons/blocks/NotFoundPage.tsx';
-import { usePreviewData } from '@/features/preview/PreviewOccaDetail';
+import { usePreviewData } from '@/features/organize/components/preview/PreviewOccaDetail.tsx';
 
 const ErrorMessage = ({ message, className = '' }: { message: string, className?: string }) => (
   <div className={`p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-2 ${className}`}>

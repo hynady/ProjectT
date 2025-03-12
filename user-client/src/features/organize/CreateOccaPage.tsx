@@ -14,6 +14,7 @@ import { TicketForm } from "@/features/organize/components/TicketForm";
 import { GalleryForm } from "@/features/organize/components/GalleryForm";
 import { uploadImageToCloudinary } from "@/utils/cloudinary.utils";
 import { PreviewModal } from "./components/PreviewModal";
+import { DashboardLayout } from "./layouts/DashboardLayout";
 
 const CreateOccaPage = () => {
   const navigate = useNavigate();
@@ -248,103 +249,118 @@ const CreateOccaPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" size="icon" onClick={() => navigate("/organize")}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-grow">
-          <h1 className="text-3xl font-bold">Tạo sự kiện mới</h1>
-          <p className="text-muted-foreground">
-            Điền thông tin chi tiết để tạo sự kiện của bạn
-          </p>
-        </div>
-        
-        {/* Add Preview Button */}
-        <PreviewModal data={occaData} />
-      </div>
-
-      <Card>
-        <CardContent className="p-6">
-          <Tabs value={activeTab} onValueChange={handleTabChange}>
-            <TabsList className="grid grid-cols-4 mb-8">
-              <TabsTrigger value="basic-info" disabled={!canGoToTab("basic-info")}>
-                Thông tin cơ bản
-              </TabsTrigger>
-              <TabsTrigger value="shows" disabled={!canGoToTab("shows")}>
-                Suất diễn
-              </TabsTrigger>
-              <TabsTrigger value="tickets" disabled={!canGoToTab("tickets")}>
-                Vé
-              </TabsTrigger>
-              <TabsTrigger value="gallery" disabled={!canGoToTab("gallery")}>
-                Hình ảnh
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="basic-info">
-              <BasicInfoForm 
-                data={occaData.basicInfo} 
-                onChange={(data) => handleFormChange("basicInfo", data)}
-                onNext={() => setActiveTab("shows")}
-              />
-            </TabsContent>
-
-            <TabsContent value="shows">
-              <ShowsForm
-                shows={occaData.shows}
-                onChange={(data) => handleFormChange("shows", data)}
-                onBack={() => setActiveTab("basic-info")}
-                onNext={() => setActiveTab("tickets")}
-              />
-            </TabsContent>
-
-            <TabsContent value="tickets">
-              <TicketForm 
-                tickets={occaData.tickets}
-                shows={occaData.shows}
-                onChange={(data) => handleFormChange("tickets", data)}
-                onBack={() => setActiveTab("shows")}
-                onNext={() => setActiveTab("gallery")}
-              />
-            </TabsContent>
-
-            <TabsContent value="gallery">
-              <GalleryForm
-                gallery={occaData.gallery}
-                onChange={(data) => handleFormChange("gallery", data)}
-                onBack={() => setActiveTab("tickets")}
-              />
-            </TabsContent>
-          </Tabs>
-
-          <div className="flex justify-between mt-8 pt-4 border-t">
-            <Button 
-              variant="outline" 
-              onClick={() => handleSave(true)}
-              disabled={isSaving}
-            >
-              {isSaving && isDraft ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
-              ) : null}
-              Lưu nháp
-            </Button>
-            <Button 
-              onClick={() => handleSave(false)}
-              disabled={isSaving || !isFormValid}
-              className="gap-2"
-            >
-              {isSaving && !isDraft ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              Đăng sự kiện
-            </Button>
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => navigate("/organize")}
+            className="flex-shrink-0"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex-grow">
+            <h1 className="text-2xl sm:text-3xl font-bold">Tạo sự kiện mới</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Điền thông tin chi tiết để tạo sự kiện của bạn
+            </p>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          
+          {/* Preview Button - hide on small screens */}
+          <div className="hidden sm:block">
+            <PreviewModal data={occaData} />
+          </div>
+        </div>
+
+        {/* Show on small screens */}
+        <div className="sm:hidden flex justify-end">
+          <PreviewModal data={occaData} />
+        </div>
+
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <Tabs value={activeTab} onValueChange={handleTabChange}>
+              <TabsList className="grid grid-cols-2 sm:grid-cols-4 mb-6 sm:mb-8">
+                <TabsTrigger value="basic-info" disabled={!canGoToTab("basic-info")}>
+                  Thông tin
+                </TabsTrigger>
+                <TabsTrigger value="shows" disabled={!canGoToTab("shows")}>
+                  Suất diễn
+                </TabsTrigger>
+                <TabsTrigger value="tickets" disabled={!canGoToTab("tickets")}>
+                  Vé
+                </TabsTrigger>
+                <TabsTrigger value="gallery" disabled={!canGoToTab("gallery")}>
+                  Hình ảnh
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="basic-info">
+                <BasicInfoForm 
+                  data={occaData.basicInfo} 
+                  onChange={(data) => handleFormChange("basicInfo", data)}
+                  onNext={() => setActiveTab("shows")}
+                />
+              </TabsContent>
+
+              <TabsContent value="shows">
+                <ShowsForm
+                  shows={occaData.shows}
+                  onChange={(data) => handleFormChange("shows", data)}
+                  onBack={() => setActiveTab("basic-info")}
+                  onNext={() => setActiveTab("tickets")}
+                />
+              </TabsContent>
+
+              <TabsContent value="tickets">
+                <TicketForm 
+                  tickets={occaData.tickets}
+                  shows={occaData.shows}
+                  onChange={(data) => handleFormChange("tickets", data)}
+                  onBack={() => setActiveTab("shows")}
+                  onNext={() => setActiveTab("gallery")}
+                />
+              </TabsContent>
+
+              <TabsContent value="gallery">
+                <GalleryForm
+                  gallery={occaData.gallery}
+                  onChange={(data) => handleFormChange("gallery", data)}
+                  onBack={() => setActiveTab("tickets")}
+                />
+              </TabsContent>
+
+              <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-0 mt-8 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleSave(true)}
+                  disabled={isSaving}
+                  className="order-2 sm:order-1"
+                >
+                  {isSaving && isDraft ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                  ) : null}
+                  Lưu nháp
+                </Button>
+                <Button 
+                  onClick={() => handleSave(false)}
+                  disabled={isSaving || !isFormValid}
+                  className="gap-2 order-1 sm:order-2"
+                >
+                  {isSaving && !isDraft ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Đăng sự kiện
+                </Button>
+              </div>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
   );
 };
 
