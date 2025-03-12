@@ -1,0 +1,58 @@
+export interface OrganizerOccaUnit {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
+  status: string;
+  ticketsSold: number;
+  ticketsTotal: number;
+  image?: string;
+}
+
+export interface BasicInfoFormData {
+  title: string;
+  artist: string;
+  location: string;
+  address: string;
+  duration: number;
+  description: string;
+  bannerUrl: string; // Đảm bảo luôn là string
+  bannerFile?: File; // Thêm File object để upload sau
+}
+
+export interface ShowFormData {
+  id?: string;
+  date: string;
+  time: string;
+}
+
+export interface TicketFormData {
+  id?: string;
+  showId: string;
+  type: string; 
+  price: number;
+  availableQuantity: number;
+}
+
+export interface GalleryItem {
+  id?: string;
+  image: string; // Đảm bảo luôn là string
+  file?: File; // Thêm File object để upload sau
+}
+
+export interface OccaFormData {
+  basicInfo: BasicInfoFormData;
+  shows: ShowFormData[];
+  tickets: TicketFormData[];
+  gallery: GalleryItem[];
+}
+
+export interface CreateOccaPayload extends OccaFormData {
+  status: string;
+}
+
+export interface CreateOccaResponse {
+  id: string;
+  title: string;
+  status: string;
+}

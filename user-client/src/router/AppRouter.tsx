@@ -21,6 +21,9 @@ import { ResetPassword } from "@/features/auth/blocks/ResetPasswordForm.tsx";
 import { RegisterForm } from "@/features/auth/blocks/RegisterForm.tsx";
 import AdminPage from "@/features/admin/block/AdminPage.tsx";
 import ProtectedBookingRoute from "@/router/ProtectedBookingRoute";
+import OrganizePage from "@/features/organize/OrganizePage.tsx";
+import CreateOccaPage from "@/features/organize/CreateOccaPage.tsx";
+import PreviewOccaDetail from "@/features/preview/PreviewOccaDetail";
 
 function AppRouter() {
   return (
@@ -59,7 +62,14 @@ function AppRouter() {
             <Route path="profile" element={<SettingsProfilePage />} />
             <Route path="account" element={<SettingsAccountPage />} />
           </Route>
+
+          {/* Organize Routes - Protected */}
+          <Route path="/organize" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
+          <Route path="/organize/create" element={<ProtectedRoute><CreateOccaPage /></ProtectedRoute>} />
         </Route>
+
+        {/* Preview Routes */}
+        <Route path="/preview/occa" element={<PreviewOccaDetail />} />
 
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>

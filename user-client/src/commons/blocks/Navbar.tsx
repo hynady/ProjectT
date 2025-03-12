@@ -1,4 +1,4 @@
-import {AlignJustify, ChevronDown, LogOut, Settings, Ticket, User} from "lucide-react";
+import {AlignJustify, ChevronDown, LogOut, Settings, Ticket, User, LayoutDashboard} from "lucide-react";
 import {Button} from "@/commons/components/button.tsx";
 import {Avatar, AvatarFallback, AvatarImage} from "@/commons/components/avatar.tsx";
 import {
@@ -167,12 +167,20 @@ const Navbar = () => {
                 <DropdownMenuSeparator/>
                 <DropdownMenuGroup>
                   {isAuthenticated && (
-                    <DropdownMenuItem
-                      className="text-sm"
-                      onClick={() => navigate("my-ticket")}>
-                      <Ticket className="h-4 w-4 mr-2"/>
-                      <span>Vé của tôi</span>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem
+                        className="text-sm"
+                        onClick={() => navigate("my-ticket")}>
+                        <Ticket className="h-4 w-4 mr-2"/>
+                        <span>Vé của tôi</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-sm"
+                        onClick={() => navigate("/organize")}>
+                        <LayoutDashboard className="h-4 w-4 mr-2"/>
+                        <span>Quản lý sự kiện</span>
+                      </DropdownMenuItem>
+                    </>
                   )}
                 </DropdownMenuGroup>
               </DropdownMenuContent>
@@ -182,13 +190,22 @@ const Navbar = () => {
           {/* Navigation Links for Desktop */}
           <nav className="hidden lg:flex items-center gap-2">
             {isAuthenticated && (
-              <Button
-                variant="default"
-                className="text-sm px-3 h-9"
-                onClick={() => navigate("my-ticket")}>
-                <Ticket className="w-4 h-4 mr-2"/>
-                Vé của tôi
-              </Button>
+              <>
+                <Button
+                  variant="default"
+                  className="text-sm px-3 h-9"
+                  onClick={() => navigate("my-ticket")}>
+                  <Ticket className="w-4 h-4 mr-2"/>
+                  Vé của tôi
+                </Button>
+                <Button
+                  variant="outline"
+                  className="text-sm px-3 h-9"
+                  onClick={() => navigate("/organize")}>
+                  <LayoutDashboard className="w-4 h-4 mr-2"/>
+                  Quản lý sự kiện
+                </Button>
+              </>
             )}
           </nav>
 
