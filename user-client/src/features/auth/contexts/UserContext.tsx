@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useAuth } from '@/features/auth/contexts';
 import { getAvatarUrl } from '@/utils/cloudinary.utils';
 import { userService } from '../services/user.service';
