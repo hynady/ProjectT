@@ -1,5 +1,4 @@
 import { BaseService } from '@/commons/base.service';
-import { format, addDays } from 'date-fns';
 import { 
   OrganizerOccaUnit, 
   CreateOccaPayload, 
@@ -36,136 +35,103 @@ class OrganizeService extends BaseService {
   }
 
   async getOccas(params: OccaFilterParams): Promise<Page<OrganizerOccaUnit>> {
-    const { page, size, status, search, sort, direction } = params;
+    // In a real app, this would make an API call
+    // Simulate API response with our mock data
+    console.log("Fetching events with params:", params);
     
-    // Build query parameters
-    const queryParams = new URLSearchParams();
-    queryParams.append('page', String(page));
-    queryParams.append('size', String(size));
+    // Clone the data to avoid mutating original
+    const allEvents = [...organizeMockData.upcoming, ...organizeMockData.past, ...organizeMockData.draft];
     
-    if (status && status !== 'all') {
-      queryParams.append('status', status);
+    // Apply filters
+    let filteredEvents = allEvents;
+    
+    // Filter by status if provided
+    if (params.status) {
+      filteredEvents = filteredEvents.filter(event => event.status === params.status);
     }
     
-    if (search) {
-      queryParams.append('search', search);
+    // Filter by search term if provided
+    if (params.search) {
+      const searchTerm = params.search.toLowerCase();
+      filteredEvents = filteredEvents.filter(event => 
+        event.title.toLowerCase().includes(searchTerm) || 
+        event.location.toLowerCase().includes(searchTerm)
+      );
     }
     
-    if (sort) {
-      queryParams.append('sort', sort);
-      queryParams.append('direction', direction || 'asc');
+    // Apply sorting
+    if (params.sort) {
+      filteredEvents.sort((a, b) => {
+        const direction = params.direction === 'desc' ? -1 : 1;
+        
+        if (params.sort === 'title') {
+          return a.title.localeCompare(b.title) * direction;
+        } else if (params.sort === 'date') {
+          return (new Date(a.date).getTime() - new Date(b.date).getTime()) * direction;
+        } else if (params.sort === 'location') {
+          return a.location.localeCompare(b.location) * direction;
+        } else if (params.sort === 'ticketSoldPercent') {
+          const percentA = a.ticketsSold / (a.ticketsTotal || 1);
+          const percentB = b.ticketsSold / (b.ticketsTotal || 1);
+          return (percentA - percentB) * direction;
+        }
+        
+        return 0;
+      });
     }
-
-    return this.request({
-      method: 'GET',
-      url: `/organize/occas?${queryParams.toString()}`,
-      mockResponse: () => new Promise((resolve) => {
-        setTimeout(() => {
-          // Generate a larger dataset for better pagination testing
-          const baseOccas = [
-            ...organizeMockData.upcoming,
-            ...organizeMockData.past,
-            ...organizeMockData.draft
-          ];
-          
-          // Add additional mock data to test pagination
-          const additionalMockData: OrganizerOccaUnit[] = Array.from({ length: 30 }, (_, i) => ({
-            id: `mock-${i + 100}`,
-            title: `Mock Event ${i + 1}`,
-            date: format(addDays(new Date(), i), 'yyyy-MM-dd'),
-            location: `Location ${i % 5 + 1}, City ${i % 3 + 1}`,
-            status: ['active', 'completed', 'draft'][i % 3] as string,
-            ticketsSold: Math.floor(Math.random() * 100),
-            ticketsTotal: 100,
-            image: ''
-          }));
-          
-          let allOccas = [...baseOccas, ...additionalMockData];
-          
-          // Apply status filter
-          if (status && status !== 'all') {
-            allOccas = allOccas.filter(occa => occa.status === status);
-          }
-          
-          // Apply search filter
-          if (search) {
-            const searchLower = search.toLowerCase();
-            allOccas = allOccas.filter(occa => 
-              occa.title.toLowerCase().includes(searchLower) ||
-              occa.location.toLowerCase().includes(searchLower)
-            );
-          }
-          
-          // Apply sorting
-          if (sort) {
-            const dir = direction === 'desc' ? -1 : 1;
-            allOccas.sort((a, b) => {
-              switch (sort) {
-                case 'title':
-                  return a.title.localeCompare(b.title) * dir;
-                case 'date':
-                  return (new Date(a.date).getTime() - new Date(b.date).getTime()) * dir;
-                case 'location':
-                  return a.location.localeCompare(b.location) * dir;
-                case 'tickets':
-                  return ((a.ticketsSold / a.ticketsTotal) - (b.ticketsSold / b.ticketsTotal)) * dir;
-                default:
-                  return 0;
-              }
-            });
-          }
-          
-          // Paginate
-          const totalElements = allOccas.length;
-          const totalPages = Math.ceil(totalElements / size);
-          const startIndex = page * size;
-          const endIndex = Math.min(startIndex + size, totalElements);
-          const paginatedOccas = allOccas.slice(startIndex, endIndex);
-          
-          console.log(`Serving page ${page} with ${size} items per page`);
-          console.log(`Total items: ${allOccas.length}, Total pages: ${Math.ceil(allOccas.length / size)}`);
-          
-          resolve({
-            content: paginatedOccas,
-            pageable: {
-              pageNumber: page,
-              pageSize: size,
-              sort: { empty: !sort, sorted: !!sort, unsorted: !sort },
-              offset: page * size,
-              paged: true,
-              unpaged: false
-            },
-            totalPages,
-            totalElements,
-            last: page + 1 >= totalPages,
-            size,
-            number: page,
-            sort: { empty: !sort, sorted: !!sort, unsorted: !sort },
-            numberOfElements: paginatedOccas.length,
-            first: page === 0,
-            empty: paginatedOccas.length === 0
-          });
-        }, 100); // Shorter delay for better usability
-      })
-    });
+    
+    // Apply pagination
+    const totalElements = filteredEvents.length;
+    const totalPages = Math.ceil(totalElements / params.size);
+    const start = params.page * params.size;
+    const end = start + params.size;
+    const paginatedEvents = filteredEvents.slice(start, end);
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Return paginated response in the expected format
+    return {
+      content: paginatedEvents,
+      pageable: {
+        pageNumber: params.page,
+        pageSize: params.size,
+        sort: { 
+          empty: !params.sort, 
+          sorted: !!params.sort, 
+          unsorted: !params.sort 
+        },
+        offset: start,
+        paged: true,
+        unpaged: false
+      },
+      totalPages,
+      totalElements,
+      last: params.page >= totalPages - 1,
+      size: params.size,
+      number: params.page,
+      sort: {
+        empty: !params.sort,
+        sorted: !!params.sort,
+        unsorted: !params.sort
+      },
+      numberOfElements: paginatedEvents.length,
+      first: params.page === 0,
+      empty: paginatedEvents.length === 0
+    };
   }
 
   async createOcca(data: CreateOccaPayload): Promise<CreateOccaResponse> {
-    return this.request({
-      method: 'POST',
-      url: '/organize/occa',
-      data,
-      mockResponse: () => new Promise((resolve) => {
-        setTimeout(() => {
-          const newId = `new-${Date.now()}`;
-          resolve({
-            id: newId,
-            title: data.basicInfo.title,
-            status: data.status
-          });
-        }, 1500);
-      })
-    });
+    // Simulate API call
+    console.log('Creating event with data:', data);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Return a mock response
+    return {
+      id: `org-${Date.now()}`,
+      title: data.basicInfo.title,
+      status: data.status
+    };
   }
 }
 

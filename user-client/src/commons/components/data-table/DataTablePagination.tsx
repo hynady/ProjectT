@@ -6,7 +6,6 @@ import {
   ChevronDown
 } from "lucide-react";
 import { Button } from "@/commons/components/button";
-import { Page } from "../../internal-types/organize.type";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,21 +13,34 @@ import {
   DropdownMenuTrigger,
 } from "@/commons/components/dropdown-menu";
 
-interface OccaTablePaginationProps {
+interface PaginationData {
+  number: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+  first: boolean;
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+  }
+}
+
+interface DataTablePaginationProps {
   page: number;
-  setPage: (page: number | ((prev: number) => number)) => void;
-  paginationData: Page<any>;
+  setPage: (page: number) => void;
+  paginationData: PaginationData;
   pageSize: number;
   onPageSizeChange: (size: number) => void;
 }
 
-export const OccaTablePagination = ({ 
+export const DataTablePagination = ({ 
   page, 
   setPage, 
   paginationData, 
   pageSize, 
   onPageSizeChange 
-}: OccaTablePaginationProps) => {
+}: DataTablePaginationProps) => {
   // Generate page numbers to display with fewer adjacent pages
   const getPageNumbers = () => {
     const totalPages = paginationData.totalPages || 1;
@@ -108,7 +120,7 @@ export const OccaTablePagination = ({
           </DropdownMenu>
           
           <div className="text-sm text-muted-foreground">
-            Hiển thị {startItem} đến {endItem} trong số {paginationData.totalElements} sự kiện
+            Hiển thị {startItem} đến {endItem} trong số {paginationData.totalElements} mục
           </div>
         </div>
         
@@ -129,7 +141,7 @@ export const OccaTablePagination = ({
             size="icon"
             className="h-8 w-8"
             disabled={paginationData.first}
-            onClick={() => setPage(p => Math.max(0, p - 1))}
+            onClick={() => setPage(Math.max(0, page - 1))}
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Trang trước</span>
@@ -167,7 +179,7 @@ export const OccaTablePagination = ({
             size="icon"
             className="h-8 w-8"
             disabled={paginationData.last}
-            onClick={() => setPage(p => Math.min(paginationData.totalPages - 1, p + 1))}
+            onClick={() => setPage(Math.min(paginationData.totalPages - 1, page + 1))}
           >
             <ChevronRight className="h-4 w-4" />
             <span className="sr-only">Trang sau</span>
@@ -222,7 +234,7 @@ export const OccaTablePagination = ({
             size="icon"
             className="h-8 w-8"
             disabled={paginationData.first}
-            onClick={() => setPage(p => Math.max(0, p - 1))}
+            onClick={() => setPage(Math.max(0, page - 1))}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -236,7 +248,7 @@ export const OccaTablePagination = ({
             size="icon"
             className="h-8 w-8"
             disabled={paginationData.last}
-            onClick={() => setPage(p => Math.min(paginationData.totalPages - 1, p + 1))}
+            onClick={() => setPage(Math.min(paginationData.totalPages - 1, page + 1))}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
