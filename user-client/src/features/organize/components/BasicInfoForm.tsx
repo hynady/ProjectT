@@ -11,11 +11,11 @@ import {
   FormMessage,
 } from "@/commons/components/form";
 import { Input } from "@/commons/components/input";
-import { Textarea } from "@/commons/components/textarea";
 import { ArrowRight, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BasicInfoFormData } from "../internal-types/organize.type";
 import { toast } from "@/commons/hooks/use-toast";
+import { RichTextEditor } from "@/commons/components/rich-text-editor";
 
 // Define the schema with proper types
 const basicInfoSchema = z.object({
@@ -38,6 +38,19 @@ const basicInfoSchema = z.object({
   }),
   description: z.string().min(10, {
     message: "Mô tả phải có ít nhất 10 ký tự",
+  }).transform(val => {
+    try {
+      const parsed = JSON.parse(val);
+      return val;
+    } catch {
+      // If not valid JSON, wrap it in a paragraph structure
+      return JSON.stringify([
+        {
+          type: 'paragraph',
+          children: [{ text: val }],
+        },
+      ]);
+    }
   }),
   bannerUrl: z.string().optional(),
   // Use a custom Zod type for File objects
@@ -224,10 +237,10 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
             <FormItem>
               <FormLabel>Mô tả sự kiện</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Mô tả chi tiết về sự kiện (hỗ trợ định dạng Markdown)" 
+                <RichTextEditor
+                  {...field}
+                  placeholder="Mô tả chi tiết về sự kiện"
                   className="min-h-[200px]"
-                  {...field} 
                 />
               </FormControl>
               <FormMessage />
