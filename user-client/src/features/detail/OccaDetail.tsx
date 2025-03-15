@@ -50,7 +50,7 @@ export default function OccaDetail() {
     }
   }, [id, navigate, isPreview]);
 
-  if (!isPreview && hero.error?.status === 404) {
+  if (!isPreview && typeof hero.error === 'object' && hero.error?.status === 404) {
     return <NotFoundPage/>;
   }
 

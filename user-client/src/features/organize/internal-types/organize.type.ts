@@ -16,8 +16,8 @@ export interface BasicInfoFormData {
   address: string;
   duration: number;
   description: string;
-  bannerUrl: string; // Đảm bảo luôn là string
-  bannerFile?: File; // Thêm File object để upload sau
+  bannerUrl: string;
+  bannerFile?: File;
 }
 
 export interface ShowFormData {
@@ -29,15 +29,15 @@ export interface ShowFormData {
 export interface TicketFormData {
   id?: string;
   showId: string;
-  type: string; 
+  type: string;
   price: number;
   availableQuantity: number;
 }
 
 export interface GalleryItem {
   id?: string;
-  image: string; // Đảm bảo luôn là string
-  file?: File; // Thêm File object để upload sau
+  image: string;
+  file?: File;
 }
 
 export interface OccaFormData {

@@ -17,7 +17,7 @@ import { useEffect, useState } from "react";
 import { BasicInfoFormData } from "../internal-types/organize.type";
 import { toast } from "@/commons/hooks/use-toast";
 
-// Extend the schema to include bannerFile
+// Define the schema with proper types
 const basicInfoSchema = z.object({
   title: z.string().min(5, {
     message: "Tên sự kiện phải có ít nhất 5 ký tự",
@@ -40,7 +40,8 @@ const basicInfoSchema = z.object({
     message: "Mô tả phải có ít nhất 10 ký tự",
   }),
   bannerUrl: z.string().optional(),
-  bannerFile: z.any().optional(), // Add this to the schema
+  // Use a custom Zod type for File objects
+  bannerFile: z.instanceof(File, { message: "Vui lòng chọn một tệp hợp lệ" }).optional(),
 });
 
 // Create a type that matches the schema
@@ -71,10 +72,14 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
 
   useEffect(() => {
     if (data) {
-      Object.keys(data).forEach((key) => {
-        const typedKey = key as keyof BasicInfoFormData;
-        form.setValue(typedKey as any, data[typedKey]);
-      });
+      // Only update fields that are defined in the form
+      form.setValue("title", data.title || "");
+      form.setValue("artist", data.artist || "");
+      form.setValue("location", data.location || "");
+      form.setValue("address", data.address || "");
+      form.setValue("duration", data.duration || 120);
+      form.setValue("description", data.description || "");
+      form.setValue("bannerUrl", data.bannerUrl || "");
       
       if (typeof data.bannerUrl === 'string' && data.bannerUrl) {
         setBannerPreview(data.bannerUrl);
@@ -105,7 +110,12 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
   const onSubmit = (values: FormValues) => {
     // Explicitly create a BasicInfoFormData object
     const submitData: BasicInfoFormData = {
-      ...values,
+      title: values.title,
+      artist: values.artist,
+      location: values.location,
+      address: values.address,
+      duration: values.duration,
+      description: values.description,
       bannerUrl: bannerPreview || "",
       bannerFile: bannerFile || undefined,
     };
@@ -227,9 +237,11 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
 
         <div className="space-y-4">
           <FormLabel>Ảnh banner sự kiện</FormLabel>
-          <div className="flex items-center gap-4">
-            <div
-              className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors flex flex-col items-center justify-center w-full h-60 relative overflow-hidden"
+          <div className="flex items-center gap-4 max-w-[50rem]">
+            {/* Updated container to enforce 16:9 aspect ratio */}
+            <div 
+              className="border-2 border-dashed rounded-lg cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors flex flex-col items-center justify-center w-full overflow-hidden relative"
+              style={{ paddingBottom: '56.25%' }} // 16:9 aspect ratio (9/16 = 0.5625 = 56.25%)
               onClick={() => document.getElementById('banner-upload')?.click()}
             >
               {bannerPreview ? (
@@ -239,7 +251,7 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
                   className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
-                <>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <Upload className="h-8 w-8 mb-2 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
                     Nhấn để tải lên ảnh banner
@@ -247,7 +259,7 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
                   <p className="text-xs text-muted-foreground mt-1">
                     PNG, JPG (Tỉ lệ khuyến nghị: 16:9)
                   </p>
-                </>
+                </div>
               )}
             </div>
             <input
@@ -258,6 +270,9 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
               onChange={handleFileUpload}
             />
           </div>
+          <p className="text-xs text-muted-foreground">
+            Hình ảnh sẽ được hiển thị theo tỉ lệ 16:9 trên trang chi tiết sự kiện
+          </p>
         </div>
 
         <div className="flex justify-end">
