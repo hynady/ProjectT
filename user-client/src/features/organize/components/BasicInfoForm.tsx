@@ -40,7 +40,7 @@ const basicInfoSchema = z.object({
     message: "Mô tả phải có ít nhất 10 ký tự",
   }).transform(val => {
     try {
-      const parsed = JSON.parse(val);
+      JSON.parse(val);
       return val;
     } catch {
       // If not valid JSON, wrap it in a paragraph structure
@@ -72,33 +72,73 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
   
   const form = useForm<FormValues>({
     resolver: zodResolver(basicInfoSchema),
+    // Khởi tạo với data nếu có, nếu không thì dùng giá trị mặc định
     defaultValues: {
-      title: "",
-      artist: "",
-      location: "",
-      address: "",
-      duration: 120,
-      description: "",
-      bannerUrl: "",
+      title: data?.title || "",
+      artist: data?.artist || "",
+      location: data?.location || "",
+      address: data?.address || "",
+      duration: data?.duration || 120,
+      description: data?.description || JSON.stringify([
+        {
+          type: 'paragraph',
+          children: [{ text: '' }],
+        },
+      ]),
+      bannerUrl: data?.bannerUrl || "",
     },
   });
 
+  // Effect này sẽ chạy khi data thay đổi và form đã được khởi tạo
   useEffect(() => {
     if (data) {
-      // Only update fields that are defined in the form
-      form.setValue("title", data.title || "");
-      form.setValue("artist", data.artist || "");
-      form.setValue("location", data.location || "");
-      form.setValue("address", data.address || "");
-      form.setValue("duration", data.duration || 120);
-      form.setValue("description", data.description || "");
-      form.setValue("bannerUrl", data.bannerUrl || "");
-      
-      if (typeof data.bannerUrl === 'string' && data.bannerUrl) {
+      // Sử dụng reset thay vì setValue để cập nhật toàn bộ form
+      form.reset({
+        title: data.title || "",
+        artist: data.artist || "",
+        location: data.location || "",
+        address: data.address || "",
+        duration: data.duration || 120,
+        description: data.description || JSON.stringify([
+          {
+            type: 'paragraph',
+            children: [{ text: '' }],
+          },
+        ]),
+        bannerUrl: data.bannerUrl || "",
+      });
+
+      if (data.bannerUrl) {
         setBannerPreview(data.bannerUrl);
       }
+      if (data.bannerFile) {
+        setBannerFile(data.bannerFile);
+      }
     }
-  }, [data, form]);
+  }, [data]);
+
+  // Thêm effect để lưu ngay mỗi khi form thay đổi
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      // Lưu vào state chung (onChange) mỗi khi form thay đổi
+      if (Object.keys(value).length > 0 && value.title !== undefined) {
+        const currentData: BasicInfoFormData = {
+          title: value.title || "",
+          artist: value.artist || "",
+          location: value.location || "",
+          address: value.address || "",
+          duration: value.duration || 120,
+          description: value.description || "",
+          bannerUrl: bannerPreview || "",
+          bannerFile: bannerFile || undefined,
+        };
+        
+        onChange(currentData);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form, onChange, bannerPreview, bannerFile]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -133,6 +173,7 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
       bannerFile: bannerFile || undefined,
     };
     
+    // Lưu dữ liệu trước khi chuyển tab
     onChange(submitData);
     onNext();
   };
@@ -238,9 +279,15 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
               <FormLabel>Mô tả sự kiện</FormLabel>
               <FormControl>
                 <RichTextEditor
-                  {...field}
+                  value={field.value}
+                  onChange={(value) => {
+                    // console.log("RichTextEditor onChange:", value); // Thêm log để debug
+                    field.onChange(value);
+                    form.trigger("description");
+                  }}
                   placeholder="Mô tả chi tiết về sự kiện"
                   className="min-h-[200px]"
+                  disabled={form.formState.isSubmitting}
                 />
               </FormControl>
               <FormMessage />

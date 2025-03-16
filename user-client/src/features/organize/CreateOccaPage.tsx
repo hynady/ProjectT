@@ -199,6 +199,7 @@ const CreateOccaPage = () => {
 
       // Redirect to event detail page or back to organize page
       navigate(asDraft ? "/organize" : `/occas/${result.id}`);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -227,7 +228,7 @@ const CreateOccaPage = () => {
 
   // Log the current state of occaData whenever it changes (for debugging)
   useEffect(() => {
-    console.log("Current occaData state:", occaData);
+    // console.log("Current occaData state:", occaData);
     // Fix: Ensure we're setting a boolean value
     const previewable = canPreview();
     setIsFormValid(previewable);

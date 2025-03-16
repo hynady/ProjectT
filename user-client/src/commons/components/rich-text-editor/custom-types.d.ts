@@ -12,6 +12,7 @@ export type CustomElementType =
   | 'bulleted-list'
   | 'numbered-list'
   | 'list-item'
+  | 'image'
 
 export type TextAlign = 'left' | 'center' | 'right' | 'justify'
 
@@ -32,7 +33,14 @@ export interface CustomElementWithAlign extends CustomElementBase {
   align?: TextAlign
 }
 
-export type CustomElement = CustomElementBase | CustomElementWithAlign
+export interface ImageElement extends CustomElementBase {
+  type: 'image'
+  url: string      // Blob URL trực tiếp để hiển thị
+  alt?: string
+  children: [{ text: '' }] // Image elements have an empty text node
+}
+
+export type CustomElement = CustomElementBase | CustomElementWithAlign | ImageElement
 
 export type CustomEditor = BaseEditor & ReactEditor & HistoryEditor
 

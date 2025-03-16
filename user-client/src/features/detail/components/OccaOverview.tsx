@@ -1,6 +1,6 @@
 import { Card } from '@/commons/components/card.tsx';
 import { Users } from 'lucide-react';
-import MarkdownContent from '@/commons/blocks/MarkdownRenderer.tsx';
+import { SlateContentRenderer } from '@/commons/components/slate-content-renderer';
 
 interface OccaOverviewProps {
   details: string;
@@ -11,7 +11,7 @@ export const OccaOverview = ({ details, organizer }: OccaOverviewProps) => {
   return (
     <div className="space-y-8">
       <Card className="prose prose-invert max-w-none p-6 transition-colors">
-        <MarkdownContent content={details}/>
+        <SlateContentRenderer content={details} />
       </Card>
       <Card className="p-6">
         <h2 className="text-xl font-semibold text-card-foreground mb-4 flex items-center gap-2">

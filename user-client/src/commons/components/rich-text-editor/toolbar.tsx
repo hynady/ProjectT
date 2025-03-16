@@ -1,4 +1,3 @@
-import React from "react";
 import { Toolbar as ToolbarContainer } from "./components";
 import { 
   BoldButton, 
@@ -13,7 +12,8 @@ import {
   AlignRightButton,
   AlignJustifyButton,
   BulletListButton,
-  NumberedListButton
+  NumberedListButton,
+  ImageButton
 } from "./format-buttons";
 
 export const Toolbar = () => {
@@ -41,6 +41,10 @@ export const Toolbar = () => {
       
       <BulletListButton />
       <NumberedListButton />
+      
+      <div className="h-6 border-l mx-1"></div>
+      
+      <ImageButton />
     </ToolbarContainer>
   );
 };
