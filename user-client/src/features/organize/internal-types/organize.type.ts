@@ -1,12 +1,10 @@
 export interface OrganizerOccaUnit {
   id: string;
   title: string;
-  date: string;
   location: string;
-  status: string;
-  ticketsSold: number;
-  ticketsTotal: number;
   image?: string;
+  approvalStatus: OccaApprovalStatus;
+  approvalMessage?: string; // For rejection messages
 }
 
 export interface BasicInfoFormData {
@@ -49,12 +47,14 @@ export interface OccaFormData {
 
 export interface CreateOccaPayload extends OccaFormData {
   status: string;
+  approvalStatus: OccaApprovalStatus;
 }
 
 export interface CreateOccaResponse {
   id: string;
   title: string;
   status: string;
+  approvalStatus: OccaApprovalStatus;
 }
 
 export interface Page<T> {
@@ -93,4 +93,12 @@ export interface OccaFilterParams {
   search?: string;
   sort?: string;
   direction?: 'asc' | 'desc';
+}
+
+export type OccaApprovalStatus = 'draft' | 'pending' | 'approved' | 'rejected';
+
+// New type for submission
+export interface OccaSubmitForApprovalPayload {
+  id: string;
+  notes?: string;
 }

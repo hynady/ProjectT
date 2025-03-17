@@ -48,7 +48,7 @@ export interface Column<T> {
 export interface StatusOption {
   value: string;
   label: string;
-  badge?: 'default' | 'outline' | 'secondary';
+  badge?: 'default' | 'outline' | 'secondary' | 'info' | 'destructive' | 'success' | 'warning';
 }
 
 interface DataTableProps<T> {

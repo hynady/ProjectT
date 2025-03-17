@@ -23,6 +23,7 @@ const CreateOccaPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDraft, setIsDraft] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [occaData, setOccaData] = useState<OccaFormData>({
     basicInfo: {
       title: "",
@@ -101,6 +102,39 @@ const CreateOccaPage = () => {
     );
     setIsFormValid(isValid);
   }, [occaData]);
+
+  const handleSubmitForApproval = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Tạo occa với trạng thái pending
+      const payload: CreateOccaPayload = {
+        ...occaData,
+        status: "active",
+        approvalStatus: "pending"
+      };
+
+      await organizeService.createOcca(payload);
+
+      toast({
+        title: "Thành công",
+        description: "Sự kiện đã được gửi để xét duyệt",
+      });
+
+      navigate("/organize");
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error instanceof Error ? error.message : "Không thể gửi sự kiện. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleSave = async (asDraft: boolean) => {
     // Chỉ kiểm tra hợp lệ nếu không phải lưu nháp
@@ -186,19 +220,17 @@ const CreateOccaPage = () => {
       const payload: CreateOccaPayload = {
         ...processedData,
         status: asDraft ? "draft" : "active",
+        approvalStatus: "draft" // Always draft when saving
       };
 
-      const result = await organizeService.createOcca(payload);
+      await organizeService.createOcca(payload);
 
       toast({
         title: "Thành công",
-        description: asDraft 
-          ? "Đã lưu bản nháp sự kiện" 
-          : "Đã tạo mới sự kiện thành công",
+        description: "Đã lưu bản nháp sự kiện",
       });
 
-      // Redirect to event detail page or back to organize page
-      navigate(asDraft ? "/organize" : `/occas/${result.id}`);
+      navigate("/organize");
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast({
@@ -378,15 +410,15 @@ const CreateOccaPage = () => {
             
             {/* Publish button */}
             <Button
-              onClick={() => handleSave(false)}
-              disabled={isSaving || !isFormValid}
-              loading={isSaving && !isDraft}
+              onClick={handleSubmitForApproval}
+              disabled={isSaving || isSubmitting || !isFormValid}
+              loading={isSubmitting}
               size={window.innerWidth >= 768 && window.innerWidth < 1024 ? "icon" : "default"}
               className="gap-2 md:gap-0 lg:gap-2"
             >
               <Upload className="h-4 w-4" />
               <span className="md:hidden lg:inline">
-                {isSaving && !isDraft ? "Đang đăng..." : "Đăng sự kiện"}
+                {isSubmitting ? "Đang gửi..." : "Gửi xét duyệt"}
               </span>
             </Button>
           </div>

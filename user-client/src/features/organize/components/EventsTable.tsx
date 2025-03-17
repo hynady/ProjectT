@@ -1,7 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
-import { Calendar, Check, CheckCircle2, Clock, Eye, FileEdit, Trash2 } from "lucide-react";
+import { Calendar, Eye, FileEdit, Trash2 } from "lucide-react";
 import { useDataTable } from "@/commons/hooks/use-data-table";
 import { Badge } from "@/commons/components/badge";
 import { ActionMenu } from "@/commons/components/data-table/ActionMenu";
@@ -13,18 +12,19 @@ import { organizeService } from "../services/organize.service";
 import { OrganizerOccaUnit, OccaFilterParams } from "../internal-types/organize.type";
 
 interface EventsTableProps {
-  searchQuery?: string;
+  searchTerm?: string;
 }
 
-export type StatusFilter = 'all' | 'active' | 'completed' | 'draft';
-
-export const EventsTable = ({ searchQuery = "" }: EventsTableProps) => {
+export const EventsTable = ({ searchTerm = "" }: EventsTableProps) => {
   const navigate = useNavigate();
   const [eventToDelete, setEventToDelete] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Configure the data table hook with your API service
+  const fetchData = useCallback((params: OccaFilterParams) => {
+    return organizeService.getOccas(params);
+  }, []);
+
   const {
     data,
     loading,
@@ -42,13 +42,21 @@ export const EventsTable = ({ searchQuery = "" }: EventsTableProps) => {
     handlePageSizeChange,
     handleSortChange,
     handleStatusChange,
-    refreshData
+    refreshData,
+    handleSearchChange,
   } = useDataTable<OrganizerOccaUnit, OccaFilterParams>({
-    defaultSortField: "date",
+    defaultSortField: "title",
     defaultSortDirection: "asc",
-    fetchData: organizeService.getOccas,
-    defaultSearchQuery: searchQuery
+    fetchData,
   });
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      handleSearchChange(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, handleSearchChange]);
 
   const handleEdit = (id: string) => {
     navigate(`/organize/edit/${id}`);
@@ -68,15 +76,9 @@ export const EventsTable = ({ searchQuery = "" }: EventsTableProps) => {
     
     try {
       setIsDeleting(true);
-      // In a real app, call the delete API
-      // await organizeService.deleteOcca(eventToDelete);
-      
-      // For now just simulate a delay
+      // Simulate deletion with a delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Refresh data after deletion
       refreshData();
-      
       setDeleteDialogOpen(false);
       setEventToDelete(null);
     } catch (err) {
@@ -100,22 +102,21 @@ export const EventsTable = ({ searchQuery = "" }: EventsTableProps) => {
     </TooltipProvider>
   );
   
-  // Define status options for filtering
   const statusOptions: StatusOption[] = [
     { value: 'all', label: 'Tất cả' },
-    { value: 'active', label: 'Đang bán vé', badge: 'default' },
-    { value: 'completed', label: 'Đã kết thúc', badge: 'outline' },
-    { value: 'draft', label: 'Bản nháp', badge: 'secondary' }
+    { value: 'draft', label: 'Bản nháp', badge: 'secondary' },
+    { value: 'pending', label: 'Chờ duyệt', badge: 'warning' },
+    { value: 'approved', label: 'Đã duyệt', badge: 'success' },
+    { value: 'rejected', label: 'Từ chối', badge: 'destructive' }
   ];
 
-  // Define columns for the data table
   const columns: Column<OrganizerOccaUnit>[] = useMemo(() => [
     {
       id: "title",
       header: "Tên sự kiện",
       sortable: true,
-      width: "w-[300px] max-w-[300px]",
-      truncate: true, // Disable auto-truncation as we handle it in our custom cell
+      width: "w-[400px] max-w-[400px]",
+      truncate: true,
       cell: (occa) => (
         <div className="flex items-center space-x-2 max-w-full">
           <div className="w-10 h-10 rounded-md overflow-hidden bg-muted flex-shrink-0">
@@ -144,18 +145,11 @@ export const EventsTable = ({ searchQuery = "" }: EventsTableProps) => {
       )
     },
     {
-      id: "date",
-      header: "Ngày diễn ra",
-      sortable: true,
-      width: "w-[120px] whitespace-nowrap",
-      cell: (occa) => format(new Date(occa.date), "dd/MM/yyyy")
-    },
-    {
       id: "location",
       header: "Địa điểm",
       sortable: true,
-      width: "w-[200px] max-w-[200px]",
-      truncate: false, // Disable auto-truncation as we handle it in our custom cell
+      width: "w-[300px] max-w-[300px]",
+      truncate: false,
       cell: (occa) => (
         <div className="overflow-hidden">
           <TruncatedText text={occa.location} />
@@ -163,81 +157,42 @@ export const EventsTable = ({ searchQuery = "" }: EventsTableProps) => {
       )
     },
     {
-      id: "ticketSoldPercent",
-      header: "Vé đã bán",
-      sortable: true,
-      width: "w-[120px]",
+      id: "approvalStatus",
+      header: "Trạng thái duyệt",
+      width: "w-[140px]",
       align: "center",
-      truncate: false, // Progress bars shouldn't be truncated
-      cell: (occa) => {
-        if (occa.status === 'draft') {
-          return <span className="text-center block text-muted-foreground">-</span>;
-        }
-        return (
-          <div className="flex flex-col items-center">
-            <div className="text-sm">
-              <span className="font-medium">{occa.ticketsSold}</span>
-              <span className="text-muted-foreground">/{occa.ticketsTotal}</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-              <div 
-                className="bg-primary h-1.5 rounded-full" 
-                style={{ width: `${(occa.ticketsSold / occa.ticketsTotal) * 100}%` }} 
-              ></div>
-            </div>
-          </div>
-        );
-      }
-    },
-    {
-      id: "status",
-      header: "Trạng thái",
-      width: "w-[120px]",
-      align: "center",
-      truncate: false, // Status badges shouldn't be truncated
       cell: (occa) => (
         <div className="flex justify-center">
           <Badge
             variant={
-              occa.status === "active"
-                ? "default"
-                : occa.status === "completed"
-                ? "outline"
+              occa.approvalStatus === "approved"
+                ? "success"
+                : occa.approvalStatus === "pending"
+                ? "warning"
+                : occa.approvalStatus === "rejected"
+                ? "destructive" 
                 : "secondary"
             }
             className="whitespace-nowrap"
           >
-            {occa.status === "active" ? (
-              <div className="flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 mr-1" />
-                Đang bán vé
-              </div>
-            ) : occa.status === "completed" ? (
-              <div className="flex items-center gap-1">
-                <Check className="w-3 h-3 mr-1" />
-                Đã kết thúc
-              </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3 mr-1" />
-                Bản nháp
-              </div>
-            )}
+            {occa.approvalStatus === "approved" ? "Đã duyệt" :
+             occa.approvalStatus === "pending" ? "Chờ duyệt" :
+             occa.approvalStatus === "rejected" ? "Từ chối" :
+             "Nháp"}
           </Badge>
         </div>
       )
     },
   ], []);
   
-  // Custom EmptyState for events
   const eventEmptyState = (
     <EmptyState 
-      searchQuery={searchQuery}
+      searchQuery={searchTerm}
       statusFilter={statusFilter}
-      title={searchQuery ? "Không tìm thấy sự kiện" : "Chưa có sự kiện nào"}
+      title={searchTerm ? "Không tìm thấy sự kiện" : "Chưa có sự kiện nào"}
       description={
-        searchQuery
-          ? `Không tìm thấy sự kiện phù hợp với từ khóa "${searchQuery}" ${statusFilter !== 'all' ? ` và bộ lọc đã chọn` : ''}`
+        searchTerm
+          ? `Không tìm thấy sự kiện phù hợp với từ khóa "${searchTerm}" ${statusFilter !== 'all' ? ` và bộ lọc đã chọn` : ''}`
           : statusFilter !== 'all'
             ? `Không có sự kiện nào trong trạng thái đã chọn`
             : "Bắt đầu tạo sự kiện đầu tiên của bạn để quản lý"
@@ -264,7 +219,7 @@ export const EventsTable = ({ searchQuery = "" }: EventsTableProps) => {
         sortDirection={sortDirection as 'asc' | 'desc'}
         statusOptions={statusOptions}
         statusFilter={statusFilter}
-        searchQuery={searchQuery}
+        searchQuery={searchTerm}
         emptyComponent={eventEmptyState}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
@@ -294,7 +249,6 @@ export const EventsTable = ({ searchQuery = "" }: EventsTableProps) => {
         )}
       />
       
-      {/* Delete Confirmation Dialog */}
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}

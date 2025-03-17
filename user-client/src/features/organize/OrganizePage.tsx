@@ -1,31 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "./layouts/DashboardLayout";
 import { EventsTable } from "./components/EventsTable";
 import { Button } from "@/commons/components/button";
 import { Input } from "@/commons/components/input";
-import {
-  PlusCircle,
-  Search,
-} from "lucide-react";
+import { PlusCircle, Search } from "lucide-react";
 
 const OrganizePage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
   const handleCreateNew = () => {
     navigate("/organize/create");
   };
-
-  // Debounce search query to avoid excessive API calls
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   return (
     <DashboardLayout>
@@ -57,9 +44,7 @@ const OrganizePage = () => {
         </div>
         
         <div className="rounded-md border flex-1 flex flex-col h-[calc(100vh-13rem)] bg-background overflow-hidden">
-          <EventsTable 
-            searchQuery={debouncedSearchQuery}
-          />
+          <EventsTable searchTerm={searchQuery} />
         </div>
       </div>
     </DashboardLayout>
