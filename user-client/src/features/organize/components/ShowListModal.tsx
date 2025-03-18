@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
 import { Plus } from "lucide-react";
 import {
   Dialog,
@@ -65,8 +66,45 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
   useEffect(() => {
     if (!shows.length) return;
     
-    // Apply filters and sorting logic
-    // ...existing filtering and sorting code...
+    let result = [...shows];
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(show => {
+        // Search by date, time, or ticket type
+        const dateMatch = format(new Date(show.date), "dd/MM/yyyy").includes(query);
+        const timeMatch = show.time.toLowerCase().includes(query);
+        const ticketMatch = show.tickets.some(ticket => 
+          ticket.type.toLowerCase().includes(query) || 
+          ticket.price.toString().includes(query)
+        );
+        return dateMatch || timeMatch || ticketMatch;
+      });
+    }
+
+    // Apply status filter
+    if (selectedStatuses.length > 0) {
+      result = result.filter(show => selectedStatuses.includes(show.saleStatus));
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      if (sortOption.field === 'date') {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return sortOption.order === 'asc' ? dateA - dateB : dateB - dateA;
+      } else {
+        // Time sorting
+        const timeA = a.time;
+        const timeB = b.time;
+        return sortOption.order === 'asc' ? 
+          timeA.localeCompare(timeB) : 
+          timeB.localeCompare(timeA);
+      }
+    });
+
+    setFilteredShows(result);
   }, [shows, searchQuery, selectedStatuses, sortOption]);
 
   const handleAddShow = () => {
