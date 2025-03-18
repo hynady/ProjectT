@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Eye, FileEdit, Trash2 } from "lucide-react";
+import { Calendar, Eye, FileEdit, Trash2, CalendarDays } from "lucide-react";
 import { useDataTable } from "@/commons/hooks/use-data-table";
 import { Badge } from "@/commons/components/badge";
 import { ActionMenu } from "@/commons/components/data-table/ActionMenu";
@@ -10,6 +10,7 @@ import { EmptyState } from "@/commons/components/data-table/EmptyState";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/commons/components/tooltip";
 import { organizeService } from "../services/organize.service";
 import { OrganizerOccaUnit, OccaFilterParams } from "../internal-types/organize.type";
+import { ShowListModal } from "./ShowListModal";
 
 interface EventsTableProps {
   searchTerm?: string;
@@ -20,6 +21,10 @@ export const EventsTable = ({ searchTerm = "" }: EventsTableProps) => {
   const [eventToDelete, setEventToDelete] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // New state for shows modal
+  const [showsModalOpen, setShowsModalOpen] = useState(false);
+  const [selectedOcca, setSelectedOcca] = useState<OrganizerOccaUnit | null>(null);
 
   const fetchData = useCallback((params: OccaFilterParams) => {
     return organizeService.getOccas(params);
@@ -64,6 +69,12 @@ export const EventsTable = ({ searchTerm = "" }: EventsTableProps) => {
 
   const handleView = (id: string) => {
     navigate(`/occas/${id}`);
+  };
+  
+  // New handler for viewing shows
+  const handleViewShows = (occa: OrganizerOccaUnit) => {
+    setSelectedOcca(occa);
+    setShowsModalOpen(true);
   };
 
   const confirmDelete = (id: string) => {
@@ -234,6 +245,11 @@ export const EventsTable = ({ searchTerm = "" }: EventsTableProps) => {
                 onClick: () => handleView(occa.id)
               },
               {
+                label: "Xem suất diễn",
+                icon: <CalendarDays className="h-4 w-4" />,
+                onClick: () => handleViewShows(occa)
+              },
+              {
                 label: "Chỉnh sửa",
                 icon: <FileEdit className="h-4 w-4" />,
                 onClick: () => handleEdit(occa.id)
@@ -257,6 +273,15 @@ export const EventsTable = ({ searchTerm = "" }: EventsTableProps) => {
         description="Hành động này không thể hoàn tác. Sự kiện sẽ bị xóa vĩnh viễn khỏi hệ thống."
         isDeleting={isDeleting}
       />
+      
+      {/* Shows modal */}
+      {selectedOcca && (
+        <ShowListModal
+          open={showsModalOpen}
+          onOpenChange={setShowsModalOpen}
+          occa={selectedOcca}
+        />
+      )}
     </>
   );
 };

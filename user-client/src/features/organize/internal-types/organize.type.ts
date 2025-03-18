@@ -102,3 +102,20 @@ export interface OccaSubmitForApprovalPayload {
   id: string;
   notes?: string;
 }
+
+export interface ShowResponse {
+  id: string;
+  date: string;
+  time: string;
+  saleStatus: ShowSaleStatus; // Renamed from status to saleStatus
+  tickets: {
+    id: string;
+    type: string;
+    price: number;
+    available: number;
+    sold?: number;
+  }[];
+}
+
+// New type for show sale status
+export type ShowSaleStatus = 'upcoming' | 'on_sale' | 'sold_out' | 'ended';

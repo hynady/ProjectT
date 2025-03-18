@@ -1,4 +1,4 @@
-import { OrganizerOccaUnit } from "../internal-types/organize.type";
+import { OrganizerOccaUnit, ShowResponse } from "../internal-types/organize.type";
 
 export const organizeMockData = {
   occas: [
@@ -118,4 +118,48 @@ export const organizeMockData = {
       approvalStatus: "rejected",
     },
   ] as OrganizerOccaUnit[],
+  
+  // Adding mock data for shows
+  showsByOccaId: (occaId: string): ShowResponse[] => [
+    {
+      id: `show-${occaId}-1`,
+      date: "2023-12-15",
+      time: "19:30",
+      saleStatus: "sold_out", // Changed from status to saleStatus and value from "available" to "on_sale"
+      tickets: [
+        { id: "ticket-1", type: "VIP", price: 500000, available: 50, sold: 20 },
+        { id: "ticket-2", type: "Standard", price: 300000, available: 100, sold: 45 },
+      ],
+    },
+    {
+      id: `show-${occaId}-2`,
+      date: "2023-12-16",
+      time: "19:30",
+      saleStatus: "on_sale", // Changed from status to saleStatus and value from "available" to "on_sale"
+      tickets: [
+        { id: "ticket-3", type: "VIP", price: 500000, available: 50, sold: 15 },
+        { id: "ticket-4", type: "Standard", price: 300000, available: 100, sold: 35 },
+      ],
+    },
+    {
+      id: `show-${occaId}-3`,
+      date: "2023-12-17",
+      time: "20:00",
+      saleStatus: "upcoming", // Changed from status to saleStatus
+      tickets: [
+        { id: "ticket-5", type: "VIP", price: 500000, available: 50 },
+        { id: "ticket-6", type: "Standard", price: 300000, available: 100 },
+      ],
+    },
+    {
+      id: `show-${occaId}-4`,
+      date: "2023-12-10",
+      time: "19:00",
+      saleStatus: "ended", // Changed from status to saleStatus and value from "past" to "ended"
+      tickets: [
+        { id: "ticket-7", type: "VIP", price: 500000, available: 0, sold: 50 },
+        { id: "ticket-8", type: "Standard", price: 300000, available: 0, sold: 100 },
+      ],
+    }
+  ]
 };

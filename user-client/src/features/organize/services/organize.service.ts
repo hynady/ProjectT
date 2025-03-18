@@ -5,7 +5,8 @@ import {
   CreateOccaResponse,
   Page,
   OccaFilterParams,
-  OccaSubmitForApprovalPayload
+  OccaSubmitForApprovalPayload,
+  ShowResponse
 } from '../internal-types/organize.type';
 import { organizeMockData } from './organize.mock';
 
@@ -145,6 +146,19 @@ class OrganizeService extends BaseService {
       data.tickets?.length > 0 &&
       data.gallery?.length > 0
     );
+  }
+
+  async getShowsByOccaId(occaId: string): Promise<ShowResponse[]> {
+    return this.request({
+      method: 'GET',
+      url: `/organize/occas/${occaId}/shows`,
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => {
+          const mockShows = organizeMockData.showsByOccaId(occaId);
+          resolve(mockShows);
+        }, 800);
+      })
+    });
   }
 }
 
