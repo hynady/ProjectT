@@ -17,6 +17,7 @@ import { FilterControls } from "./shows/FilterControls";
 import { LoadingSkeleton } from "./shows/LoadingSkeleton";
 import { EmptyState } from "./shows/EmptyState";
 import { ShowList } from "./shows/ShowList";
+import { ShowFormDialog } from "./shows/ShowFormDialog";
 
 interface ShowListModalProps {
   open: boolean;
@@ -39,6 +40,9 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
     order: 'asc'
   });
   
+  const [showDialogOpen, setShowDialogOpen] = useState(false);
+  const [editingShow, setEditingShow] = useState<ShowInfo | null>(null);
+  
   useEffect(() => {
     const fetchShows = async () => {
       if (!open || !occa) return;
@@ -47,7 +51,6 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
       setError(null);
       
       try {
-        // Call the service function to get shows data
         const result = await organizeService.getShowsByOccaId(occa.id);
         setShows(result);
         setFilteredShows(result);
@@ -62,17 +65,14 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
     fetchShows();
   }, [open, occa]);
 
-  // Apply filters and sorting
   useEffect(() => {
     if (!shows.length) return;
     
     let result = [...shows];
 
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(show => {
-        // Search by date, time, or ticket type
         const dateMatch = format(new Date(show.date), "dd/MM/yyyy").includes(query);
         const timeMatch = show.time.toLowerCase().includes(query);
         const ticketMatch = show.tickets.some(ticket => 
@@ -83,19 +83,16 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
       });
     }
 
-    // Apply status filter
     if (selectedStatuses.length > 0) {
       result = result.filter(show => selectedStatuses.includes(show.saleStatus));
     }
 
-    // Apply sorting
     result.sort((a, b) => {
       if (sortOption.field === 'date') {
         const dateA = new Date(a.date).getTime();
         const dateB = new Date(b.date).getTime();
         return sortOption.order === 'asc' ? dateA - dateB : dateB - dateA;
       } else {
-        // Time sorting
         const timeA = a.time;
         const timeB = b.time;
         return sortOption.order === 'asc' ? 
@@ -108,26 +105,86 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
   }, [shows, searchQuery, selectedStatuses, sortOption]);
 
   const handleAddShow = () => {
-    toast({
-      title: "Thêm suất diễn mới",
-      description: "Đang thêm suất diễn mới cho sự kiện này",
-    });
+    setEditingShow(null);
+    setShowDialogOpen(true);
   };
   
   const handleEditShow = (e: React.MouseEvent, showId: string) => {
     e.stopPropagation();
-    toast({
-      title: "Chỉnh sửa suất diễn",
-      description: `Đang chỉnh sửa suất diễn ${showId}`,
-    });
+    const show = shows.find(s => s.id === showId);
+    if (show) {
+      setEditingShow(show);
+      setShowDialogOpen(true);
+    }
   };
   
+  const handleSaveShow = (date: string, time: string) => {
+    try {
+      const isDuplicate = shows.some(show => {
+        if (editingShow && show.id === editingShow.id) return false;
+        return show.date === date && show.time === time;
+      });
+
+      if (isDuplicate) {
+        toast({
+          title: "Trùng lặp",
+          description: "Đã có suất diễn vào ngày và giờ này",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (editingShow) {
+        const updatedShows = shows.map(show => {
+          if (show.id === editingShow.id) {
+            return {
+              ...show,
+              date,
+              time,
+            };
+          }
+          return show;
+        });
+        
+        setShows(updatedShows);
+        toast({
+          title: "Suất diễn đã được cập nhật",
+          description: `Đã cập nhật suất diễn vào ngày ${format(new Date(date), "dd/MM/yyyy")}`,
+        });
+      } else {
+        const newShow: ShowInfo = {
+          id: `show-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          date,
+          time,
+          saleStatus: "upcoming",
+          tickets: []
+        };
+        
+        setShows(prev => [...prev, newShow]);
+        toast({
+          title: "Đã thêm suất diễn",
+          description: `Đã thêm suất diễn vào ngày ${format(new Date(date), "dd/MM/yyyy")}`,
+        });
+      }
+      
+      setShowDialogOpen(false);
+      
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể lưu suất diễn. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteShow = (e: React.MouseEvent, showId: string) => {
     e.stopPropagation();
+    setShows(prevShows => prevShows.filter(show => show.id !== showId));
     toast({
-      title: "Xóa suất diễn",
-      description: `Đang xóa suất diễn ${showId}`,
-      variant: "destructive",
+      title: "Đã xóa suất diễn",
+      description: "Suất diễn đã được xóa thành công",
     });
   };
   
@@ -179,70 +236,78 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
   const isFiltered = searchQuery.trim() !== '' || selectedStatuses.length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <div className="flex text-start items-center justify-between m-3 mb-0">
-            <DialogTitle className="text-xl">
-              Suất diễn: {occa.title}
-            </DialogTitle>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="gap-1"
-              onClick={handleAddShow}
-            >
-              <Plus className="h-4 w-4" /> Thêm suất diễn
-            </Button>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <div className="flex text-start items-center justify-between m-3 mb-0">
+              <DialogTitle className="text-xl">
+                Suất diễn: {occa.title}
+              </DialogTitle>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="gap-1"
+                onClick={handleAddShow}
+              >
+                <Plus className="h-4 w-4" /> Thêm suất diễn
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <FilterControls
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
+            selectedStatuses={selectedStatuses}
+            onStatusToggle={handleStatusToggle}
+            onClearStatusFilters={() => setSelectedStatuses([])}
+            sortOption={sortOption}
+            onSortChange={handleSortChange}
+          />
+
+          <div className="flex-1 overflow-hidden">
+            <ScrollArea className="h-[calc(85vh-160px)] w-full pr-4">
+              {loading ? (
+                <LoadingSkeleton />
+              ) : error ? (
+                <div className="py-8 text-center">
+                  <p className="text-destructive">{error}</p>
+                </div>
+              ) : filteredShows.length === 0 ? (
+                <EmptyState 
+                  isFiltered={shows.length > 0}
+                  onAddShow={handleAddShow}
+                  onClearFilters={handleClearFilters}
+                />
+              ) : (
+                <ShowList
+                  shows={filteredShows}
+                  onEditShow={handleEditShow}
+                  onDeleteShow={handleDeleteShow}
+                  onAddTicket={handleAddTicket}
+                  onEditTicket={handleEditTicket}
+                  onDeleteTicket={handleDeleteTicket}
+                />
+              )}
+            </ScrollArea>
           </div>
-        </DialogHeader>
 
-        <FilterControls
-          searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
-          selectedStatuses={selectedStatuses}
-          onStatusToggle={handleStatusToggle}
-          onClearStatusFilters={() => setSelectedStatuses([])}
-          sortOption={sortOption}
-          onSortChange={handleSortChange}
-        />
-
-        <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-[calc(85vh-160px)] w-full pr-4">
-            {loading ? (
-              <LoadingSkeleton />
-            ) : error ? (
-              <div className="py-8 text-center">
-                <p className="text-destructive">{error}</p>
-              </div>
-            ) : filteredShows.length === 0 ? (
-              <EmptyState 
-                isFiltered={shows.length > 0}
-                onAddShow={handleAddShow}
-                onClearFilters={handleClearFilters}
-              />
-            ) : (
-              <ShowList
-                shows={filteredShows}
-                onEditShow={handleEditShow}
-                onDeleteShow={handleDeleteShow}
-                onAddTicket={handleAddTicket}
-                onEditTicket={handleEditTicket}
-                onDeleteTicket={handleDeleteTicket}
-              />
-            )}
-          </ScrollArea>
-        </div>
-
-        {/* Show result count when filters are applied */}
-        {isFiltered && shows.length > 0 && (
-          <div className="px-6 py-2 text-sm text-muted-foreground border-t">
-            {filteredShows.length === 0 
-              ? "Không tìm thấy suất diễn nào" 
-              : `Hiển thị ${filteredShows.length} / ${shows.length} suất diễn`}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          {isFiltered && shows.length > 0 && (
+            <div className="px-6 py-2 text-sm text-muted-foreground border-t">
+              {filteredShows.length === 0 
+                ? "Không tìm thấy suất diễn nào" 
+                : `Hiển thị ${filteredShows.length} / ${shows.length} suất diễn`}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      <ShowFormDialog
+        open={showDialogOpen}
+        onOpenChange={setShowDialogOpen}
+        onSave={handleSaveShow}
+        editingShow={editingShow ? { date: editingShow.date, time: editingShow.time } : undefined}
+      />
+    </>
   );
 };

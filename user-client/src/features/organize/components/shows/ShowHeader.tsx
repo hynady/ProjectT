@@ -46,11 +46,15 @@ export const ShowHeader = ({ show, onEdit, onDelete }: ShowHeaderProps) => {
   return (
     <div className="flex items-center justify-between w-full">
       <div className="flex-1">
-        <div className="flex items-center space-x-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{formatDate(show.date)}</span>
-          <Clock className="h-4 w-4 ml-2 text-muted-foreground" />
-          <span>{show.time}</span>
+        <div className="flex items-center">
+          <div className="flex items-center space-x-2 min-w-[200px] w-[200px]">
+            <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="font-medium truncate">{formatDate(show.date)}</span>
+          </div>
+          <div className="flex items-center space-x-2 ml-2">
+            <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span>{show.time}</span>
+          </div>
         </div>
         <div className="flex items-center mt-1 gap-3">
           <div>{getStatusBadge(show.saleStatus)}</div>
