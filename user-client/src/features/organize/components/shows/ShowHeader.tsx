@@ -4,6 +4,7 @@ import { Calendar, Clock, Edit, Trash } from "lucide-react";
 import { Badge } from "@/commons/components/badge";
 import { Button } from "@/commons/components/button";
 import { ShowSaleStatus } from "../../internal-types/organize.type";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/commons/components/tooltip";
 
 interface ShowHeaderProps {
   show: {
@@ -31,54 +32,70 @@ export const ShowHeader = ({ show, onEdit, onDelete }: ShowHeaderProps) => {
   const getStatusBadge = (saleStatus: ShowSaleStatus) => {
     switch (saleStatus) {
       case "on_sale":
-        return <Badge variant="success">Có thể đặt vé</Badge>;
+        return <Badge variant="success" className="h-6">Có thể đặt vé</Badge>;
       case "sold_out":
-        return <Badge variant="destructive">Hết vé</Badge>;
+        return <Badge variant="destructive" className="h-6">Hết vé</Badge>;
       case "upcoming":
-        return <Badge variant="outline">Sắp mở bán</Badge>;
+        return <Badge variant="outline" className="h-6">Sắp mở bán</Badge>;
       case "ended":
-        return <Badge variant="secondary">Đã diễn ra</Badge>;
+        return <Badge variant="secondary" className="h-6">Đã diễn ra</Badge>;
       default:
-        return <Badge variant="outline">{saleStatus}</Badge>;
+        return <Badge variant="outline" className="h-6">{saleStatus}</Badge>;
     }
   };
 
+  const isEnded = show.saleStatus === "ended";
+
   return (
-    <div className="flex items-center justify-between w-full">
-      <div className="flex-1">
-        <div className="flex items-center">
-          <div className="flex items-center space-x-2 min-w-[200px] w-[200px]">
-            <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="font-medium truncate">{formatDate(show.date)}</span>
-          </div>
-          <div className="flex items-center space-x-2 ml-2">
-            <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span>{show.time}</span>
-          </div>
+    <div className="flex items-center justify-between w-full gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center flex-1 gap-1 sm:gap-3">
+        <div className="flex items-center min-w-[180px] w-[180px] sm:border-r sm:pr-2">
+          <Calendar className="h-4 w-4 text-primary flex-shrink-0 mr-1.5" />
+          <span className="font-medium truncate">{formatDate(show.date)}</span>
         </div>
-        <div className="flex items-center mt-1 gap-3">
-          <div>{getStatusBadge(show.saleStatus)}</div>
-          <span className="text-sm text-muted-foreground">
-            {show.tickets.length} loại vé
-          </span>
+        <div className="flex items-center sm:min-w-[80px]">
+          <Clock className="h-4 w-4 text-primary flex-shrink-0 mr-1.5" />
+          <span>{show.time}</span>
+        </div>
+        <div className="hidden sm:block ml-auto">
+          {getStatusBadge(show.saleStatus)}
         </div>
       </div>
       
-      <div className="flex items-center gap-1 mr-1">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={(e) => onEdit(e, show.id)}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={(e) => onDelete(e, show.id)}
-        >
-          <Trash className="h-4 w-4 text-destructive" />
-        </Button>
+      <div className="flex sm:hidden mr-auto">
+        {getStatusBadge(show.saleStatus)}
+      </div>
+      
+      <div className="flex items-center gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => onEdit(e, show.id)}
+              disabled={isEnded}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{isEnded ? "Không thể chỉnh sửa" : "Chỉnh sửa"}</TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={(e) => onDelete(e, show.id)}
+              disabled={isEnded}
+            >
+              <Trash className="h-4 w-4 text-destructive" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{isEnded ? "Không thể xóa" : "Xóa"}</TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );

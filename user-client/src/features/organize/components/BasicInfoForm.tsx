@@ -335,7 +335,7 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
           </p>
         </div>
 
-        <div className="flex justify-end">
+        <div className="justify-end hidden sm:flex">
           <Button type="submit" className="gap-2">
             Tiếp theo
             <ArrowRight className="h-4 w-4" />

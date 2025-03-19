@@ -155,7 +155,7 @@ export const GalleryForm = ({ gallery, onChange, onBack }: GalleryFormProps) => 
         </div>
       )}
 
-      <div className="flex justify-between pt-4 hidden sm:flex">
+      <div className="justify-between pt-4 hidden sm:flex">
         <Button variant="outline" onClick={onBack} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Quay lại

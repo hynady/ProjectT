@@ -1,8 +1,8 @@
-import { Search, SlidersHorizontal, ArrowUpDown } from "lucide-react";
-import { Input } from "@/commons/components/input";
+import { SlidersHorizontal, ArrowUpDown } from "lucide-react";
 import { Button } from "@/commons/components/button";
 import { Badge } from "@/commons/components/badge";
 import { ShowSaleStatus } from "../../internal-types/organize.type";
+import { DateRange } from "react-day-picker";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +12,12 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel
 } from "@/commons/components/dropdown-menu";
+import { DatePickerWithRange } from "@/commons/components/date-picker-with-range";
+import { vi } from "date-fns/locale";
 
 interface FilterControlsProps {
-  searchQuery: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  dateRange: DateRange | undefined;
+  onDateRangeChange: (range: DateRange | undefined) => void;
   selectedStatuses: ShowSaleStatus[];
   onStatusToggle: (status: ShowSaleStatus) => void;
   onClearStatusFilters: () => void;
@@ -24,16 +26,17 @@ interface FilterControlsProps {
     order: 'asc' | 'desc';
   };
   onSortChange: (field: 'date' | 'time', order: 'asc' | 'desc') => void;
+  onClearDateRange: () => void;
 }
 
 export const FilterControls = ({
-  searchQuery,
-  onSearchChange,
+  dateRange,
+  onDateRangeChange,
   selectedStatuses,
   onStatusToggle,
   onClearStatusFilters,
   sortOption,
-  onSortChange
+  onSortChange,
 }: FilterControlsProps) => {
   const renderStatusFilters = () => {
     const statusOptions: {label: string; value: ShowSaleStatus; color: string}[] = [
@@ -129,14 +132,16 @@ export const FilterControls = ({
 
   return (
     <div className="px-6 pt-3 pb-1 flex flex-wrap gap-2">
-      <div className="relative flex-1 min-w-[200px]">
-        <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Tìm kiếm suất diễn..."
-          className="pl-8 w-full h-9"
-          value={searchQuery}
-          onChange={onSearchChange}
+      {/* Date Range Picker using shadcn component */}
+      <div className="flex-1 min-w-[200px]">
+        <DatePickerWithRange
+          className="h-9"
+          date={dateRange}
+          onDateChange={onDateRangeChange}
+          locale={vi}
+          align="start"
+          placeholder="Chọn khoảng ngày"
+          calendarDays={2}
         />
       </div>
       <div className="flex items-center gap-2">

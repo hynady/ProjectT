@@ -123,17 +123,23 @@ export const organizeMockData = {
   showsByOccaId: (occaId: string): ShowResponse[] => [
     {
       id: `show-${occaId}-1`,
-      date: "2023-12-15",
+      date: "2025-12-15",
       time: "19:30",
       saleStatus: "sold_out", // Changed from status to saleStatus and value from "available" to "on_sale"
       tickets: [
         { id: "ticket-1", type: "VIP", price: 500000, available: 50, sold: 20 },
         { id: "ticket-2", type: "Standard", price: 300000, available: 100, sold: 45 },
+        { id: "ticket-9", type: "Standard", price: 300000, available: 100, sold: 45 },
+        { id: "ticket-10", type: "Standard", price: 300000, available: 100, sold: 45 },
+        { id: "ticket-11", type: "Standard", price: 300000, available: 100, sold: 45 },
+        { id: "ticket-12", type: "Standard", price: 300000, available: 100, sold: 45 },
+        { id: "ticket-13", type: "Standard", price: 300000, available: 100, sold: 45 },
+
       ],
     },
     {
       id: `show-${occaId}-2`,
-      date: "2023-12-16",
+      date: "2025-12-16",
       time: "19:30",
       saleStatus: "on_sale", // Changed from status to saleStatus and value from "available" to "on_sale"
       tickets: [
@@ -143,7 +149,7 @@ export const organizeMockData = {
     },
     {
       id: `show-${occaId}-3`,
-      date: "2023-12-17",
+      date: "2025-12-17",
       time: "20:00",
       saleStatus: "upcoming", // Changed from status to saleStatus
       tickets: [
@@ -153,7 +159,7 @@ export const organizeMockData = {
     },
     {
       id: `show-${occaId}-4`,
-      date: "2023-12-10",
+      date: "2025-12-10",
       time: "19:00",
       saleStatus: "ended", // Changed from status to saleStatus and value from "past" to "ended"
       tickets: [

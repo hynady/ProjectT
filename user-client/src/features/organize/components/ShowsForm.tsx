@@ -139,7 +139,7 @@ export const ShowsForm = ({ shows, onChange, onBack, onNext }: ShowsFormProps) =
         </div>
       )}
 
-      <div className="flex justify-between pt-4">
+      <div className="justify-between pt-4 hidden sm:flex">
         <Button variant="outline" onClick={onBack} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Quay lại

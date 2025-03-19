@@ -149,7 +149,7 @@ const PreviewOccaDetail = () => {
             if (!show.prices || show.prices.length === 0) {
               show.prices = [{
                 id: `preview-ticket-default-${show.id}`,
-                type: "Vé Standard",
+                type: "Vé Mẫu",
                 price: 200000,
                 available: 100
               }];

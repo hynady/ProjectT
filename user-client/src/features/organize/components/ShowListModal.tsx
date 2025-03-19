@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { format, isWithinInterval, parseISO } from "date-fns";
 import { Plus } from "lucide-react";
+import { DateRange } from "react-day-picker";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,8 @@ import { LoadingSkeleton } from "./shows/LoadingSkeleton";
 import { EmptyState } from "./shows/EmptyState";
 import { ShowList } from "./shows/ShowList";
 import { ShowFormDialog } from "./shows/ShowFormDialog";
+import { DeleteConfirmDialog } from "@/commons/components/data-table/DeleteConfirmDialog";
+import { vi } from "date-fns/locale";
 
 interface ShowListModalProps {
   open: boolean;
@@ -30,7 +33,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
   const [filteredShows, setFilteredShows] = useState<ShowInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedStatuses, setSelectedStatuses] = useState<ShowSaleStatus[]>([]);
   const [sortOption, setSortOption] = useState<{
     field: 'date' | 'time';
@@ -42,6 +45,9 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
   
   const [showDialogOpen, setShowDialogOpen] = useState(false);
   const [editingShow, setEditingShow] = useState<ShowInfo | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [showToDelete, setShowToDelete] = useState<ShowInfo | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   useEffect(() => {
     const fetchShows = async () => {
@@ -70,16 +76,16 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
     
     let result = [...shows];
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    if (dateRange?.from) {
       result = result.filter(show => {
-        const dateMatch = format(new Date(show.date), "dd/MM/yyyy").includes(query);
-        const timeMatch = show.time.toLowerCase().includes(query);
-        const ticketMatch = show.tickets.some(ticket => 
-          ticket.type.toLowerCase().includes(query) || 
-          ticket.price.toString().includes(query)
-        );
-        return dateMatch || timeMatch || ticketMatch;
+        const showDate = parseISO(show.date);
+        if (dateRange.to && dateRange.from) {
+          return isWithinInterval(showDate, {
+            start: dateRange.from,
+            end: dateRange.to
+          });
+        }
+        return format(showDate, 'yyyy-MM-dd') === format(dateRange.from!, 'yyyy-MM-dd');
       });
     }
 
@@ -102,7 +108,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
     });
 
     setFilteredShows(result);
-  }, [shows, searchQuery, selectedStatuses, sortOption]);
+  }, [shows, dateRange, selectedStatuses, sortOption]);
 
   const handleAddShow = () => {
     setEditingShow(null);
@@ -113,8 +119,64 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
     e.stopPropagation();
     const show = shows.find(s => s.id === showId);
     if (show) {
+      if (show.saleStatus === "ended") {
+        toast({
+          title: "Không thể chỉnh sửa",
+          description: "Không thể chỉnh sửa suất diễn đã diễn ra",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setEditingShow(show);
       setShowDialogOpen(true);
+    }
+  };
+  
+  const handleConfirmDeleteShow = (e: React.MouseEvent, showId: string) => {
+    e.stopPropagation();
+    const show = shows.find(s => s.id === showId);
+    if (show) {
+      if (show.saleStatus === "ended") {
+        toast({
+          title: "Không thể xóa",
+          description: "Không thể xóa suất diễn đã diễn ra",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setShowToDelete(show);
+      setDeleteDialogOpen(true);
+    }
+  };
+  
+  const handleDeleteShow = async () => {
+    if (!showToDelete) return;
+    
+    try {
+      setIsDeleting(true);
+      
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setShows(prevShows => prevShows.filter(show => show.id !== showToDelete.id));
+      
+      toast({
+        title: "Đã xóa suất diễn",
+        description: "Suất diễn đã được xóa thành công",
+      });
+      
+      setShowToDelete(null);
+      setDeleteDialogOpen(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể xóa suất diễn. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
   
@@ -178,17 +240,20 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
       });
     }
   };
-
-  const handleDeleteShow = (e: React.MouseEvent, showId: string) => {
-    e.stopPropagation();
-    setShows(prevShows => prevShows.filter(show => show.id !== showId));
-    toast({
-      title: "Đã xóa suất diễn",
-      description: "Suất diễn đã được xóa thành công",
-    });
-  };
   
   const handleAddTicket = (showId: string) => {
+    const show = shows.find(s => s.id === showId);
+    if (!show) return;
+    
+    if (show.saleStatus === "ended") {
+      toast({
+        title: "Không thể thêm vé",
+        description: "Không thể thêm vé cho suất diễn đã diễn ra",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "Thêm loại vé mới",
       description: `Đang thêm vé cho suất diễn ${showId}`,
@@ -196,22 +261,48 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
   };
   
   const handleEditTicket = (ticketId: string) => {
-    toast({
-      title: "Chỉnh sửa loại vé",
-      description: `Đang chỉnh sửa vé ${ticketId}`,
-    });
+    for (const show of shows) {
+      const ticket = show.tickets.find(t => t.id === ticketId);
+      if (ticket) {
+        if (show.saleStatus === "ended") {
+          toast({
+            title: "Không thể chỉnh sửa",
+            description: "Không thể chỉnh sửa vé của suất diễn đã diễn ra",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        toast({
+          title: "Chỉnh sửa loại vé",
+          description: `Đang chỉnh sửa vé ${ticketId}`,
+        });
+        return;
+      }
+    }
   };
   
   const handleDeleteTicket = (ticketId: string) => {
-    toast({
-      title: "Xóa loại vé",
-      description: `Đang xóa vé ${ticketId}`,
-      variant: "destructive",
-    });
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+    for (const show of shows) {
+      const ticket = show.tickets.find(t => t.id === ticketId);
+      if (ticket) {
+        if (show.saleStatus === "ended") {
+          toast({
+            title: "Không thể xóa",
+            description: "Không thể xóa vé của suất diễn đã diễn ra",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        toast({
+          title: "Xóa loại vé",
+          description: `Đang xóa vé ${ticketId}`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
   };
 
   const handleStatusToggle = (status: ShowSaleStatus) => {
@@ -229,11 +320,19 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
   };
   
   const handleClearFilters = () => {
-    setSearchQuery("");
+    setDateRange(undefined);
     setSelectedStatuses([]);
   };
 
-  const isFiltered = searchQuery.trim() !== '' || selectedStatuses.length > 0;
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
+  };
+
+  const handleClearDateRange = () => {
+    setDateRange(undefined);
+  };
+
+  const isFiltered = !!dateRange || selectedStatuses.length > 0;
 
   return (
     <>
@@ -256,17 +355,18 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
           </DialogHeader>
 
           <FilterControls
-            searchQuery={searchQuery}
-            onSearchChange={handleSearchChange}
+            dateRange={dateRange}
+            onDateRangeChange={handleDateRangeChange}
             selectedStatuses={selectedStatuses}
             onStatusToggle={handleStatusToggle}
             onClearStatusFilters={() => setSelectedStatuses([])}
             sortOption={sortOption}
             onSortChange={handleSortChange}
+            onClearDateRange={handleClearDateRange}
           />
 
           <div className="flex-1 overflow-hidden">
-            <ScrollArea className="h-[calc(85vh-160px)] w-full pr-4">
+            <ScrollArea className="h-[calc(85vh-160px)] w-full px-6">
               {loading ? (
                 <LoadingSkeleton />
               ) : error ? (
@@ -283,7 +383,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
                 <ShowList
                   shows={filteredShows}
                   onEditShow={handleEditShow}
-                  onDeleteShow={handleDeleteShow}
+                  onDeleteShow={handleConfirmDeleteShow}
                   onAddTicket={handleAddTicket}
                   onEditTicket={handleEditTicket}
                   onDeleteTicket={handleDeleteTicket}
@@ -307,6 +407,15 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
         onOpenChange={setShowDialogOpen}
         onSave={handleSaveShow}
         editingShow={editingShow ? { date: editingShow.date, time: editingShow.time } : undefined}
+      />
+      
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteShow}
+        title="Xóa suất diễn"
+        description={`Bạn có chắc chắn muốn xóa suất diễn vào ngày ${showToDelete ? format(new Date(showToDelete.date), "dd/MM/yyyy", { locale: vi }) : ""} lúc ${showToDelete?.time || ""}? Hành động này không thể hoàn tác.`}
+        isDeleting={isDeleting}
       />
     </>
   );
