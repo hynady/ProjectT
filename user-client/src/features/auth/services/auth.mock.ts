@@ -2,7 +2,7 @@ export const authMockData = {
   login: {
     validCredentials: {
       email: 'duyvnlx3016@gmail.com',
-      password: 'Namduy2003@))#'
+      password: 'Test@2003'
     },
     response: {
       token: 'fake-jwt-token'

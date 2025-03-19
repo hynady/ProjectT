@@ -76,30 +76,181 @@ export const detailMockData = {
     },
   ] as GalleryUnit[],
   overviewData: {
-    description: `# The Artificial Paradise Tour 2025
-![The Artificial Paradise Tour 2025](https://salt.tkbcdn.com/ts/ds/f0/ca/7c/6e7dad78e37fd71064f8c6a957570bd1.jpg)
-
-### Event Description
-Join us for a special music night with BlackPink, featuring their most popular hit songs. Experience the thrill of live performances with a full band, meet the artists, and enjoy exclusive fan experiences.
-
-### Ticket Prices
-- **SVIP**: 3,500,000 VND (Available: 20)
-- **VIP**: 2,500,000 VND (Available: 50)
-- **Standard**: 1,500,000 VND (Available: 100)
-- **Economy**: 800,000 VND (Available: 200)
-
-### Event Highlights
-- Live performance with a full band
-- Meet and greet with the artists
-- Special gifts for the audience
-- Photo opportunity with the artists (SVIP)
-- Soundcheck party (VIP & SVIP)
-
-### Terms and Conditions
-- Tickets are non-refundable and non-exchangeable
-- Please arrive 30 minutes before the performance
-- Professional cameras are not allowed
-- Follow the event organizer's regulations
+    description: `[
+  {
+    "type": "heading-one",
+    "children": [
+      {
+        "text": "The Artificial Paradise Tour 2025"
+      }
+    ]
+  },
+  {
+    "type": "image",
+    "url": "https://salt.tkbcdn.com/ts/ds/f0/ca/7c/6e7dad78e37fd71064f8c6a957570bd1.jpg",
+    "alt": "The Artificial Paradise Tour 2025",
+    "children": [{ "text": "" }]
+  },
+  {
+    "type": "heading-three",
+    "children": [
+      {
+        "text": "Event Description"
+      }
+    ]
+  },
+  {
+    "type": "paragraph",
+    "children": [
+      {
+        "text": "Join us for a special music night with BlackPink, featuring their most popular hit songs. Experience the thrill of live performances with a full band, meet the artists, and enjoy exclusive fan experiences."
+      }
+    ]
+  },
+  {
+    "type": "heading-three",
+    "children": [
+      {
+        "text": "Ticket Prices"
+      }
+    ]
+  },
+  {
+    "type": "bulleted-list",
+    "children": [
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "**SVIP**: 3,500,000 VND (Available: 20)"
+          }
+        ]
+      },
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "**VIP**: 2,500,000 VND (Available: 50)"
+          }
+        ]
+      },
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "**Standard**: 1,500,000 VND (Available: 100)"
+          }
+        ]
+      },
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "**Economy**: 800,000 VND (Available: 200)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "heading-three",
+    "children": [
+      {
+        "text": "Event Highlights"
+      }
+    ]
+  },
+  {
+    "type": "bulleted-list",
+    "children": [
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "Live performance with a full band"
+          }
+        ]
+      },
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "Meet and greet with the artists"
+          }
+        ]
+      },
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "Special gifts for the audience"
+          }
+        ]
+      },
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "Photo opportunity with the artists (SVIP)"
+          }
+        ]
+      },
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "Soundcheck party (VIP & SVIP)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "heading-three",
+    "children": [
+      {
+        "text": "Terms and Conditions"
+      }
+    ]
+  },
+  {
+    "type": "bulleted-list",
+    "children": [
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "Tickets are non-refundable and non-exchangeable"
+          }
+        ]
+      },
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "Please arrive 30 minutes before the performance"
+          }
+        ]
+      },
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "Professional cameras are not allowed"
+          }
+        ]
+      },
+      {
+        "type": "list-item",
+        "children": [
+          {
+            "text": "Follow the event organizer's regulations"
+          }
+        ]
+      }
+    ]
+  }
+]
 `,
     organizer: "BlackPink Entertainment",
   } as OverviewData,
