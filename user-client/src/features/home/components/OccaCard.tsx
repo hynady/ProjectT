@@ -18,9 +18,10 @@ import { TicketStamp } from "@/features/home/components/TicketStamp";
 interface OccaCardProps {
   occa: OccaCardUnit;
   loading: boolean;
+  isPreview?: boolean; // Add this prop
 }
 
-export const OccaCard: React.FC<OccaCardProps> = ({ occa, loading }) => {
+export const OccaCard: React.FC<OccaCardProps> = ({ occa, loading, isPreview = false }) => {
   const navigate = useNavigate();
 
   if (loading) {
@@ -98,6 +99,11 @@ export const OccaCard: React.FC<OccaCardProps> = ({ occa, loading }) => {
       </CardContent>
 
       <CardFooter className="relative z-10">
+        {isPreview ? (
+          <Button disabled className="w-full" size="sm">
+            Xem trước
+          </Button>
+        ) : (
         <Button
           className="w-full group-hover:bg-primary/90"
           variant="default"
@@ -106,6 +112,7 @@ export const OccaCard: React.FC<OccaCardProps> = ({ occa, loading }) => {
           <span>Mua vé ngay</span>
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
+        )}
       </CardFooter>
     </Card>
   );

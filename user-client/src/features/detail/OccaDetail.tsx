@@ -15,6 +15,7 @@ import { OccaOverviewSkeleton } from "./skeletons/OccaOverviewSkeleton";
 import { OccaShowsSkeleton } from "./skeletons/OccaShowsSkeleton";
 import { OccaGallerySkeleton, OccaLocationSkeleton } from "./skeletons/OccaLocationSkeleton";
 import NotFoundPage from '@/commons/blocks/NotFoundPage.tsx';
+import { usePreviewData } from '@/features/organize/components/preview/PreviewOccaDetail.tsx';
 
 const ErrorMessage = ({ message, className = '' }: { message: string, className?: string }) => (
   <div className={`p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-2 ${className}`}>
@@ -27,18 +28,34 @@ export default function OccaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const { hero, shows, gallery, location, overview } = useOccaDetail(id || '');
+  
+  // Luôn gọi các hook cơ bản trước
+  const detailData = useOccaDetail(id || '');
+  
+  // Sử dụng hook usePreviewData một cách an toàn (có thể là undefined)
+  const previewContext = usePreviewData?.();
+  
+  // Xác định xem có đang ở chế độ preview hay không
+  const isPreview = Boolean(previewContext?.isPreview);
+  
+  // Chọn nguồn dữ liệu dựa trên chế độ
+  const { hero, shows, gallery, location, overview } = isPreview && previewContext?.previewData
+    ? previewContext.previewData
+    : detailData;
 
   useEffect(() => {
-
-    if (!id) {
+    // Không cần redirect nếu đang ở chế độ preview
+    if (!isPreview && !id) {
       navigate('/');
     }
-  }, [id, navigate]);
+  }, [id, navigate, isPreview]);
 
-  if (hero.error?.status === 404) {
+  if (!isPreview && typeof hero.error === 'object' && hero.error?.status === 404) {
     return <NotFoundPage/>;
   }
+
+  // Ẩn OccaBottomCTA trong chế độ preview
+  const showBottomCTA = !isPreview && shows.data;
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,7 +93,7 @@ export default function OccaDetail() {
                 organizer={overview.data?.organizer || ''}
                 occaInfo={
                   {
-                    id: id ?? '',
+                    id: id ?? 'preview',
                     title: hero.data?.title ?? '',
                     location: location.data?.location ?? '',
                     address: location.data?.address ?? '',
@@ -84,6 +101,7 @@ export default function OccaDetail() {
                     shows: shows.data
                   }
                 }
+                isPreview={isPreview}
               />
             )}
           </div>
@@ -114,7 +132,7 @@ export default function OccaDetail() {
         </Card>
 
         <OccaFAQs />
-        {shows.data && <OccaBottomCTA shows={shows.data} />}
+        {showBottomCTA && <OccaBottomCTA shows={shows.data!} />}
       </main>
     </div>
   );

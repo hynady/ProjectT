@@ -20,10 +20,10 @@ interface OccaShowSelectionProps {
   shows: OccaShowUnit[];
   organizer: string;
   occaInfo: BookingInfo['occa'];
+  isPreview?: boolean;
 }
 
-
-export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectionProps) => {
+export const OccaShowSelection = ({shows, organizer, occaInfo, isPreview = false}: OccaShowSelectionProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAuth();
@@ -43,6 +43,11 @@ export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectio
     price: number;
     available: number;
   }) => {
+    // Không thực hiện hành động nếu đang ở chế độ preview
+    if (isPreview) {
+      return;
+    }
+    
     if (!isAuthenticated) {
       setShowLoginDialog(true);
       return;
@@ -108,9 +113,9 @@ export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectio
                         
                           <Button
                             onClick={() => handleShowSelect(show, ticket)}
-                            disabled={ticket.available < 1}
+                            disabled={isPreview || ticket.available < 1}
                           >
-                            {ticket.available < 1 ? "Bán hết" : "Chọn"}
+                            {isPreview ? "Xem trước" : ticket.available < 1 ? "Bán hết" : "Chọn"}
                           </Button>
                       </Card>
                     ))}
@@ -120,7 +125,15 @@ export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectio
             ))}
           </Accordion>
           
-          {isAuthenticated ? (
+          {isPreview ? (
+            <Button
+              className="w-full mt-6"
+              size="lg"
+              disabled
+            >
+              Chế độ xem trước
+            </Button>
+          ) : isAuthenticated ? (
             <Button
               className="w-full mt-6"
               size="lg"
@@ -140,7 +153,7 @@ export const OccaShowSelection = ({shows, organizer, occaInfo}: OccaShowSelectio
           )}
 
           <p className="text-center text-sm text-muted-foreground mt-4">
-            Vé được bán bởi {organizer}
+            {isPreview ? "Đây là bản xem trước" : `Vé được bán bởi ${organizer}`}
           </p>
         </div>
       </div>
