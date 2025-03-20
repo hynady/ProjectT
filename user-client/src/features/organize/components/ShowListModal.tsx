@@ -406,7 +406,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
         open={showDialogOpen}
         onOpenChange={setShowDialogOpen}
         onSave={handleSaveShow}
-        editingShow={editingShow ? { date: editingShow.date, time: editingShow.time } : undefined}
+        showData={editingShow}
       />
       
       <DeleteConfirmDialog

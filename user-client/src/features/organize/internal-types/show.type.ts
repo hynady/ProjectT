@@ -5,11 +5,11 @@ export interface ShowInfo {
   date: string;
   time: string;
   saleStatus: ShowSaleStatus;
-  tickets: {
+  tickets: Array<{
     id: string;
     type: string;
     price: number;
     available: number;
     sold?: number;
-  }[];
+  }>;
 }

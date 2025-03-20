@@ -22,6 +22,7 @@ export interface ShowFormData {
   id?: string;
   date: string;
   time: string;
+  saleStatus?: ShowSaleStatus;
 }
 
 export interface TicketFormData {

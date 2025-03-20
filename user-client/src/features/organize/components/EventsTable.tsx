@@ -10,7 +10,7 @@ import { EmptyState } from "@/commons/components/data-table/EmptyState";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/commons/components/tooltip";
 import { organizeService } from "../services/organize.service";
 import { OrganizerOccaUnit, OccaFilterParams } from "../internal-types/organize.type";
-import { ShowListModal } from "./ShowListModal";
+import { ShowListModal } from "@/features/organize/components/ShowListModal";
 
 interface EventsTableProps {
   searchTerm?: string;

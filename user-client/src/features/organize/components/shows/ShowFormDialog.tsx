@@ -1,73 +1,74 @@
 import { useState, useEffect } from "react";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
+import { format, parse } from "date-fns";
+import { Calendar, Clock } from "lucide-react";
 import { Button } from "@/commons/components/button";
-import { Calendar } from "@/commons/components/calendar";
-import { Input } from "@/commons/components/input";
-import { Label } from "@/commons/components/label";
+import { Calendar as CalendarComponent } from "@/commons/components/calendar";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogDescription
 } from "@/commons/components/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+import { Input } from "@/commons/components/input";
+import { Label } from "@/commons/components/label";
+import { ShowFormData } from "../../internal-types/organize.type";
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
 } from "@/commons/components/popover";
 import { cn } from "@/commons/lib/utils/utils";
-import { toast } from "@/commons/hooks/use-toast";
 
-export interface ShowFormDialogProps {
+interface ShowFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (date: string, time: string) => void;
-  editingShow?: {
-    date: string;
-    time: string;
-  };
-  title?: string;
+  onSave: (date: string, time: string, status: string) => void;
+  showData?: ShowFormData | null;
 }
 
-export const ShowFormDialog = ({ 
-  open, 
-  onOpenChange, 
-  onSave, 
-  editingShow,
-  title
+export const ShowFormDialog = ({
+  open,
+  onOpenChange,
+  onSave,
+  showData
 }: ShowFormDialogProps) => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState<string>("");
-
-  // Reset form when dialog opens or editing show changes
+  const [date, setDate] = useState<Date | undefined>(
+    showData?.date ? parse(showData.date, 'yyyy-MM-dd', new Date()) : undefined
+  );
+  
+  const [time, setTime] = useState<string>(showData?.time || '19:30');
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  
+  // Reset form data when dialog opens
   useEffect(() => {
     if (open) {
-      if (editingShow) {
-        setSelectedDate(new Date(editingShow.date));
-        setSelectedTime(editingShow.time);
+      if (showData) {
+        setDate(showData.date ? parse(showData.date, 'yyyy-MM-dd', new Date()) : undefined);
+        setTime(showData.time || '19:30');
       } else {
-        setSelectedDate(undefined);
-        setSelectedTime("");
+        setDate(undefined);
+        setTime('19:30');
       }
     }
-  }, [open, editingShow]);
-
-  const handleSave = () => {
-    if (!selectedDate || !selectedTime) {
-      toast({
-        title: "Thiếu thông tin",
-        description: "Vui lòng chọn đầy đủ ngày và giờ diễn",
-        variant: "destructive",
-      });
-      return;
+  }, [open, showData]);
+  
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!date) {
+      return; // Validation error - date required
     }
     
-    const formattedDate = format(selectedDate, "yyyy-MM-dd");
-    onSave(formattedDate, selectedTime);
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    onSave(
+      formattedDate, 
+      time, 
+      // Maintain existing status or default to 'upcoming'
+      showData?.saleStatus || 'upcoming'
+    );
   };
 
   return (
@@ -75,60 +76,73 @@ export const ShowFormDialog = ({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {title || (editingShow ? "Sửa suất diễn" : "Thêm suất diễn")}
+            {showData ? 'Chỉnh sửa suất diễn' : 'Thêm suất diễn'}
           </DialogTitle>
+          <DialogDescription>
+            {showData 
+              ? 'Chỉnh sửa thông tin cho suất diễn hiện tại.' 
+              : 'Nhập thông tin thời gian cho suất diễn mới.'}
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>Ngày diễn</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? (
-                    format(selectedDate, "PPP", { locale: vi })
-                  ) : (
-                    <span>Chọn ngày</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  locale={vi}
-                  initialFocus
-                  fromDate={new Date()}
+        
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="date">Ngày</Label>
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="date"
+                    variant="outline"
+                    type="button"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {date ? format(date, 'dd/MM/yyyy') : <span>Chọn ngày</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={date}
+                    onSelect={(date) => {
+                      setDate(date);
+                      setCalendarOpen(false);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="time">Giờ</Label>
+              <div className="relative">
+                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="time"
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="pl-10"
+                  required
                 />
-              </PopoverContent>
-            </Popover>
+              </div>
+            </div>
           </div>
-
-          <div className="space-y-2">
-            <Label>Giờ diễn</Label>
-            <Input
-              type="time"
-              value={selectedTime}
-              onChange={(e) => setSelectedTime(e.target.value)}
-              placeholder="HH:mm"
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Hủy</Button>
-          </DialogClose>
-          <Button onClick={handleSave}>
-            {editingShow ? "Cập nhật" : "Thêm"}
-          </Button>
-        </DialogFooter>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Hủy
+            </Button>
+            <Button type="submit" disabled={!date}>
+              {showData ? 'Lưu' : 'Thêm'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

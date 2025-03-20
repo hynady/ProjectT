@@ -117,28 +117,25 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
     }
   }, [data]);
 
-  // Thêm effect để lưu ngay mỗi khi form thay đổi
-  useEffect(() => {
-    const subscription = form.watch((value) => {
-      // Lưu vào state chung (onChange) mỗi khi form thay đổi
-      if (Object.keys(value).length > 0 && value.title !== undefined) {
-        const currentData: BasicInfoFormData = {
-          title: value.title || "",
-          artist: value.artist || "",
-          location: value.location || "",
-          address: value.address || "",
-          duration: value.duration || 120,
-          description: value.description || "",
-          bannerUrl: bannerPreview || "",
-          bannerFile: bannerFile || undefined,
-        };
-        
-        onChange(currentData);
-      }
-    });
+  // REMOVE THE PROBLEMATIC WATCH EFFECT THAT CAUSES TYPING ISSUES
+  // Instead, only update on blur or submit
+
+  // Handle blur events to update the parent form
+  const handleFieldBlur = () => {
+    const values = form.getValues();
+    const currentData: BasicInfoFormData = {
+      title: values.title || "",
+      artist: values.artist || "",
+      location: values.location || "",
+      address: values.address || "",
+      duration: values.duration || 120,
+      description: values.description || "",
+      bannerUrl: bannerPreview || "",
+      bannerFile: bannerFile || undefined,
+    };
     
-    return () => subscription.unsubscribe();
-  }, [form, onChange, bannerPreview, bannerFile]);
+    onChange(currentData);
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -153,6 +150,9 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
     
     // Lưu File object vào form
     form.setValue("bannerFile", file);
+    
+    // Update parent on file change
+    handleFieldBlur();
     
     toast({
       title: "Đã chọn ảnh",
@@ -192,6 +192,10 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
                   <Input 
                     placeholder="Nhập tên sự kiện" 
                     {...field} 
+                    onBlur={() => {
+                      field.onBlur();
+                      handleFieldBlur();
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -209,6 +213,10 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
                   <Input 
                     placeholder="Tên nghệ sĩ hoặc người trình bày" 
                     {...field} 
+                    onBlur={() => {
+                      field.onBlur();
+                      handleFieldBlur();
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -228,6 +236,10 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
                   <Input 
                     placeholder="Tên địa điểm (VD: Nhà hát Hòa Bình)" 
                     {...field} 
+                    onBlur={() => {
+                      field.onBlur();
+                      handleFieldBlur();
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -245,6 +257,10 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
                   <Input 
                     placeholder="Địa chỉ đầy đủ của địa điểm" 
                     {...field} 
+                    onBlur={() => {
+                      field.onBlur();
+                      handleFieldBlur();
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -264,6 +280,10 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
                   type="number" 
                   placeholder="120" 
                   {...field} 
+                  onBlur={() => {
+                    field.onBlur();
+                    handleFieldBlur();
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -281,7 +301,6 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
                 <RichTextEditor
                   value={field.value}
                   onChange={(value) => {
-                    // console.log("RichTextEditor onChange:", value); // Thêm log để debug
                     field.onChange(value);
                     form.trigger("description");
                   }}

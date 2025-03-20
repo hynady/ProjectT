@@ -24,6 +24,7 @@ import ProtectedBookingRoute from "@/router/ProtectedBookingRoute";
 import OrganizePage from "@/features/organize/OrganizePage.tsx";
 import CreateOccaPage from "@/features/organize/CreateOccaPage.tsx";
 import PreviewOccaDetail from "@/features/organize/components/preview/PreviewOccaDetail";
+import EditOccaPage from "@/features/organize/EditOccaPage";
 
 function AppRouter() {
   return (
@@ -68,7 +69,7 @@ function AppRouter() {
         <Route path="/organize">
           <Route index element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
           <Route path="create" element={<ProtectedRoute><CreateOccaPage /></ProtectedRoute>} />
-          <Route path="edit/:id" element={<ProtectedRoute><CreateOccaPage /></ProtectedRoute>} />
+          <Route path="edit/:id" element={<ProtectedRoute><EditOccaPage /></ProtectedRoute>} />
           <Route path="events" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
           <Route path="tickets" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
           <Route path="customers" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />

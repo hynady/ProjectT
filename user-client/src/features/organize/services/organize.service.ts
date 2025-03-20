@@ -6,7 +6,8 @@ import {
   Page,
   OccaFilterParams,
   OccaSubmitForApprovalPayload,
-  ShowResponse
+  ShowResponse,
+  OccaFormData
 } from '../internal-types/organize.type';
 import { organizeMockData } from './organize.mock';
 
@@ -105,17 +106,21 @@ class OrganizeService extends BaseService {
   }
 
   async createOcca(data: CreateOccaPayload): Promise<CreateOccaResponse> {
+    console.log("API call: createOcca with approval status:", data.approvalStatus);
     return this.request({
       method: 'POST',
       url: '/organize/occas',
       data,
       mockResponse: () => new Promise((resolve, reject) => {
         setTimeout(() => {
+          console.log("Mock API: Processing createOcca request");
           if (data.approvalStatus === 'pending' && !this.validateOccaForSubmission(data)) {
+            console.error("Mock API: Validation failed for submission");
             reject(new Error("Vui lòng điền đầy đủ thông tin trước khi gửi duyệt"));
             return;
           }
 
+          console.log("Mock API: Returning successful response");
           resolve({
             id: `org-${Date.now()}`,
             title: data.basicInfo.title,
@@ -157,6 +162,99 @@ class OrganizeService extends BaseService {
           const mockShows = organizeMockData.showsByOccaId(occaId);
           resolve(mockShows);
         }, 800);
+      })
+    });
+  }
+
+  async getOccaById(id: string): Promise<OccaFormData> {
+    return this.request({
+      method: 'GET',
+      url: `/organize/occas/${id}`,
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => {
+          // Generate a mock full occa with all details based on basic info from mock data
+          const basicInfo = organizeMockData.occas.find(occa => occa.id === id);
+          
+          if (!basicInfo) {
+            throw new Error(`Occa with ID ${id} not found`);
+          }
+          
+          // Get mock shows for this occa
+          const shows = organizeMockData.showsByOccaId(id).map(show => ({
+            id: show.id,
+            date: show.date,
+            time: show.time
+          }));
+          
+          // Create mock tickets from the shows
+          const tickets = [];
+          for (const show of organizeMockData.showsByOccaId(id)) {
+            for (const ticket of show.tickets) {
+              tickets.push({
+                id: ticket.id,
+                showId: show.id,
+                type: ticket.type,
+                price: ticket.price,
+                availableQuantity: ticket.available
+              });
+            }
+          }
+          
+          // Generate mock gallery items
+          const gallery = Array(Math.floor(Math.random() * 5) + 1)
+            .fill(0)
+            .map((_, i) => ({
+              id: `gallery-${id}-${i}`,
+              image: `https://picsum.photos/seed/${id}-${i}/800/600`
+            }));
+          
+          resolve({
+            basicInfo: {
+              title: basicInfo.title,
+              artist: "Various Artists", // Mock data
+              location: basicInfo.location,
+              address: "123 Example Street, City", // Mock address
+              duration: 120, // Default duration
+              description: JSON.stringify([
+                {
+                  type: 'paragraph',
+                  children: [{ text: 'This is a mock description for the event.' }],
+                },
+              ]),
+              bannerUrl: basicInfo.image || "",
+            },
+            shows,
+            tickets,
+            gallery
+          });
+        }, 800);
+      })
+    });
+  }
+  
+  async updateOcca(id: string, data: CreateOccaPayload): Promise<CreateOccaResponse> {
+    console.log("API call: updateOcca for ID:", id, "with approval status:", data.approvalStatus);
+    return this.request({
+      method: 'PUT',
+      url: `/organize/occas/${id}`,
+      data,
+      mockResponse: () => new Promise((resolve, reject) => {
+        setTimeout(() => {
+          console.log("Mock API: Processing updateOcca request");
+          if (data.approvalStatus === 'pending' && !this.validateOccaForSubmission(data)) {
+            console.error("Mock API: Validation failed for submission");
+            reject(new Error("Vui lòng điền đầy đủ thông tin trước khi gửi duyệt"));
+            return;
+          }
+
+          console.log("Mock API: Returning successful response");
+          resolve({
+            id,
+            title: data.basicInfo.title,
+            status: data.status,
+            approvalStatus: data.approvalStatus
+          });
+        }, 1000);
       })
     });
   }
