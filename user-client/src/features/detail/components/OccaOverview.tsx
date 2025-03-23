@@ -1,6 +1,6 @@
 import { Card } from '@/commons/components/card.tsx';
 import { Users } from 'lucide-react';
-import { SlateContentRenderer } from '@/commons/components/slate-content-renderer';
+import { SlateContentRenderer } from '@/commons/components/rich-text-editor/slate-content-renderer';
 
 interface OccaOverviewProps {
   details: string;

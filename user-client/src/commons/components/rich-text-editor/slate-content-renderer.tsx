@@ -11,7 +11,7 @@ interface SlateTextNode {
 
 interface SlateElementProps {
   type: string;
-  children: SlateTextNode[];
+  children: (SlateTextNode | SlateElementProps)[];  // Updated type to handle nested elements
   align?: 'left' | 'center' | 'right' | 'justify';
   url?: string;
   alt?: string;
@@ -61,11 +61,17 @@ export const SlateContentRenderer: React.FC<SlateContentRendererProps> = ({ cont
       style.textAlign = element.align;
     }
 
-    const children = element.children.map((child, childIndex) => (
-      <React.Fragment key={childIndex}>
-        {renderLeaf(child)}
-      </React.Fragment>
-    ));
+    // Updated children rendering logic
+    const children = element.children.map((child, childIndex) => {
+      if ('type' in child) {
+        return renderElement(child as SlateElementProps, childIndex);
+      }
+      return (
+        <React.Fragment key={childIndex}>
+          {renderLeaf(child as SlateTextNode)}
+        </React.Fragment>
+      );
+    });
 
     switch (element.type) {
       case 'paragraph':
@@ -94,19 +100,19 @@ export const SlateContentRenderer: React.FC<SlateContentRendererProps> = ({ cont
         );
       case 'bulleted-list':
         return (
-          <ul key={index} style={{ ...style, listStyleType: 'disc', paddingInlineStart: '1.5em' }} className="my-4">
+          <ul key={index} style={style} className="list-disc pl-6 my-4 space-y-1">
             {children}
           </ul>
         );
       case 'numbered-list':
         return (
-          <ol key={index} style={{ ...style, listStyleType: 'decimal', paddingInlineStart: '1.5em' }} className="my-4">
+          <ol key={index} style={style} className="list-decimal pl-6 my-4 space-y-1">
             {children}
           </ol>
         );
       case 'list-item':
         return (
-          <li key={index} style={style} className="mb-1">
+          <li key={index} style={style}>
             {children}
           </li>
         );
@@ -118,7 +124,7 @@ export const SlateContentRenderer: React.FC<SlateContentRendererProps> = ({ cont
         );
       default:
         return (
-          <p key={index} style={style}>
+          <p key={index} style={style} className="mb-4">
             {children}
           </p>
         );

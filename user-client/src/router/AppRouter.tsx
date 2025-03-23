@@ -19,12 +19,12 @@ import { DetailPageLayout } from "@/features/detail/layout.tsx";
 import SettingsLayout from "@/features/setting/layout.tsx";
 import { ResetPassword } from "@/features/auth/blocks/ResetPasswordForm.tsx";
 import { RegisterForm } from "@/features/auth/blocks/RegisterForm.tsx";
-import AdminPage from "@/features/admin/block/AdminPage.tsx";
 import ProtectedBookingRoute from "@/router/ProtectedBookingRoute";
 import OrganizePage from "@/features/organize/OrganizePage.tsx";
 import CreateOccaPage from "@/features/organize/CreateOccaPage.tsx";
 import PreviewOccaDetail from "@/features/organize/components/preview/PreviewOccaDetail";
 import EditOccaPage from "@/features/organize/EditOccaPage";
+import AdminRoutes from "@/features/admin/AdminRoutes";
 
 function AppRouter() {
   return (
@@ -76,6 +76,9 @@ function AppRouter() {
           <Route path="settings" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
         </Route>
 
+        {/* Admin Routes - Protected - WITHOUT NavLayout */}
+        <Route path="/admin/*" element={<AdminRoutes />} />
+
         {/* Preview Routes */}
         <Route path="/preview/occa" element={<PreviewOccaDetail />} />
 
@@ -109,7 +112,6 @@ function AppRouter() {
 
         {/* 404 Not Found Route */}
         <Route path="*" element={<NotFoundPage />} />
-        <Route path="/test" element={<AdminPage />} />
       </Routes>
     </ScrollToTop>
   );
