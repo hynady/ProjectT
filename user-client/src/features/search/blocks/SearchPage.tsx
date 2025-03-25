@@ -16,7 +16,7 @@ import {OccaCardUnit} from "@/features/home/internal-types/home.ts";
 
 export type SearchFormValues = {
   categoryId: string;
-  venueId: string;
+  regionId: string;
   sortBy: 'date' | 'price' | 'title';
   sortOrder: 'asc' | 'desc';
 };
@@ -27,10 +27,10 @@ export const SearchPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
-  const [venues, setVenues] = useState<{ id: string, region: string }[]>([]);
+  const [regions, setRegions] = useState<{ id: string, name: string }[]>([]);
   const [filters, setFilters] = useState<SearchFormValues>({
     categoryId: 'all',
-    venueId: 'all',
+    regionId: 'all',
     sortBy: 'date',
     sortOrder: 'desc'
   });
@@ -44,13 +44,13 @@ export const SearchPage: React.FC = () => {
 
   const fetchCategoriesAndVenues = async () => {
     try {
-      const [categoriesData, venuesData] = await Promise.all([
+      const [categoriesData, regionsData] = await Promise.all([
         searchService.fetchCategories(),
-        searchService.fetchVenues()
+        searchService.fetchRegions()
       ]);
       setCategories(categoriesData);
-      setVenues(venuesData);
-    } catch (error) {
+      setRegions(regionsData);
+    } catch {
       // console.error('Error fetching categories and venues:', error);
     }
   };
@@ -61,7 +61,7 @@ export const SearchPage: React.FC = () => {
 
   const searchFormSchema = z.object({
     categoryId: z.enum(['all', ...categories.map(c => c.id)]),
-    venueId: z.enum(['all', ...venues.map(v => v.id)]),
+    venueId: z.enum(['all', ...regions.map(v => v.id)]),
     sortBy: z.enum(['date', 'price', 'title']),
     sortOrder: z.enum(['asc', 'desc']),
   });
@@ -73,13 +73,13 @@ export const SearchPage: React.FC = () => {
 
   useEffect(() => {
     const categoryId = (searchParams.get('categoryId') as SearchFormValues['categoryId']) || 'all';
-    const venueId = (searchParams.get('venueId') as SearchFormValues['venueId']) || 'all';
+    const regionId = (searchParams.get('regionId') as SearchFormValues['regionId']) || 'all';
     const sortBy = (searchParams.get('sortBy') as SearchFormValues['sortBy']) || 'date';
     const sortOrder = (searchParams.get('sortOrder') as SearchFormValues['sortOrder']) || 'desc';
 
     const initialFilters = {
       categoryId,
-      venueId,
+      regionId,
       sortBy,
       sortOrder
     };
@@ -91,8 +91,8 @@ export const SearchPage: React.FC = () => {
   const getCategoryName = (id: string) =>
     id === 'all' ? 'Tất cả' : categories.find(c => c.id === id)?.name || '';
 
-  const getVenueName = (id: string) =>
-    id === 'all' ? 'Tất cả' : venues.find(v => v.id === id)?.region || '';
+  const getRegionName = (id: string) =>
+    id === 'all' ? 'Tất cả' : regions.find(v => v.id === id)?.name || '';
 
   // Update the fetchOccasData function to store the last count
   const fetchOccasData = async (page: number, formValues: SearchFormValues) => {
@@ -106,7 +106,7 @@ export const SearchPage: React.FC = () => {
         totalPages,
         totalElements,
       }));
-    } catch (error) {
+    } catch {
       // console.error('Error fetching occasions:', error);
     } finally {
       setLoading(false);
@@ -202,14 +202,14 @@ export const SearchPage: React.FC = () => {
               </Badge>
             )}
 
-            {filters.venueId !== 'all' && (
+            {filters.regionId !== 'all' && (
               <Badge
                 variant="outline"
                 className="cursor-pointer hover:bg-destructive/10 transition-colors flex items-center gap-1"
-                onClick={() => handleFilterChange('venueId', 'all')}
+                onClick={() => handleFilterChange('regionId', 'all')}
               >
                 <MapPinned className="h-3 w-3"/>
-                {getVenueName(filters.venueId)}
+                {getRegionName(filters.regionId)}  {/* Updated function name to getRegionName */}
                 <X className="h-3 w-3" />
               </Badge>
             )}
@@ -224,10 +224,10 @@ export const SearchPage: React.FC = () => {
               >
                 <Filter className="h-4 w-4" />
                 Bộ lọc
-                {(filters.categoryId !== 'all' || filters.venueId !== 'all') && (
+                {(filters.categoryId !== 'all' || filters.regionId !== 'all') && (
                   <Badge variant="secondary" className="ml-1">
                     {(filters.categoryId !== 'all' ? 1 : 0) +
-                      (filters.venueId !== 'all' ? 1 : 0)}
+                      (filters.regionId !== 'all' ? 1 : 0)}
                   </Badge>
                 )}
               </Button>
@@ -270,14 +270,14 @@ export const SearchPage: React.FC = () => {
                         <X className="h-3 w-3" />
                       </Badge>
                     )}
-                    {filters.venueId !== 'all' && (
+                    {filters.regionId !== 'all' && (
                       <Badge
                         variant="outline"
                         className="cursor-pointer hover:bg-destructive/10 transition-colors flex items-center gap-1"
-                        onClick={() => handleFilterChange('venueId', 'all')}
+                        onClick={() => handleFilterChange('regionId', 'all')}
                       >
                         <MapPinned className="h-3 w-3"/>
-                        {getVenueName(filters.venueId)}
+                        {getRegionName(filters.regionId)}
                         <X className="h-3 w-3" />
                       </Badge>
                     )}
@@ -325,21 +325,21 @@ export const SearchPage: React.FC = () => {
                           <div className="grid grid-cols-2 gap-2 pt-2">
                             <Button
                               type="button"
-                              variant={filters.venueId === 'all' ? 'default' : 'outline'}
-                              onClick={() => handleFilterChange('venueId', 'all')}
+                              variant={filters.regionId === 'all' ? 'default' : 'outline'}
+                              onClick={() => handleFilterChange('regionId', 'all')}
                               className="h-auto py-2 px-4"
                             >
                               Tất cả
                             </Button>
-                            {venues.map(venue => (
+                            {regions.map(venue => (
                               <Button
                                 key={venue.id}
                                 type="button"
-                                variant={filters.venueId === venue.id ? 'default' : 'outline'}
-                                onClick={() => handleFilterChange('venueId', venue.id)}
+                                variant={filters.regionId === venue.id ? 'default' : 'outline'}
+                                onClick={() => handleFilterChange('regionId', venue.id)}
                                 className="h-auto py-2 px-4"
                               >
-                                {venue.region}
+                                {venue.name}
                               </Button>
                             ))}
                           </div>

@@ -106,7 +106,7 @@ export const useHome = () => {
 
     const fetchVenuesSection = async () => {
       try {
-        const data = await homeService.getVenues();
+        const data = await homeService.getRegions();
         setVenuesSection({ data, isLoading: false, error: null });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {

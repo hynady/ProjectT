@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ticket.servermono.occacontext.adapters.dtos.CategoryResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.OccaResponse;
-import com.ticket.servermono.occacontext.adapters.dtos.VenueResponse;
+import com.ticket.servermono.occacontext.adapters.dtos.RegionDTO;
 import com.ticket.servermono.occacontext.usecases.OccaServices;
 import com.ticket.servermono.occacontext.usecases.CategoryServices;
-import com.ticket.servermono.occacontext.usecases.VenueServices;
+import com.ticket.servermono.occacontext.usecases.RegionServices;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +24,7 @@ public class OccaController {
 
     private final OccaServices occaServices;
     private final CategoryServices categoryServices;
-    private final VenueServices venueServices;
+    private final RegionServices regionServices;
 
     // Get hero occasions for home page
     @GetMapping("/hero-occas")
@@ -62,16 +62,6 @@ public class OccaController {
         try {
             List<CategoryResponse> categories = categoryServices.getAllCategoriesWithCount();
             return ResponseEntity.ok(categories);
-        } catch(RuntimeException e) {
-            return ResponseEntity.status(500).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/venues")
-    public ResponseEntity<?> getVenues() {
-        try {
-            List<VenueResponse> venues = venueServices.getAllVenuesWithCount();
-            return ResponseEntity.ok(venues);
         } catch(RuntimeException e) {
             return ResponseEntity.status(500).body(e.getMessage());
         }

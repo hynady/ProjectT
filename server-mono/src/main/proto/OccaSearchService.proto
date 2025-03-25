@@ -38,6 +38,7 @@ message SearchOccasRequest {
     string venue_id = 5;
     string sort_by = 6;
     string sort_order = 7;
+    string region_id = 8;
 }
 
 message SearchOccasResponse {

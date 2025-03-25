@@ -69,6 +69,7 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
                         "FROM Occa o " +
                         "WHERE LOWER(o.title) LIKE %:query% " +
                         "   OR LOWER(o.venue.location) LIKE %:query% " +
+                        "   OR LOWER(o.venue.region.name) LIKE %:query% " +
                         "   OR SOUNDEX(o.title) = SOUNDEX(:query) " +
                         "ORDER BY " +
                         "   CASE " +
@@ -101,14 +102,15 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
                         "FROM Occa o " +
                         "WHERE (:keyword IS NULL OR " +
                         "       LOWER(o.title) LIKE CONCAT('%', :keyword, '%') OR " +
+                        "       LOWER(o.venue.region.name) LIKE CONCAT('%', :keyword, '%') OR " +
                         "       LOWER(o.venue.location) LIKE CONCAT('%', :keyword, '%')) " +
                         "AND (:categoryId IS NULL OR o.category.id = :categoryId) " +
-                        "AND (:venueId IS NULL OR o.venue.id = :venueId) " +
+                        "AND (:regionId IS NULL OR o.venue.region.id = :regionId) " +
                         "AND EXISTS (SELECT 1 FROM Show s WHERE s.occa.id = o.id)")
         Page<OccaProjection> searchOccas(
                         @Param("keyword") String keyword,
                         @Param("categoryId") UUID categoryId,
-                        @Param("venueId") UUID venueId,
+                        @Param("regionId") UUID regionId,
                         Pageable pageable);
 
         @Query("SELECT COUNT(o) " +

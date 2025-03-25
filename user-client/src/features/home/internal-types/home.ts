@@ -26,8 +26,8 @@ export interface HeroSectionUnit {
   
   export interface VenueCardUnit {
     id: string;
-    image: string;
-    region: string;
+    regionImage: string;
+    regionName: string;
     occaCount: number;
   }
   

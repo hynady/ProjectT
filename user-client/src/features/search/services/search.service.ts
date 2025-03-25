@@ -80,9 +80,9 @@ class SearchService extends BaseService {
             );
           }
 
-          if (formValues.venueId && formValues.venueId !== 'all') {
+          if (formValues.regionId && formValues.regionId !== 'all') {
             filteredOccas = filteredOccas.filter(event =>
-              event.venueId === formValues.venueId
+              event.venueId === formValues.regionId
             );
           }
 
@@ -123,12 +123,12 @@ class SearchService extends BaseService {
       })
     });
   }
-  async fetchVenues(): Promise<{ id: string, region: string }[]> {
+  async fetchRegions(): Promise<{ id: string, name: string }[]> {
     return this.request({
       method: 'GET',
-      url: '/occas/venues',
+      url: '/regions/getOnlyNameRegion',
       mockResponse: () => new Promise((resolve) => {
-        setTimeout(() => resolve(searchMockData.venues), 500);
+        setTimeout(() => resolve(searchMockData.regions), 500);
       })
     });
   }

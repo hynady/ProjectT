@@ -33,12 +33,13 @@ public class SearchController {
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) String categoryId,
+        @RequestParam(required = false) String regionId,
         @RequestParam(required = false) String venueId,
         @RequestParam(required = false, defaultValue = "date") String sortBy,
         @RequestParam(required = false, defaultValue = "asc") String sortOrder
     ) {
         try {
-            SearchPageResponse response = searchService.searchOccas(page, size, keyword, categoryId, venueId, sortBy, sortOrder);
+            SearchPageResponse response = searchService.searchOccas(page, size, keyword, categoryId, regionId, venueId, sortBy, sortOrder);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(null);

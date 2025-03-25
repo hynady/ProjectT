@@ -62,8 +62,8 @@ export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
       <CardHeader className="p-0">
       <div className="relative overflow-hidden">
         <img
-        src={venue.image}
-        alt={venue.region}
+        src={venue.regionImage}
+        alt={venue.regionName}
         onError={(e) => {
           e.currentTarget.src =
             "https://placehold.co/600x400/8b5cf6/f5f3ff?text=No+Image";
@@ -79,7 +79,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
         <div 
           className={`text-2xl font-bold bg-gradient-to-r ${randomGradient} to-foreground bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300`}
         >
-          {venue.region}
+          {venue.regionName}
         </div>
         <span className="text-sm text-muted-foreground">{venue.occaCount} sự kiện</span>
       </div>

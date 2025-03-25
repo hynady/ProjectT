@@ -17,8 +17,6 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
-import ticket.GetMinPriceForShowRequest;
-import ticket.GetMinPriceForShowResponse;
 import ticket.TicketShowServicesGrpc.TicketShowServicesBlockingStub;
 
 @Service

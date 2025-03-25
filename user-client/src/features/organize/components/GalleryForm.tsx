@@ -3,6 +3,7 @@ import { Button } from "@/commons/components/button";
 import { ArrowLeft, Plus, Upload, X } from "lucide-react";
 import { GalleryItem } from "../internal-types/organize.type";
 import { toast } from "@/commons/hooks/use-toast";
+import { isCloudinaryUrl } from "@/utils/cloudinary.utils";
 
 interface GalleryFormProps {
   gallery: GalleryItem[];
@@ -49,24 +50,37 @@ export const GalleryForm = ({ gallery, onChange, onBack }: GalleryFormProps) => 
       title: "Đã chọn ảnh",
       description: `Đã thêm ${filesArray.length} ảnh vào thư viện. Ảnh sẽ được tải lên khi bạn lưu hoặc đăng sự kiện.`,
     });
+    
+    // Reset the file input
+    event.target.value = '';
   };
 
   const handleRemoveImage = (index: number) => {
     const updatedGallery = [...gallery];
-
     const removedItem = updatedGallery[index];
+    
+    // If it's a File object, remove it from the files array
     if (removedItem.file) {
       set_GalleryFiles(prev => prev.filter(f => 
-        !updatedGallery[index].file || f.name !== updatedGallery[index].file?.name
+        !removedItem.file || f.name !== removedItem.file.name
       ));
     }
 
+    // If it's a blob URL (not a Cloudinary URL), revoke it to free up memory
     if (removedItem.image && removedItem.image.startsWith('blob:')) {
       URL.revokeObjectURL(removedItem.image);
     }
 
+    // Remove the item from the gallery
     updatedGallery.splice(index, 1);
     onChange(updatedGallery);
+    
+    toast({
+      title: "Đã xóa ảnh",
+      description: isCloudinaryUrl(removedItem.image) 
+        ? "Ảnh sẽ bị xóa khi bạn lưu thay đổi" 
+        : "Đã xóa ảnh khỏi thư viện",
+    });
   };
 
   return (
@@ -100,6 +114,10 @@ export const GalleryForm = ({ gallery, onChange, onBack }: GalleryFormProps) => 
         Tải lên hình ảnh sự kiện (tối đa 10 ảnh) để hiển thị trong thư viện. Các định dạng được hỗ trợ: JPG, PNG.
       </p>
 
+      <p className="text-xs text-muted-foreground">
+        <strong>Lưu ý:</strong> Hình ảnh sẽ được chuyển thành định dạng web tối ưu khi bạn lưu hoặc đăng sự kiện.
+      </p>
+
       {gallery.length === 0 ? (
         <div className="border-2 border-dashed rounded-lg p-6 sm:p-12 flex flex-col items-center justify-center text-center">
           <Upload className="h-6 w-6 sm:h-8 sm:w-8 mb-4 text-muted-foreground" />
@@ -128,6 +146,12 @@ export const GalleryForm = ({ gallery, onChange, onBack }: GalleryFormProps) => 
                 alt={`Gallery image ${index + 1}`}
                 className="w-full h-full object-cover"
               />
+              {/* Status badge for blob URLs vs Cloudinary URLs */}
+              {item.image && (
+                <div className="absolute top-0 right-0 m-1 px-1.5 py-0.5 text-xs rounded bg-black/60 text-white">
+                  {item.image.startsWith('blob:') ? 'Chưa lưu' : 'Đã lưu'}
+                </div>
+              )}
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <Button
                   variant="destructive"

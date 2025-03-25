@@ -56,12 +56,12 @@ class HomeService extends BaseService {
     });
   }
 
-  async getVenues(): Promise<VenueCardUnit[]> {
+  async getRegions(): Promise<VenueCardUnit[]> {
     return this.request({
       method: 'GET',
-      url: 'occas/venues',
+      url: '/regions',
       mockResponse: () => new Promise((resolve) => {
-        setTimeout(() => resolve(homeMockData.venues), 1000);
+        setTimeout(() => resolve(homeMockData.regions), 1000);
       })
     });
   }

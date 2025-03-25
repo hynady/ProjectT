@@ -105,6 +105,7 @@ public class OccaSearchGrpcService extends OccaSearchServiceGrpc.OccaSearchServi
                 request.getKeyword(),
                 request.getCategoryId(),
                 request.getVenueId(),
+                request.getRegionId(),
                 request.getSortBy(),
                 request.getSortOrder()
             );

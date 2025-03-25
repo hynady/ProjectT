@@ -25,14 +25,14 @@ import java.util.Optional;
 public class OccaDataInitializer {
 
     @Bean
-    @Order(2)
+    @Order(3)
     CommandLineRunner initOccaData(OccaRepository repository, VenueRepository venueRepository,
             CategoryRepository categoryRepository, OccaServices occaServices, ShowServices showServices) {
         return args -> {
             if (repository.count() == 0) {
 
-                Optional<Venue> svdHanoiVenue = venueRepository.findByLocation("SVĐ Mỹ Đình, Hà Nội");
-                Optional<Venue> svdHcmVenue = venueRepository.findByLocation("SVĐ Quốc gia, TP.HCM");
+                Optional<Venue> svdHanoiVenue = venueRepository.findByLocation("Nhà hát lớn Hà Nội");
+                Optional<Venue> svdHcmVenue = venueRepository.findByLocation("Nhà Văn hóa Thanh Niên");
                 Optional<Category> musicCategory = categoryRepository.findByName("Âm nhạc");
                 Optional<Category> sportCategory = categoryRepository.findByName("Thể thao");
                 Optional<Category> festivalCategory = categoryRepository.findByName("Lễ hội");
@@ -153,32 +153,181 @@ public class OccaDataInitializer {
                 savedOccas.forEach(occa -> {
                     OccaDetailInfo detailInfo = OccaDetailInfo.builder()
                             .bannerUrl(occa.getImage()) // Using image as banner for now
-                            .description("# The Artificial Paradise Tour 2025\r\n" + //
-                                    "![The Artificial Paradise Tour 2025](https://salt.tkbcdn.com/ts/ds/f0/ca/7c/6e7dad78e37fd71064f8c6a957570bd1.jpg)\r\n"
-                                    + //
-                                    "\r\n" + //
-                                    "### Event Description\r\n" + //
-                                    "Join us for a special music night with BlackPink, featuring their most popular hit songs. Experience the thrill of live performances with a full band, meet the artists, and enjoy exclusive fan experiences.\r\n"
-                                    + //
-                                    "\r\n" + //
-                                    "### Ticket Prices\r\n" + //
-                                    "- **SVIP**: 3,500,000 VND (Available: 20)\r\n" + //
-                                    "- **VIP**: 2,500,000 VND (Available: 50)\r\n" + //
-                                    "- **Standard**: 1,500,000 VND (Available: 100)\r\n" + //
-                                    "- **Economy**: 800,000 VND (Available: 200)\r\n" + //
-                                    "\r\n" + //
-                                    "### Event Highlights\r\n" + //
-                                    "- Live performance with a full band\r\n" + //
-                                    "- Meet and greet with the artists\r\n" + //
-                                    "- Special gifts for the audience\r\n" + //
-                                    "- Photo opportunity with the artists (SVIP)\r\n" + //
-                                    "- Soundcheck party (VIP & SVIP)\r\n" + //
-                                    "\r\n" + //
-                                    "### Terms and Conditions\r\n" + //
-                                    "- Tickets are non-refundable and non-exchangeable\r\n" + //
-                                    "- Please arrive 30 minutes before the performance\r\n" + //
-                                    "- Professional cameras are not allowed\r\n" + //
-                                    "- Follow the event organizer's regulations" + occa.getTitle())
+                            .description("[" +
+                                "{" +
+                                  "\"type\": \"heading-one\"," +
+                                  "\"children\": [" +
+                                    "{" +
+                                      "\"text\": \"The Artificial Paradise Tour 2025\"" +
+                                    "}" +
+                                  "]" +
+                                "}," +
+                                "{" +
+                                  "\"type\": \"image\"," +
+                                  "\"url\": \"https://salt.tkbcdn.com/ts/ds/f0/ca/7c/6e7dad78e37fd71064f8c6a957570bd1.jpg\"," +
+                                  "\"alt\": \"The Artificial Paradise Tour 2025\"," +
+                                  "\"children\": [{ \"text\": \"\" }]" +
+                                "}," +
+                                "{" +
+                                  "\"type\": \"heading-three\"," +
+                                  "\"children\": [" +
+                                    "{" +
+                                      "\"text\": \"Event Description\"" +
+                                    "}" +
+                                  "]" +
+                                "}," +
+                                "{" +
+                                  "\"type\": \"paragraph\"," +
+                                  "\"children\": [" +
+                                    "{" +
+                                      "\"text\": \"Join us for a special music night with BlackPink, featuring their most popular hit songs. Experience the thrill of live performances with a full band, meet the artists, and enjoy exclusive fan experiences.\"" +
+                                    "}" +
+                                  "]" +
+                                "}," +
+                                "{" +
+                                  "\"type\": \"heading-three\"," +
+                                  "\"children\": [" +
+                                    "{" +
+                                      "\"text\": \"Ticket Prices\"" +
+                                    "}" +
+                                  "]" +
+                                "}," +
+                                "{" +
+                                  "\"type\": \"bulleted-list\"," +
+                                  "\"children\": [" +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"**SVIP**: 3,500,000 VND (Available: 20)\"" +
+                                        "}" +
+                                      "]" +
+                                    "}," +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"**VIP**: 2,500,000 VND (Available: 50)\"" +
+                                        "}" +
+                                      "]" +
+                                    "}," +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"**Standard**: 1,500,000 VND (Available: 100)\"" +
+                                        "}" +
+                                      "]" +
+                                    "}," +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"**Economy**: 800,000 VND (Available: 200)\"" +
+                                        "}" +
+                                      "]" +
+                                    "}" +
+                                  "]" +
+                                "}," +
+                                "{" +
+                                  "\"type\": \"heading-three\"," +
+                                  "\"children\": [" +
+                                    "{" +
+                                      "\"text\": \"Event Highlights\"" +
+                                    "}" +
+                                  "]" +
+                                "}," +
+                                "{" +
+                                  "\"type\": \"bulleted-list\"," +
+                                  "\"children\": [" +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"Live performance with a full band\"" +
+                                        "}" +
+                                      "]" +
+                                    "}," +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"Meet and greet with the artists\"" +
+                                        "}" +
+                                      "]" +
+                                    "}," +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"Special gifts for the audience\"" +
+                                        "}" +
+                                      "]" +
+                                    "}," +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"Photo opportunity with the artists (SVIP)\"" +
+                                        "}" +
+                                      "]" +
+                                    "}," +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"Soundcheck party (VIP & SVIP)\"" +
+                                        "}" +
+                                      "]" +
+                                    "}" +
+                                  "]" +
+                                "}," +
+                                "{" +
+                                  "\"type\": \"heading-three\"," +
+                                  "\"children\": [" +
+                                    "{" +
+                                      "\"text\": \"Terms and Conditions\"" +
+                                    "}" +
+                                  "]" +
+                                "}," +
+                                "{" +
+                                  "\"type\": \"bulleted-list\"," +
+                                  "\"children\": [" +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"Tickets are non-refundable and non-exchangeable\"" +
+                                        "}" +
+                                      "]" +
+                                    "}," +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"Please arrive 30 minutes before the performance\"" +
+                                        "}" +
+                                      "]" +
+                                    "}," +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"Professional cameras are not allowed\"" +
+                                        "}" +
+                                      "]" +
+                                    "}," +
+                                    "{" +
+                                      "\"type\": \"list-item\"," +
+                                      "\"children\": [" +
+                                        "{" +
+                                          "\"text\": \"Follow the event organizer's regulations\"" +
+                                        "}" +
+                                      "]" +
+                                    "}" +
+                                  "]" +
+                                "}" +
+                              "]")
                             .organizer("VinGroup Entertainment")
                             .galleryUrls(Arrays.asList(
                                     occa.getImage(),

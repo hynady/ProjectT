@@ -124,6 +124,91 @@ export const useOccaForm = ({
     setIsFormValid(isValid);
   }, [occaData]);
 
+  // Upload images to Cloudinary and return the processed data
+  const uploadImagesToCloudinary = async (data: OccaFormData): Promise<OccaFormData> => {
+    const processedData = { ...data };
+    
+    // Upload banner if provided
+    if (processedData.basicInfo.bannerFile) {
+      try {
+        console.log("Uploading banner image to Cloudinary...");
+        const bannerResponse = await uploadImageToCloudinary(
+          processedData.basicInfo.bannerFile,
+          "occa_banners"
+        );
+        
+        // Replace blob URL with Cloudinary URL
+        if (processedData.basicInfo.bannerUrl && processedData.basicInfo.bannerUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(processedData.basicInfo.bannerUrl);
+        }
+        processedData.basicInfo.bannerUrl = bannerResponse.secure_url;
+        console.log("Banner uploaded successfully:", processedData.basicInfo.bannerUrl);
+      } catch (err) {
+        console.error("Failed to upload banner:", err);
+        throw new Error("Không thể tải lên ảnh banner. Vui lòng thử lại.");
+      }
+    }
+    
+    // Upload gallery images if provided
+    if (processedData.gallery && processedData.gallery.length > 0) {
+      const galleryWithFiles = processedData.gallery.filter(item => item.file);
+      
+      if (galleryWithFiles.length > 0) {
+        try {
+          console.log(`Uploading ${galleryWithFiles.length} gallery images to Cloudinary...`);
+          const uploadPromises = galleryWithFiles.map(async (item) => {
+            if (!item.file) return item;
+            
+            const response = await uploadImageToCloudinary(
+              item.file,
+              "occa_galleries"
+            );
+            
+            // Release the blob URL if it exists
+            if (item.image && item.image.startsWith('blob:')) {
+              URL.revokeObjectURL(item.image);
+            }
+            
+            return {
+              ...item,
+              image: response.secure_url
+            };
+          });
+          
+          // Replace old gallery with new gallery with Cloudinary URLs
+          const updatedGallery = await Promise.all(uploadPromises);
+          processedData.gallery = updatedGallery;
+          console.log("Gallery images uploaded successfully");
+        } catch (err) {
+          console.error("Failed to upload gallery images:", err);
+          throw new Error("Không thể tải lên một số ảnh thư viện. Vui lòng thử lại.");
+        }
+      }
+    }
+    
+    return processedData;
+  };
+
+  // Cleanup function to remove file objects and prepare payload for API
+  const preparePayloadForSubmission = (data: OccaFormData): OccaFormData => {
+    // Create a deep copy to avoid mutation
+    const cleanData = JSON.parse(JSON.stringify(data)) as OccaFormData;
+    
+    // Remove File objects from basicInfo
+    cleanData.basicInfo = { ...cleanData.basicInfo };
+    delete cleanData.basicInfo.bannerFile;
+    
+    // Remove File objects from gallery items and only keep necessary fields
+    if (cleanData.gallery) {
+      cleanData.gallery = cleanData.gallery.map(item => ({
+        id: item.id,
+        image: item.image
+      }));
+    }
+    
+    return cleanData;
+  };
+
   // Handle form submission for approval
   const handleSubmitForApproval = async () => {
     if (!validateForm()) {
@@ -132,9 +217,27 @@ export const useOccaForm = ({
 
     setIsSubmitting(true);
     try {
-      // Create occa with pending status
+      // First, upload all images to Cloudinary
+      let processedData = { ...occaData };
+      
+      try {
+        processedData = await uploadImagesToCloudinary(processedData);
+      } catch (error) {
+        toast({
+          title: "Lỗi tải lên ảnh",
+          description: error instanceof Error ? error.message : "Không thể tải lên ảnh. Vui lòng thử lại.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Prepare data for API submission
+      const cleanData = preparePayloadForSubmission(processedData);
+      
+      // Create payload with approval status
       const payload: CreateOccaPayload = {
-        ...occaData,
+        ...cleanData,
         status: "active",
         approvalStatus: "pending"
       };
@@ -179,77 +282,27 @@ export const useOccaForm = ({
     setIsDraft(asDraft);
 
     try {
-      // Prepare data for submission
-      const processedData = { ...occaData };
+      // First, upload all images to Cloudinary
+      let processedData = { ...occaData };
       
-      // Upload banner if provided
-      if (processedData.basicInfo.bannerFile) {
-        try {
-          const bannerResponse = await uploadImageToCloudinary(
-            processedData.basicInfo.bannerFile,
-            "occa_banners"
-          );
-          processedData.basicInfo.bannerUrl = bannerResponse.secure_url;
-        } catch (err) {
-          console.error("Failed to upload banner:", err);
-          toast({
-            title: "Lỗi",
-            description: "Không thể tải lên ảnh banner. Vui lòng thử lại.",
-            variant: "destructive",
-          });
-          setIsSaving(false);
-          return;
-        }
+      try {
+        processedData = await uploadImagesToCloudinary(processedData);
+      } catch (error) {
+        toast({
+          title: "Lỗi tải lên ảnh",
+          description: error instanceof Error ? error.message : "Không thể tải lên ảnh. Vui lòng thử lại.",
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return;
       }
       
-      // Upload gallery images if provided
-      if (processedData.gallery && processedData.gallery.length > 0) {
-        const galleryWithFiles = processedData.gallery.filter(item => item.file);
-        
-        if (galleryWithFiles.length > 0) {
-          try {
-            const uploadPromises = galleryWithFiles.map(async (item) => {
-              if (!item.file) return item;
-              
-              const response = await uploadImageToCloudinary(
-                item.file,
-                "occa_galleries"
-              );
-              
-              return {
-                ...item,
-                image: response.secure_url
-              };
-            });
-            
-            // Replace old gallery with new gallery with Cloudinary URLs
-            const updatedGallery = await Promise.all(uploadPromises);
-            processedData.gallery = updatedGallery;
-          } catch (err) {
-            console.error("Failed to upload gallery images:", err);
-            toast({
-              title: "Lỗi",
-              description: "Không thể tải lên một số ảnh thư viện. Vui lòng thử lại.",
-              variant: "destructive",
-            });
-            setIsSaving(false);
-            return;
-          }
-        }
-      }
+      // Prepare data for API submission
+      const cleanData = preparePayloadForSubmission(processedData);
       
-      // Remove unnecessary File fields before sending to API
-      processedData.basicInfo = { ...processedData.basicInfo };
-      delete processedData.basicInfo.bannerFile;
-      
-      processedData.gallery = processedData.gallery.map(item => ({
-        id: item.id,
-        image: item.image
-      }));
-
-      // Call API to create/update event
+      // Create payload with draft status
       const payload: CreateOccaPayload = {
-        ...processedData,
+        ...cleanData,
         status: asDraft ? "draft" : "active",
         approvalStatus: "draft" // Always draft when saving
       };
@@ -271,6 +324,9 @@ export const useOccaForm = ({
         });
       }
 
+      // Update the local state with the processed data
+      setOccaData(processedData);
+      
       navigate("/organize");
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {

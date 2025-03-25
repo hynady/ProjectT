@@ -150,10 +150,10 @@ export const searchMockData = {
     {id: "7", name: "Trải nghiệm"},
     {id: "8", name: "Giải trí"},
   ],
-  venues: [
-    {id: "1", region: "HCM"},
-    {id: "2", region: "Hà Nội"},
-    {id: "3", region: "Đà Nẵng"},
-    {id: "4", region: "Cần Thơ"},
+  regions: [
+    {id: "1", name: "HCM"},
+    {id: "2", name: "Hà Nội"},
+    {id: "3", name: "Đà Nẵng"},
+    {id: "4", name: "Cần Thơ"},
   ]
 };

@@ -141,6 +141,11 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Revoke the previous blob URL if it exists
+    if (bannerPreview && bannerPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(bannerPreview);
+    }
+
     // Lưu file để submit sau
     setBannerFile(file);
     
@@ -157,6 +162,30 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
     toast({
       title: "Đã chọn ảnh",
       description: "Ảnh sẽ được tải lên khi bạn lưu hoặc đăng sự kiện",
+    });
+    
+    // Reset the input value to allow selecting the same file again if needed
+    event.target.value = '';
+  };
+
+  const handleRemoveBanner = () => {
+    // Revoke the blob URL if it exists
+    if (bannerPreview && bannerPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(bannerPreview);
+    }
+    
+    // Clear the banner preview and file
+    setBannerPreview(null);
+    setBannerFile(null);
+    form.setValue("bannerFile", undefined);
+    form.setValue("bannerUrl", "");
+    
+    // Update parent component
+    handleFieldBlur();
+    
+    toast({
+      title: "Đã xóa ảnh",
+      description: "Ảnh banner đã được xóa",
     });
   };
 
@@ -303,6 +332,7 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
                   onChange={(value) => {
                     field.onChange(value);
                     form.trigger("description");
+                    handleFieldBlur();
                   }}
                   placeholder="Mô tả chi tiết về sự kiện"
                   className="min-h-[200px]"
@@ -315,7 +345,21 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
         />
 
         <div className="space-y-4">
-          <FormLabel>Ảnh banner sự kiện</FormLabel>
+          <div className="flex items-center justify-between">
+            <FormLabel>Ảnh banner sự kiện</FormLabel>
+            {bannerPreview && (
+              <Button 
+                type="button"
+                variant="outline" 
+                size="sm" 
+                onClick={handleRemoveBanner} 
+                className="text-xs h-7 px-2 py-1"
+              >
+                Xóa
+              </Button>
+            )}
+          </div>
+          
           <div className="flex items-center gap-4 max-w-[50rem]">
             {/* Updated container to enforce 16:9 aspect ratio */}
             <div 
@@ -324,11 +368,17 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
               onClick={() => document.getElementById('banner-upload')?.click()}
             >
               {bannerPreview ? (
-                <img
-                  src={bannerPreview}
-                  alt="Banner preview"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
+                <>
+                  <img
+                    src={bannerPreview}
+                    alt="Banner preview"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  {/* Status badge for blob URLs vs Cloudinary URLs */}
+                  <div className="absolute top-0 right-0 m-2 px-1.5 py-0.5 text-xs rounded bg-black/60 text-white">
+                    {bannerPreview.startsWith('blob:') ? 'Chưa lưu' : 'Đã lưu'}
+                  </div>
+                </>
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <Upload className="h-8 w-8 mb-2 text-muted-foreground" />
@@ -349,9 +399,14 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
               onChange={handleFileUpload}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Hình ảnh sẽ được hiển thị theo tỉ lệ 16:9 trên trang chi tiết sự kiện
-          </p>
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+            <p>
+              Hình ảnh sẽ được hiển thị theo tỉ lệ 16:9 trên trang chi tiết sự kiện
+            </p>
+            <p>
+              <strong>Lưu ý:</strong> Ảnh sẽ được tải lên máy chủ khi bạn lưu hoặc đăng sự kiện
+            </p>
+          </div>
         </div>
 
         <div className="justify-end hidden sm:flex">

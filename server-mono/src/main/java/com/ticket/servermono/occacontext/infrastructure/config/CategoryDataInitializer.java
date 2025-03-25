@@ -13,7 +13,7 @@ import java.util.Arrays;
 public class CategoryDataInitializer {
 
     @Bean
-    @Order(1) 
+    @Order(2) 
     CommandLineRunner initCategoryData(CategoryRepository repository) {
         return args -> {
             if (repository.count() == 0) {

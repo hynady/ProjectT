@@ -82,6 +82,7 @@ public class SearchService {
         int size, 
         String keyword, 
         String categoryId, 
+        String regionId, 
         String venueId,
         String sortBy,
         String sortOrder
@@ -92,6 +93,7 @@ public class SearchService {
             .setKeyword(keyword != null ? keyword : "")
             .setCategoryId(categoryId != null ? categoryId : "")
             .setVenueId(venueId != null ? venueId : "")
+            .setRegionId(regionId != null ? regionId : "")
             .setSortBy(sortBy)
             .setSortOrder(sortOrder)
             .build();

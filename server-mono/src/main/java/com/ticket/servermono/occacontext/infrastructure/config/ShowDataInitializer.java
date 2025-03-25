@@ -24,7 +24,7 @@ public class ShowDataInitializer {
     private final Random random = new Random();
 
     @Bean
-    @Order(3) // Run after OccaDataInitializer which is Order(2)
+    @Order(4) // Run after OccaDataInitializer which is Order(2)
     CommandLineRunner initShowData(ShowRepository showRepository, OccaRepository occaRepository, ShowServices showServices) {
         return args -> {
             if (showRepository.count() == 0) {

@@ -151,22 +151,47 @@ public class OccaServices {
             String keyword,
             String categoryId,
             String venueId,
+            String regionId,
             String sortBy,
             String sortOrder) {
 
-        // Nếu sortBy là "date", thì chuyển thành "nextShowDateTime"
-        if (sortBy != null && sortBy.equals("date")) {
-            sortBy = "nextShowDateTime";
+        // Validate and map sortBy to actual entity field names
+        String validatedSortBy;
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            validatedSortBy = "nextShowDateTime"; // default sort field
+        } else {
+            switch (sortBy.toLowerCase()) {
+                case "date":
+                    validatedSortBy = "nextShowDateTime";
+                    break;
+                case "title":
+                    validatedSortBy = "title";
+                    break;
+                case "price":
+                    validatedSortBy = "minPrice"; // map price to minPrice field
+                    break;
+                default:
+                    validatedSortBy = "nextShowDateTime"; // fallback to default
+            }
+        }
+
+        // Validate sort order
+        String validatedSortOrder = (sortOrder == null || sortOrder.trim().isEmpty())
+                ? "desc"
+                : sortOrder.toLowerCase();
+
+        if (!validatedSortOrder.equals("asc") && !validatedSortOrder.equals("desc")) {
+            validatedSortOrder = "desc"; // default sort order
         }
 
         // Bây giờ có thể sắp xếp trực tiếp bằng Pageable
-        Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
+        Sort sort = Sort.by(Sort.Direction.fromString(validatedSortOrder), validatedSortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
         var resultPage = occaRepository.searchOccas(
                 keyword,
                 parseUuid(categoryId),
-                parseUuid(venueId),
+                parseUuid(regionId),
                 pageable);
 
         // Chuyển đổi projections thành responses với các thông tin giá từ show
