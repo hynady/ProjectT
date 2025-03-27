@@ -11,6 +11,7 @@ import {
   TicketFormData,
   GalleryItem
 } from '../internal-types/organize.type';
+import { CustomElement, ImageElement } from '@/commons/components/rich-text-editor/custom-types';
 
 export interface UseOccaFormOptions {
   isEditing?: boolean;
@@ -149,6 +150,90 @@ export const useOccaForm = ({
       }
     }
     
+    // Process description to find blob images and upload them to Cloudinary
+    if (processedData.basicInfo.description) {
+      try {
+        // Parse the description JSON
+        let descriptionContent = JSON.parse(processedData.basicInfo.description) as (CustomElement)[];
+        
+        if (Array.isArray(descriptionContent)) {
+          // Track if any images were uploaded and need updating
+          let hasChanges = false;
+          
+          // Function to recursively process nodes and upload images
+          const processNode = async (node: CustomElement): Promise<CustomElement> => {
+            // Check if this is an image node with a blob URL
+            if (node.type === 'image' && ('url' in node) && node.url?.startsWith('blob:')) {
+              // Convert blob URL to File object
+              try {
+                const response = await fetch(node.url);
+                const blob = await response.blob();
+                const imageNode = node as ImageElement;
+                const filename = imageNode.alt || 'image.jpg';
+                const file = new File([blob], filename, { type: blob.type });
+                
+                // Upload to Cloudinary
+                console.log(`Uploading description image to Cloudinary: ${filename}`);
+                const imageResponse = await uploadImageToCloudinary(file, "occa_descriptions");
+                
+                // Replace blob URL with Cloudinary URL
+                URL.revokeObjectURL(node.url);
+                hasChanges = true;
+                
+                // Return updated node while maintaining the correct structure
+                return {
+                  ...imageNode,
+                  url: imageResponse.secure_url,
+                  children: [{ text: '' }]  // Image nodes always have this structure
+                };
+              } catch (error) {
+                console.error("Failed to upload image from description:", error);
+                return node; // Keep original node on error
+              }
+            }
+            
+            // If node has children, process each child
+            if ('children' in node && Array.isArray(node.children)) {
+              const updatedChildren = await Promise.all(
+                node.children.map(async (child) => {
+                  // Type guard to ensure child is a CustomElement
+                  if (typeof child === 'object' && child !== null && 'type' in child && typeof child.type === 'string') {
+                    // First cast to unknown to avoid direct casting error
+                    return await processNode(child as unknown as CustomElement);
+                  }
+                  // If it's not a CustomElement, it must be a CustomText node
+                  return child;
+                })
+              );
+              
+              // Return node with processed children
+              return {
+                ...node,
+                children: updatedChildren
+              } as CustomElement;
+            }
+            
+            // Return unchanged node
+            return node;
+          };
+          
+          // Process all root nodes
+          descriptionContent = await Promise.all(
+            descriptionContent.map(async (node) => processNode(node))
+          );
+          
+          // Update the description if any changes were made
+          if (hasChanges) {
+            processedData.basicInfo.description = JSON.stringify(descriptionContent);
+            console.log("Description images uploaded successfully");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to process description images:", err);
+        // Don't throw error here, continue with other uploads
+      }
+    }
+    
     // Upload gallery images if provided
     if (processedData.gallery && processedData.gallery.length > 0) {
       const galleryWithFiles = processedData.gallery.filter(item => item.file);
@@ -201,8 +286,24 @@ export const useOccaForm = ({
     // Remove File objects from gallery items and only keep necessary fields
     if (cleanData.gallery) {
       cleanData.gallery = cleanData.gallery.map(item => ({
-        id: item.id,
+        id: isEditing ? item.id : undefined, // Only keep ID if editing
         image: item.image
+      }));
+    }
+    
+    // Remove IDs from shows if not editing
+    if (!isEditing && cleanData.shows) {
+      cleanData.shows = cleanData.shows.map(show => ({
+        ...show,
+        id: undefined // Remove ID for new creation
+      }));
+    }
+    
+    // Remove IDs from tickets if not editing
+    if (!isEditing && cleanData.tickets) {
+      cleanData.tickets = cleanData.tickets.map(ticket => ({
+        ...ticket,
+        id: undefined // Remove ID for new creation
       }));
     }
     

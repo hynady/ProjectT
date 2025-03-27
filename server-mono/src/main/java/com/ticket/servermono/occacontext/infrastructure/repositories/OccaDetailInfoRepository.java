@@ -16,11 +16,9 @@ public interface OccaDetailInfoRepository extends JpaRepository<OccaDetailInfo, 
 
     @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.DetailData.OccaHeroDetailResponse(" +
             "o.id, o.title, o.artist, odi.bannerUrl, " +
-            "(SELECT MIN(s.date) FROM Show s WHERE s.occa.id = o.id AND s.date >= CURRENT_DATE), " +
-            "(SELECT s.time FROM Show s WHERE s.occa.id = o.id AND s.date = " +
-            "   (SELECT MIN(s2.date) FROM Show s2 WHERE s2.occa.id = o.id AND s2.date >= CURRENT_DATE) " +
-            "   ORDER BY s.time ASC LIMIT 1), " +
-            " o.venue.location) " +
+            "CASE WHEN o.nextShowDateTime IS NOT NULL THEN CAST(FUNCTION('date', o.nextShowDateTime) AS LocalDate) ELSE NULL END, " + 
+            "CASE WHEN o.nextShowDateTime IS NOT NULL THEN CAST(FUNCTION('time', o.nextShowDateTime) AS LocalTime) ELSE NULL END, " +
+            "o.venue.location) " +
             "FROM Occa o " +
             "LEFT JOIN o.detailInfo odi " +
             "WHERE o.id = :occaId")

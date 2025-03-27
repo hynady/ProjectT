@@ -3,9 +3,13 @@ package com.ticket.servermono.occacontext.entities;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.ticket.servermono.occacontext.domain.enums.ApprovalStatus;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -47,6 +51,13 @@ public class Occa extends BaseSQLEntity {
 
     @Column(name = "min_price")
     private Double minPrice;
+    
+    @Column(name = "status")
+    private String status;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status", nullable = false)
+    private ApprovalStatus approvalStatus;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

@@ -18,5 +18,7 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
             "GROUP BY c.id, c.name")
     List<CategoryResponse> findAllCategoriesWithCount();
 
+    Optional<Category> findFirstByName(String name);
+
     Optional<Category> findByName(String name);
 }

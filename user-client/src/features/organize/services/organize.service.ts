@@ -26,10 +26,20 @@ class OrganizeService extends BaseService {
   }
 
   getOccas(params: OccaFilterParams): Promise<Page<OrganizerOccaUnit>> {
+    // Tạo đối tượng URLSearchParams để xây dựng query string
+    const searchParams = new URLSearchParams();
+    
+    // Thêm các tham số vào searchParams
+    if (params.page !== undefined) searchParams.append('page', params.page.toString());
+    if (params.size !== undefined) searchParams.append('size', params.size.toString());
+    if (params.search) searchParams.append('search', params.search);
+    if (params.status) searchParams.append('status', params.status);
+    if (params.sort) searchParams.append('sort', params.sort);
+    if (params.direction) searchParams.append('direction', params.direction);
+    
     return this.request({
       method: 'GET',
-      url: '/organize/occas',
-      data: params,
+      url: `/organize/occas?${searchParams.toString()}`,
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => {
           // Clone the data to avoid mutating original

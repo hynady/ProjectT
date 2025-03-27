@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
+import com.ticket.servermono.occacontext.domain.enums.ApprovalStatus;
 import com.ticket.servermono.occacontext.entities.Category;
 import com.ticket.servermono.occacontext.entities.Occa;
 import com.ticket.servermono.occacontext.entities.OccaDetailInfo;
@@ -50,6 +51,7 @@ public class OccaDataInitializer {
                                 .artist("Taylor Swift")
                                 .venue(svdHanoiVenue.get())
                                 .category(musicCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
 
                         Occa.builder()
@@ -58,6 +60,7 @@ public class OccaDataInitializer {
                                 .artist("Coldplay")
                                 .venue(svdHcmVenue.get())
                                 .category(musicCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
 
                         Occa.builder()
@@ -66,6 +69,7 @@ public class OccaDataInitializer {
                                 .artist("Ed Sheeran")
                                 .venue(svdHanoiVenue.get())
                                 .category(musicCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
 
                         Occa.builder()
@@ -74,12 +78,14 @@ public class OccaDataInitializer {
                                 .artist("Adele")
                                 .venue(svdHcmVenue.get())
                                 .category(musicCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
                         Occa.builder()
                                 .title("NBA All-Star Game 2025")
                                 .image("https://assets.bigcartel.com/product_images/255024353/POST-NBA2020AllStarGame.jpg?auto=format&fit=max&w=1800")
                                 .venue(svdHanoiVenue.get())
                                 .category(sportCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
 
                         Occa.builder()
@@ -88,6 +94,7 @@ public class OccaDataInitializer {
                                 .artist("Katy Perry")
                                 .venue(svdHcmVenue.get())
                                 .category(entertainmentCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
 
                         Occa.builder()
@@ -96,6 +103,7 @@ public class OccaDataInitializer {
                                 .artist("U2")
                                 .venue(svdHanoiVenue.get())
                                 .category(musicCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
 
                         Occa.builder()
@@ -104,6 +112,7 @@ public class OccaDataInitializer {
                                 .artist("Shakira")
                                 .venue(svdHcmVenue.get())
                                 .category(musicCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
 
                         Occa.builder()
@@ -112,6 +121,7 @@ public class OccaDataInitializer {
                                 .artist("Nhiều nghệ sĩ")
                                 .venue(svdHanoiVenue.get())
                                 .category(festivalCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
 
                         Occa.builder()
@@ -120,6 +130,7 @@ public class OccaDataInitializer {
                                 .artist("BTS")
                                 .venue(svdHanoiVenue.get())
                                 .category(musicCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
 
                         Occa.builder()
@@ -127,6 +138,7 @@ public class OccaDataInitializer {
                                 .image("https://res.klook.com/image/upload/c_fill,w_750,h_563/q_80/w_80,x_15,y_15,g_south_west,l_Klook_water_br_trans_yhcmh3a/activities/ea25ft7t8qvbuooohmag.jpg")
                                 .venue(svdHcmVenue.get())
                                 .category(experienceCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
 
                         Occa.builder()
@@ -135,6 +147,7 @@ public class OccaDataInitializer {
                                 .artist("The Rolling Stones")
                                 .venue(svdHanoiVenue.get())
                                 .category(musicCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build(),
 
                         Occa.builder()
@@ -143,6 +156,7 @@ public class OccaDataInitializer {
                                 .artist("OVO")
                                 .venue(svdHcmVenue.get())
                                 .category(entertainmentCategory.get())
+                                .approvalStatus(ApprovalStatus.APPROVED)
                                 .build()
                 };
 

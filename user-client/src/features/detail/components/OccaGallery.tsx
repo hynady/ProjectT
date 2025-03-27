@@ -9,6 +9,15 @@ interface OccaGalleryProps {
 }
 
 export const OccaGallery = ({ images }: OccaGalleryProps) => {
+  const plugins = images.length >= 3 
+    ? [
+        Autoplay({
+          delay: 2000,
+          stopOnInteraction: true,
+        }),
+      ]
+    : undefined;
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-card-foreground flex items-center gap-2">
@@ -20,13 +29,9 @@ export const OccaGallery = ({ images }: OccaGalleryProps) => {
           opts={{
             align: "start",
             slidesToScroll: 1,
-            loop: true,
+            loop: images.length > 1,
           }}
-          plugins={[
-            Autoplay({
-              delay: 2000,
-            }),
-          ]}
+          plugins={plugins}
           orientation="vertical"
           className="w-full"
         >

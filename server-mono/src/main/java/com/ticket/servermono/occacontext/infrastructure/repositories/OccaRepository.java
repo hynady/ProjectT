@@ -5,6 +5,7 @@ import com.ticket.servermono.occacontext.entities.Occa;
 import com.ticket.servermono.occacontext.adapters.dtos.OccaProjection;
 import com.ticket.servermono.occacontext.adapters.dtos.SearchBarTemplateResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.Booking.OccaForBookingResponse;
+import com.ticket.servermono.occacontext.domain.enums.ApprovalStatus;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,14 @@ import java.util.UUID;
 
 public interface OccaRepository extends JpaRepository<Occa, UUID> {
         // TODO: Add logic optimized for user all below methods
+
+        // Các phương thức cho organizer API
+        Page<Occa> findByApprovalStatus(ApprovalStatus status, Pageable pageable);
+        
+        Page<Occa> findByApprovalStatusAndTitleContainingIgnoreCase(
+                ApprovalStatus status, String title, Pageable pageable);
+                
+        Page<Occa> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 
         @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaProjection(" +
                         "o.id, o.title, o.image, " +
