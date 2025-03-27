@@ -10,5 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GalleryDTO {
+    private String id;
     private String image;
 }

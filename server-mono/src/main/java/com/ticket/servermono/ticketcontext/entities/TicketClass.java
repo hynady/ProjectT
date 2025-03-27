@@ -17,7 +17,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@EntityListeners(TicketClassListener.class)
 public class TicketClass extends BaseSQLEntity {
 
     @Column(name = "name", nullable = false)

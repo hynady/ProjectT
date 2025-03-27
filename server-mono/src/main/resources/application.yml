@@ -18,11 +18,11 @@ spring:
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP_ID:ticket-service}
       auto-offset-reset: ${KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*" # allow all packages
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     producer:
-        value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
       
 app:

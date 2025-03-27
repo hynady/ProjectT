@@ -32,4 +32,6 @@ public interface OccaDetailInfoRepository extends JpaRepository<OccaDetailInfo, 
 
     @Query("SELECT odi.galleryUrls FROM OccaDetailInfo odi WHERE odi.occa.id = :occaId")
     Optional<List<String>> findGalleryByOccaId(@Param("occaId") UUID occaId);
+
+    Optional<OccaDetailInfo> findByOccaId(UUID occaId);
 }

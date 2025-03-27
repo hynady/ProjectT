@@ -1,10 +1,14 @@
 package com.ticket.servermono.occacontext.adapters.controllers;
 
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,9 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaRequest;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaResponse;
+import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OrganizerOccaUnit;
 import com.ticket.servermono.occacontext.usecases.OrganizerServices;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -72,6 +78,59 @@ public class OrganizerController {
         } catch (Exception e) {
             log.error("Error creating occa", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Lấy chi tiết sự kiện để chỉnh sửa
+     * 
+     * @param id ID của sự kiện
+     * @return Chi tiết sự kiện
+     */
+    @GetMapping("/occas/{id}")
+    public ResponseEntity<?> getOccaDetail(@PathVariable String id) {
+        try {
+            UUID occaId = UUID.fromString(id);
+            log.info("Getting occa detail with ID: {}", occaId);
+            
+            OccaDetailResponse response = organizerServices.getOccaDetail(occaId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid UUID format: {}", id, e);
+            return ResponseEntity.badRequest().body("Invalid occa ID format");
+        } catch (EntityNotFoundException e) {
+            log.error("Occa not found: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Error getting occa detail for ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Cập nhật thông tin sự kiện
+     * 
+     * @param id ID của sự kiện cần cập nhật
+     * @param request Thông tin cập nhật của sự kiện
+     * @return Thông tin sự kiện sau khi cập nhật
+     */
+    @PutMapping("/occas/{id}")
+    public ResponseEntity<?> updateOcca(@PathVariable String id, @RequestBody CreateOccaRequest request) {
+        try {
+            UUID occaId = UUID.fromString(id);
+            log.info("Updating occa with ID: {}", occaId);
+            
+            CreateOccaResponse response = organizerServices.updateOcca(occaId, request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid UUID format: {}", id, e);
+            return ResponseEntity.badRequest().body("Invalid occa ID format");
+        } catch (EntityNotFoundException e) {
+            log.error("Occa not found: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Error updating occa with ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
         }
     }
 }

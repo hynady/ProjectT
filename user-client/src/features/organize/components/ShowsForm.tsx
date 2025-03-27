@@ -18,13 +18,22 @@ interface ShowsFormProps {
   onChange: (shows: ShowFormData[]) => void;
   onBack: () => void;
   onNext: () => void;
+  // Thêm các hàm từ useOccaForm
+  createShow?: (show: Omit<ShowFormData, 'id'>) => ShowFormData;
+  addShow?: (show: Omit<ShowFormData, 'id'>) => ShowFormData;
+  updateShow?: (showId: string, show: Partial<ShowFormData>) => void;
+  deleteShow?: (showId: string) => void;
 }
 
 export const ShowsForm = ({
   shows,
   onChange,
   onBack,
-  onNext
+  onNext,
+  createShow,
+  addShow,
+  updateShow,
+  deleteShow
 }: ShowsFormProps) => {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -33,22 +42,53 @@ export const ShowsForm = ({
 
   // Handle adding or updating a show
   const handleSaveShow = (date: string, time: string, status: string) => {
-    const newShow: ShowFormData = {
-      id: editIndex !== null ? shows[editIndex]?.id || `show-${Date.now()}` : `show-${Date.now()}`,
-      date,
-      time,
-      saleStatus: status as ShowSaleStatus
-    };
-    
+    // Nếu có các hàm từ useOccaForm, ưu tiên sử dụng chúng
     if (editIndex !== null) {
-      // Update existing show
-      const updatedShows = [...shows];
-      updatedShows[editIndex] = newShow;
-      onChange(updatedShows);
+      // Cập nhật show
+      const showId = shows[editIndex]?.id;
+      if (updateShow && showId) {
+        updateShow(showId, {
+          date,
+          time,
+          saleStatus: status as ShowSaleStatus
+        });
+      } else {
+        // Fallback nếu không có hàm updateShow
+        const updatedShows = [...shows];
+        updatedShows[editIndex] = {
+          id: shows[editIndex]?.id || '',
+          date,
+          time,
+          saleStatus: status as ShowSaleStatus
+        };
+        onChange(updatedShows);
+      }
       setEditIndex(null);
     } else {
-      // Add new show
-      onChange([...shows, newShow]);
+      // Thêm show mới
+      if (addShow) {
+        addShow({
+          date,
+          time,
+          saleStatus: status as ShowSaleStatus
+        });
+      } else if (createShow) {
+        // Tạo show mới rồi thêm vào danh sách
+        const newShow = createShow({
+          date,
+          time,
+          saleStatus: status as ShowSaleStatus
+        });
+        onChange([...shows, newShow]);
+      } else {
+        // Fallback nếu không có hàm addShow hoặc createShow
+        onChange([...shows, {
+          id: `temp-show-${Date.now()}`,
+          date,
+          time,
+          saleStatus: status as ShowSaleStatus
+        }]);
+      }
     }
     
     setIsDialogOpen(false);
@@ -63,8 +103,17 @@ export const ShowsForm = ({
   // Delete show after confirmation
   const handleDeleteShow = () => {
     if (showToDeleteIndex !== null) {
-      const updatedShows = shows.filter((_, i) => i !== showToDeleteIndex);
-      onChange(updatedShows);
+      const showToDeleteId = shows[showToDeleteIndex]?.id;
+      
+      if (deleteShow && showToDeleteId) {
+        // Sử dụng hàm deleteShow từ useOccaForm nếu có
+        deleteShow(showToDeleteId);
+      } else {
+        // Fallback
+        const updatedShows = shows.filter((_, i) => i !== showToDeleteIndex);
+        onChange(updatedShows);
+      }
+      
       setDeleteDialogOpen(false);
       setShowToDeleteIndex(null);
     }
@@ -78,12 +127,20 @@ export const ShowsForm = ({
   
   // Update show status
   const handleStatusChange = (index: number, status: string) => {
-    const updatedShows = [...shows];
-    updatedShows[index] = { 
-      ...updatedShows[index], 
-      saleStatus: status as ShowSaleStatus 
-    };
-    onChange(updatedShows);
+    const showId = shows[index]?.id;
+    
+    if (updateShow && showId) {
+      // Sử dụng hàm updateShow từ useOccaForm nếu có
+      updateShow(showId, { saleStatus: status as ShowSaleStatus });
+    } else {
+      // Fallback
+      const updatedShows = [...shows];
+      updatedShows[index] = { 
+        ...updatedShows[index], 
+        saleStatus: status as ShowSaleStatus 
+      };
+      onChange(updatedShows);
+    }
   };
 
   return (

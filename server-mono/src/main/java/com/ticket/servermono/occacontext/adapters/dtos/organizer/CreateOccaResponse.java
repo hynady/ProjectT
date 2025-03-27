@@ -1,5 +1,6 @@
 package com.ticket.servermono.occacontext.adapters.dtos.organizer;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -16,4 +17,5 @@ public class CreateOccaResponse {
     private String title;
     private String status;
     private String approvalStatus;
+    private LocalDateTime updatedAt; // Thêm trường updatedAt
 }

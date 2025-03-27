@@ -15,14 +15,40 @@ interface TicketFormProps {
   onChange: (tickets: TicketFormData[]) => void;
   onBack: () => void;
   onNext: () => void;
+  // Thêm các hàm từ useOccaForm
+  createTicket?: (ticket: Omit<TicketFormData, 'id'>) => TicketFormData;
+  addTicket?: (ticket: Omit<TicketFormData, 'id'>) => TicketFormData | null;
+  updateTicket?: (ticketId: string, ticket: Partial<TicketFormData>) => void;
+  deleteTicket?: (ticketId: string) => void;
 }
 
-export const TicketForm = ({ tickets, shows, onChange, onBack, onNext }: TicketFormProps) => {
+export const TicketForm = ({ 
+  tickets, 
+  shows, 
+  onChange, 
+  onBack, 
+  onNext,
+  createTicket,
+  addTicket,
+  updateTicket,
+  deleteTicket
+}: TicketFormProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [selectedShowId, setSelectedShowId] = useState<string | null>(null);
 
   const openAddTicketDialog = (showId: string) => {
+    // Kiểm tra xem show có tồn tại không
+    const showExists = shows.some(s => s.id === showId);
+    if (!showExists) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể thêm vé: Suất diễn không tồn tại",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSelectedShowId(showId);
     setEditingIndex(null);
     setDialogOpen(true);
@@ -30,6 +56,18 @@ export const TicketForm = ({ tickets, shows, onChange, onBack, onNext }: TicketF
 
   const openEditDialog = (index: number) => {
     const ticket = tickets[index];
+    
+    // Kiểm tra xem showId có hợp lệ không
+    const showExists = shows.some(s => s.id === ticket.showId);
+    if (!showExists) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể chỉnh sửa vé: Suất diễn không tồn tại",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setEditingIndex(index);
     setSelectedShowId(ticket.showId);
     setDialogOpen(true);
@@ -45,17 +83,36 @@ export const TicketForm = ({ tickets, shows, onChange, onBack, onNext }: TicketF
       return;
     }
     
-    const newTicket: TicketFormData = {
-      id: editingIndex !== null ? tickets[editingIndex].id : `ticket-${Date.now()}`,
-      showId: selectedShowId,
-      ...values,
-    };
-
-    let updatedTickets;
+    // Tìm show tương ứng để đảm bảo ID đúng định dạng
+    const selectedShow = shows.find(show => show.id === selectedShowId);
+    if (!selectedShow) {
+      toast({
+        title: "Lỗi",
+        description: "Không tìm thấy suất diễn đã chọn",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (editingIndex !== null) {
-      // Edit existing ticket
-      updatedTickets = [...tickets];
-      updatedTickets[editingIndex] = newTicket;
+      // Cập nhật ticket
+      const ticketId = tickets[editingIndex].id;
+      if (updateTicket && ticketId) {
+        // Sử dụng hàm updateTicket từ useOccaForm nếu có
+        updateTicket(ticketId, {
+          ...values,
+          showId: selectedShowId
+        });
+      } else {
+        // Fallback nếu không có hàm updateTicket
+        const updatedTickets = [...tickets];
+        updatedTickets[editingIndex] = {
+          id: tickets[editingIndex].id,
+          showId: selectedShowId,
+          ...values
+        };
+        onChange(updatedTickets);
+      }
     } else {
       // Check for duplicate ticket type for the same show
       const isDuplicate = tickets.some(
@@ -71,19 +128,50 @@ export const TicketForm = ({ tickets, shows, onChange, onBack, onNext }: TicketF
         return;
       }
 
-      updatedTickets = [...tickets, newTicket];
+      // Thêm ticket mới
+      if (addTicket) {
+        // Sử dụng hàm addTicket từ useOccaForm nếu có
+        const newTicket = addTicket({
+          showId: selectedShowId,
+          ...values
+        });
+        
+        // Nếu thêm thất bại (null được trả về), không đóng dialog
+        if (!newTicket) return;
+      } else if (createTicket) {
+        // Tạo ticket mới rồi thêm vào danh sách
+        const newTicket = createTicket({
+          showId: selectedShowId,
+          ...values
+        });
+        onChange([...tickets, newTicket]);
+      } else {
+        // Fallback nếu không có hàm addTicket hoặc createTicket
+        onChange([...tickets, {
+          id: `ticket-${Date.now()}`,
+          showId: selectedShowId,
+          ...values
+        }]);
+      }
     }
 
-    onChange(updatedTickets);
     setDialogOpen(false);
     setSelectedShowId(null);
     setEditingIndex(null);
   };
 
   const handleRemoveTicket = (index: number) => {
-    const updatedTickets = [...tickets];
-    updatedTickets.splice(index, 1);
-    onChange(updatedTickets);
+    const ticketId = tickets[index].id;
+    
+    if (deleteTicket && ticketId) {
+      // Sử dụng hàm deleteTicket từ useOccaForm nếu có
+      deleteTicket(ticketId);
+    } else {
+      // Fallback nếu không có hàm deleteTicket
+      const updatedTickets = [...tickets];
+      updatedTickets.splice(index, 1);
+      onChange(updatedTickets);
+    }
   };
 
   // Group tickets by show ID for display
@@ -199,8 +287,10 @@ export const TicketForm = ({ tickets, shows, onChange, onBack, onNext }: TicketF
                       })}
                     </div>
                   ) : (
-                    <div className="text-center py-3 text-muted-foreground text-sm">
-                      <p>Chưa có loại vé nào</p>
+                    <div className="flex flex-col items-center justify-center p-4 text-center">
+                      <p className="text-sm text-muted-foreground">
+                        Chưa có vé nào cho suất diễn này
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -210,22 +300,21 @@ export const TicketForm = ({ tickets, shows, onChange, onBack, onNext }: TicketF
         </div>
       )}
 
-      <div className="justify-between pt-4 hidden sm:flex">
+      <div className="flex justify-between pt-4">
         <Button variant="outline" onClick={onBack} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Quay lại
         </Button>
-        <Button
-          onClick={onNext}
-          disabled={tickets.length === 0}
+        <Button 
+          onClick={onNext} 
           className="gap-2"
+          disabled={tickets.length === 0}
         >
           Tiếp theo
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Use the new TicketFormDialog component */}
       <TicketFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}

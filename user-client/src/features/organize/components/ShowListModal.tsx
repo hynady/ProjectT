@@ -215,7 +215,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
         });
       } else {
         const newShow: ShowInfo = {
-          id: `show-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: `temp-show-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           date,
           time,
           saleStatus: "upcoming",

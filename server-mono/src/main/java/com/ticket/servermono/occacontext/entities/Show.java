@@ -2,8 +2,6 @@ package com.ticket.servermono.occacontext.entities;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -21,9 +19,10 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@EntityListeners(ShowListener.class)
 public class Show extends BaseSQLEntity {
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "occa_id", nullable = false)
     private Occa occa;
 
@@ -32,4 +31,7 @@ public class Show extends BaseSQLEntity {
 
     @Column(name = "time", nullable = false)
     private LocalTime time;
+
+    @Column(name = "sale_status")
+    private String saleStatus; // upcoming, on_sale, sold_out, ended
 }

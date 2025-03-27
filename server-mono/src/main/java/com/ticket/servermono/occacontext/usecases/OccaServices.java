@@ -253,6 +253,8 @@ public class OccaServices {
                 .orElseThrow(() -> new RuntimeException("Occa not found with id: " + occaId));
     }
 
+    // TODO: Tối ưu hóa cập nhật nextShowDateTime trực tiếp bằng occaId thay vì
+    // showId
     @Transactional
     public void updateNextShowDateTime(UUID occaId) {
         Occa occa = occaRepository.findById(occaId)
@@ -303,10 +305,30 @@ public class OccaServices {
     }
 
     @KafkaListener(topics = "update-next-show-datetime")
-    public void listenUpdateNextShowDateTime(String showId) {
-        log.info("Received message to update next show date time for Show ID: {}", showId);
-        Show show = showRepository.findById(UUID.fromString(showId))
-                .orElseThrow(() -> new RuntimeException("Show not found with ID: " + showId));
-        updateNextShowDateTime(show.getOcca().getId());
+    @Transactional
+    public void listenUpdateNextShowDateTime(String occaIdStr) {
+        try {
+            log.info("Received message to update next show date time for Occa ID: {}", occaIdStr);
+
+            UUID occaId;
+            try {
+                occaId = UUID.fromString(occaIdStr);
+                log.info("Successfully parsed UUID: {}", occaId);
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid UUID format for occaId: {}", occaIdStr);
+                return;
+            }
+
+            Optional<Occa> occaOptional = occaRepository.findById(occaId);
+            if (occaOptional.isPresent()) {
+                Occa occa = occaOptional.get();
+                log.info("Found occa with ID: {}, title: {}", occa.getId(), occa.getTitle());
+                updateNextShowDateTime(occa.getId());
+            } else {
+                log.error("Occa not found with ID: {}", occaId);
+            }
+        } catch (Exception e) {
+            log.error("Error updating next show datetime: {}", e.getMessage(), e);
+        }
     }
 }

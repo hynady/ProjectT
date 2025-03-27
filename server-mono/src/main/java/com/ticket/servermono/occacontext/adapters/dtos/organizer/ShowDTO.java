@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ShowDTO {
+    private String id;
     private String date;
     private String time;
+    private String saleStatus; // upcoming, on_sale, sold_out, ended
 }

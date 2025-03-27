@@ -3,6 +3,7 @@ import { Button } from "@/commons/components/button";
 import { ArrowLeft, Eye, Save, Upload } from "lucide-react";
 import { PreviewModal } from "../PreviewModal";
 import { OccaFormData } from "../../internal-types/organize.type";
+import { toast } from "@/commons/hooks/use-toast";
 
 interface OccaFormHeaderProps {
   isEditing: boolean;
@@ -11,6 +12,7 @@ interface OccaFormHeaderProps {
   isSaving: boolean;
   isDraft: boolean;
   isSubmitting: boolean;
+  hasChanges?: boolean; // New prop to track changes
   onSave: (asDraft: boolean) => void;
   onSubmit: () => void;
   onNavigateToTab: (tab: string) => void;
@@ -23,11 +25,37 @@ export const OccaFormHeader = ({
   isSaving,
   isDraft,
   isSubmitting,
+  hasChanges = true, // Default to true for create mode
   onSave,
   onSubmit,
   onNavigateToTab
 }: OccaFormHeaderProps) => {
   const navigate = useNavigate();
+
+  // Only show no changes warning in edit mode
+  const handleSubmitWithCheck = () => {
+    if (isEditing && !hasChanges) {
+      toast({
+        title: "Không có thay đổi",
+        description: "Không có thay đổi nào để gửi xét duyệt",
+        variant: "default",
+      });
+      return;
+    }
+    onSubmit();
+  };
+
+  const handleSaveWithCheck = (asDraft: boolean) => {
+    if (isEditing && !hasChanges) {
+      toast({
+        title: "Không có thay đổi",
+        description: "Không có thay đổi nào để lưu",
+        variant: "default",
+      });
+      return;
+    }
+    onSave(asDraft);
+  };
 
   return (
     <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
@@ -44,6 +72,21 @@ export const OccaFormHeader = ({
         <h1 className="text-xl sm:text-2xl font-semibold">
           {isEditing ? "Chỉnh sửa sự kiện" : "Tạo sự kiện mới"}
         </h1>
+        
+        {/* Show status badge when in edit mode */}
+        {isEditing && (
+          <div className="ml-2">
+            {hasChanges ? (
+              <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                Đã thay đổi
+              </span>
+            ) : (
+              <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                Không thay đổi
+              </span>
+            )}
+          </div>
+        )}
       </div>
       
       {/* Action buttons with responsive display */}
@@ -74,8 +117,8 @@ export const OccaFormHeader = ({
         {/* Draft button */}
         <Button
           variant={isDraft ? "default" : "outline"}
-          onClick={() => onSave(true)}
-          disabled={isSaving}
+          onClick={() => handleSaveWithCheck(true)}
+          disabled={isSaving || (isEditing && !hasChanges)}
           loading={isSaving && isDraft}
           size={window.innerWidth >= 768 && window.innerWidth < 1024 ? "icon" : "default"}
           className="gap-2 md:gap-0 lg:gap-2"
@@ -88,8 +131,8 @@ export const OccaFormHeader = ({
         
         {/* Publish button */}
         <Button
-          onClick={onSubmit}
-          disabled={isSaving || isSubmitting || !isFormValid}
+          onClick={handleSubmitWithCheck}
+          disabled={isSaving || isSubmitting || !isFormValid || (isEditing && !hasChanges)}
           loading={isSubmitting}
           size={window.innerWidth >= 768 && window.innerWidth < 1024 ? "icon" : "default"}
           className="gap-2 md:gap-0 lg:gap-2"

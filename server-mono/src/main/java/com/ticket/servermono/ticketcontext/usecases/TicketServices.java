@@ -370,14 +370,4 @@ public class TicketServices {
             .min()
             .orElse(0);
     }
-
-    public void publishNextShowDateTime(UUID showId) {
-        if (showId == null) {
-            log.warn("Attempted to publish null showId to Kafka");
-            return;
-        }
-        
-        log.info("Publishing show ID {} to update-next-show-datetime topic", showId);
-        kafkaTemplate.send("update-next-show-datetime", showId.toString());
-    }
 }

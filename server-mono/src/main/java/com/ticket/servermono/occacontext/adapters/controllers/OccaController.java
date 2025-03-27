@@ -10,10 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ticket.servermono.occacontext.adapters.dtos.CategoryResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.OccaResponse;
-import com.ticket.servermono.occacontext.adapters.dtos.RegionDTO;
 import com.ticket.servermono.occacontext.usecases.OccaServices;
 import com.ticket.servermono.occacontext.usecases.CategoryServices;
-import com.ticket.servermono.occacontext.usecases.RegionServices;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +22,6 @@ public class OccaController {
 
     private final OccaServices occaServices;
     private final CategoryServices categoryServices;
-    private final RegionServices regionServices;
 
     // Get hero occasions for home page
     @GetMapping("/hero-occas")

@@ -31,13 +31,23 @@ const CreateOccaPage = ({ isEditing = false, occaId, initialData }: CreateOccaPa
     isDraft, 
     isSubmitting, 
     isFormValid,
+    hasChanges, // Add this to get change tracking
     setActiveTab,
     handleSave,
     handleSubmitForApproval,
     updateBasicInfo,
     updateShows,
     updateTickets,
-    updateGallery
+    updateGallery,
+    // Thêm các hàm tạo ID tập trung
+    createShow,
+    createTicket,
+    addShow,
+    updateShow,
+    deleteShow,
+    addTicket,
+    updateTicket,
+    deleteTicket
   } = useOccaForm({ isEditing, occaId, initialData });
 
   // Handle auth redirect
@@ -63,6 +73,7 @@ const CreateOccaPage = ({ isEditing = false, occaId, initialData }: CreateOccaPa
           isSaving={isSaving}
           isDraft={isDraft}
           isSubmitting={isSubmitting}
+          hasChanges={hasChanges} // Pass hasChanges to enable/disable buttons
           onSave={handleSave}
           onSubmit={handleSubmitForApproval}
           onNavigateToTab={setActiveTab}
@@ -120,6 +131,11 @@ const CreateOccaPage = ({ isEditing = false, occaId, initialData }: CreateOccaPa
                   onChange={updateShows}
                   onBack={() => setActiveTab("basic-info")}
                   onNext={() => setActiveTab("tickets")}
+                  // Truyền các hàm tạo và quản lý show
+                  createShow={createShow}
+                  addShow={addShow}
+                  updateShow={updateShow}
+                  deleteShow={deleteShow}
                 />
               </TabsContent>
               <TabsContent value="tickets">
@@ -129,6 +145,11 @@ const CreateOccaPage = ({ isEditing = false, occaId, initialData }: CreateOccaPa
                   onChange={updateTickets}
                   onBack={() => setActiveTab("shows")}
                   onNext={() => setActiveTab("gallery")}
+                  // Truyền các hàm tạo và quản lý ticket
+                  createTicket={createTicket}
+                  addTicket={addTicket}
+                  updateTicket={updateTicket}
+                  deleteTicket={deleteTicket}
                 />
               </TabsContent>
               <TabsContent value="gallery">
