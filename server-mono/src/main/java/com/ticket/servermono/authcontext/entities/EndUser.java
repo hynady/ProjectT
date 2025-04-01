@@ -5,7 +5,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.annotations.Where;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -42,7 +41,7 @@ public class EndUser extends BaseSQLEntity {
     private String roles;
 
     @Column(name = "is_deleted")
-    private boolean isDeleted = false;
+    private boolean isDeleted;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

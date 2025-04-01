@@ -11,7 +11,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.PostRemove;
 import jakarta.persistence.PostUpdate;
-import jakarta.persistence.PreRemove;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

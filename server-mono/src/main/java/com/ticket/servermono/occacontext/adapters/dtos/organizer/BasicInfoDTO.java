@@ -1,5 +1,7 @@
 package com.ticket.servermono.occacontext.adapters.dtos.organizer;
 
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,4 +19,5 @@ public class BasicInfoDTO {
     private Integer duration;
     private String description;
     private String bannerUrl;
+    private UUID categoryId;
 }

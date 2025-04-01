@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,8 +37,6 @@ import user.UserServiceGrpc;
 public class TicketServices {
     private final TicketClassRepository ticketClassRepository;
     private final TicketRepository ticketRepository;
-
-    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @GrpcClient("user-service")
     private UserServiceGrpc.UserServiceBlockingStub userStub;

@@ -1,5 +1,6 @@
 package com.ticket.servermono.occacontext.adapters.controllers;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -14,10 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ticket.servermono.occacontext.adapters.dtos.CategoryResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaRequest;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OrganizerOccaUnit;
+import com.ticket.servermono.occacontext.usecases.CategoryServices;
 import com.ticket.servermono.occacontext.usecases.OrganizerServices;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -60,21 +63,24 @@ public class OrganizerController {
         
         return ResponseEntity.ok(result);
     }
-    
     /**
      * Tạo mới sự kiện
      * 
-     * @param request Thông tin để tạo sự kiện mới
+     * @param request Thông tin để tạo sự kiện mới (bao gồm trường categoryId trong basicInfo)
      * @return ResponseEntity<CreateOccaResponse> Thông tin sự kiện đã tạo
      */
     @PostMapping("/occas")
     public ResponseEntity<CreateOccaResponse> createOcca(@RequestBody CreateOccaRequest request) {
-        log.info("Creating new occa with title: {}", 
-                request.getBasicInfo() != null ? request.getBasicInfo().getTitle() : "unknown");
+        log.info("Creating new occa with title: {}, category: {}", 
+                request.getBasicInfo() != null ? request.getBasicInfo().getTitle() : "unknown",
+                request.getBasicInfo() != null ? request.getBasicInfo().getCategoryId() : "default");
         
         try {
             CreateOccaResponse response = organizerServices.createOcca(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (EntityNotFoundException e) {
+            log.error("Entity not found when creating occa: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             log.error("Error creating occa", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -85,7 +91,7 @@ public class OrganizerController {
      * Lấy chi tiết sự kiện để chỉnh sửa
      * 
      * @param id ID của sự kiện
-     * @return Chi tiết sự kiện
+     * @return Chi tiết sự kiện (bao gồm categoryId trong basicInfo)
      */
     @GetMapping("/occas/{id}")
     public ResponseEntity<?> getOccaDetail(@PathVariable String id) {
@@ -94,6 +100,9 @@ public class OrganizerController {
             log.info("Getting occa detail with ID: {}", occaId);
             
             OccaDetailResponse response = organizerServices.getOccaDetail(occaId);
+            log.info("Retrieved occa: {}, category: {}", 
+                    response.getBasicInfo().getTitle(), 
+                    response.getBasicInfo().getCategoryId());
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             log.error("Invalid UUID format: {}", id, e);
@@ -111,14 +120,17 @@ public class OrganizerController {
      * Cập nhật thông tin sự kiện
      * 
      * @param id ID của sự kiện cần cập nhật
-     * @param request Thông tin cập nhật của sự kiện
+     * @param request Thông tin cập nhật của sự kiện (bao gồm trường categoryId trong basicInfo)
      * @return Thông tin sự kiện sau khi cập nhật
      */
     @PutMapping("/occas/{id}")
     public ResponseEntity<?> updateOcca(@PathVariable String id, @RequestBody CreateOccaRequest request) {
         try {
             UUID occaId = UUID.fromString(id);
-            log.info("Updating occa with ID: {}", occaId);
+            log.info("Updating occa with ID: {}, title: {}, category: {}", 
+                    occaId, 
+                    request.getBasicInfo() != null ? request.getBasicInfo().getTitle() : "unchanged",
+                    request.getBasicInfo() != null ? request.getBasicInfo().getCategoryId() : "unchanged");
             
             CreateOccaResponse response = organizerServices.updateOcca(occaId, request);
             return ResponseEntity.ok(response);

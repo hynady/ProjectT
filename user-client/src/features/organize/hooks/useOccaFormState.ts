@@ -84,28 +84,37 @@ export const useOccaFormState = ({
     }
 
     // Deep compare function for nested objects
-    const hasDeepChanges = (original: any, current: any): boolean => {
+    function hasDeepChanges<T>(original: T, current: T): boolean {
+      // Handle direct equality
+      if (Object.is(original, current)) return false;
+      
       // Handle null/undefined cases
-      if (original === current) return false;
-      if (!original || !current) return true;
-
-      // Different types
-      if (typeof original !== typeof current) return true;
-
-      // Arrays comparison
+      if (original == null || current == null) return true;
+      
+      // Handle dates
+      if (original instanceof Date && current instanceof Date) {
+        return original.getTime() !== current.getTime();
+      }
+      
+      // Handle non-objects (after Date check)
+      if (typeof original !== 'object' || typeof current !== 'object') 
+        return original !== current;
+      
+      // Handle arrays with proper type checking
       if (Array.isArray(original) && Array.isArray(current)) {
         if (original.length !== current.length) return true;
         
-        // For arrays, we need to be smarter about ID based comparisons
-        if (original.length > 0 && 'id' in original[0]) {
-          // Map objects by ID for easier comparison
-          const originalMap = new Map(original.map(item => [item.id, item]));
-          const currentMap = new Map(current.map(item => [item.id, item]));
+        // Special handling for arrays of objects with IDs
+        if (original.length > 0 && typeof original[0] === 'object' && original[0] !== null && 'id' in original[0]) {
+          const originalMap = new Map(
+            original.map(item => [(item as { id: string }).id, item])
+          );
+          const currentMap = new Map(
+            current.map(item => [(item as { id: string }).id, item])
+          );
           
-          // Check for missing or added IDs
           if (originalMap.size !== currentMap.size) return true;
           
-          // Check each item by ID
           for (const [id, originalItem] of originalMap) {
             const currentItem = currentMap.get(id);
             if (!currentItem || hasDeepChanges(originalItem, currentItem)) {
@@ -115,32 +124,30 @@ export const useOccaFormState = ({
           return false;
         }
         
-        // Default array comparison when items don't have IDs
+        // Regular array comparison
         return original.some((item, index) => hasDeepChanges(item, current[index]));
       }
 
-      // Object comparison
-      if (typeof original === 'object' && typeof current === 'object') {
-        const originalKeys = Object.keys(original);
-        const currentKeys = Object.keys(current);
-        
-        // Special handling for Files
-        if (currentKeys.includes('bannerFile') && current.bannerFile instanceof File) {
-          return true;
-        }
-        
-        if (originalKeys.length !== currentKeys.length) return true;
-        
-        return originalKeys.some(key => {
-          // Skip file objects in comparison
-          if (key === 'bannerFile' || key === 'file') return false;
-          return hasDeepChanges(original[key], current[key]);
-        });
+      // Handle objects
+      const originalObj = original as Record<string, unknown>;
+      const currentObj = current as Record<string, unknown>;
+      
+      const originalKeys = Object.keys(originalObj);
+      const currentKeys = Object.keys(currentObj);
+      
+      // Special handling for Files
+      if (currentKeys.includes('bannerFile') && currentObj.bannerFile instanceof File) {
+        return true;
       }
       
-      // Simple value comparison
-      return original !== current;
-    };
+      if (originalKeys.length !== currentKeys.length) return true;
+      
+      return originalKeys.some(key => {
+        // Skip file objects in comparison
+        if (key === 'bannerFile' || key === 'file') return false;
+        return hasDeepChanges(originalObj[key], currentObj[key]);
+      });
+    }
     
     // Compare current data with original data
     const changed = hasDeepChanges(originalData, occaData);

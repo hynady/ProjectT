@@ -16,6 +16,7 @@ export interface BasicInfoFormData {
   description: string;
   bannerUrl: string;
   bannerFile?: File;
+  categoryId?: string; // Add category ID field
 }
 
 export interface ShowFormData {
@@ -120,3 +121,9 @@ export interface ShowResponse {
 
 // New type for show sale status
 export type ShowSaleStatus = 'upcoming' | 'on_sale' | 'sold_out' | 'ended';
+
+// Category type for dropdown selection
+export interface CategoryType {
+  id: string;
+  name: string;
+}

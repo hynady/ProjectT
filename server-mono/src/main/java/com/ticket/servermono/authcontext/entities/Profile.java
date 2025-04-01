@@ -1,7 +1,5 @@
 package com.ticket.servermono.authcontext.entities;
 
-import java.util.UUID;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

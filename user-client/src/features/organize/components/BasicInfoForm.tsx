@@ -13,9 +13,17 @@ import {
 import { Input } from "@/commons/components/input";
 import { ArrowRight, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BasicInfoFormData } from "../internal-types/organize.type";
+import { BasicInfoFormData, CategoryType } from "../internal-types/organize.type";
 import { toast } from "@/commons/hooks/use-toast";
 import { RichTextEditor } from "@/commons/components/rich-text-editor";
+import { organizeService } from "../services/organize.service";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/commons/components/select";
 
 // Define the schema with proper types
 const basicInfoSchema = z.object({
@@ -52,6 +60,9 @@ const basicInfoSchema = z.object({
       ]);
     }
   }),
+  categoryId: z.string().min(1, {
+    message: "Vui lòng chọn danh mục cho sự kiện"
+  }),
   bannerUrl: z.string().optional(),
   // Use a custom Zod type for File objects
   bannerFile: z.instanceof(File, { message: "Vui lòng chọn một tệp hợp lệ" }).optional(),
@@ -69,6 +80,7 @@ interface BasicInfoFormProps {
 export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) => {
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [categories, setCategories] = useState<CategoryType[]>([]);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(basicInfoSchema),
@@ -85,6 +97,7 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
           children: [{ text: '' }],
         },
       ]),
+      categoryId: data?.categoryId || "",
       bannerUrl: data?.bannerUrl || "",
     },
   });
@@ -105,6 +118,7 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
             children: [{ text: '' }],
           },
         ]),
+        categoryId: data.categoryId || "",
         bannerUrl: data.bannerUrl || "",
       });
 
@@ -116,6 +130,22 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
       }
     }
   }, [data]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const fetchedCategories = await organizeService.getCategories();
+        setCategories(fetchedCategories);
+      } catch {
+        toast({
+          title: "Lỗi",
+          description: "Không thể tải danh mục",
+        });
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // REMOVE THE PROBLEMATIC WATCH EFFECT THAT CAUSES TYPING ISSUES
   // Instead, only update on blur or submit
@@ -130,6 +160,7 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
       address: values.address || "",
       duration: values.duration || 120,
       description: values.description || "",
+      categoryId: values.categoryId || "",
       bannerUrl: bannerPreview || "",
       bannerFile: bannerFile || undefined,
     };
@@ -198,6 +229,7 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
       address: values.address,
       duration: values.duration,
       description: values.description,
+      categoryId: values.categoryId,
       bannerUrl: bannerPreview || "",
       bannerFile: bannerFile || undefined,
     };
@@ -338,6 +370,37 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
                   className="min-h-[200px]"
                   disabled={form.formState.isSubmitting}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="categoryId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Danh mục</FormLabel>
+              <FormControl>
+                <Select
+                  value={field.value}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    handleFieldBlur();
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn danh mục" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>

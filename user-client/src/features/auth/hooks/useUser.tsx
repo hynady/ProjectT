@@ -13,7 +13,7 @@ export interface UserData {
 }
 
 export function useUser() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -53,10 +53,18 @@ export function useUser() {
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       console.error("Error fetching user data:", err);
+      
+      // Check if error is unauthorized (401) or user not found (404)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorStatus = (err as any)?.status || (err as any)?.response?.status;
+      if (errorStatus === 401 || errorStatus === 404) {
+        console.log("User unauthorized or not found. Logging out...");
+        logout(); // Auto logout if user data can't be retrieved
+      }
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, logout]);
 
   // Call fetchUserData when the component using this hook mounts or when isAuthenticated changes
   useEffect(() => {

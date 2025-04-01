@@ -148,9 +148,17 @@ public class OrganizerServices {
         // 1. Tìm hoặc tạo mới Venue
         Venue venue = findOrCreateVenue(request.getBasicInfo().getLocation(), request.getBasicInfo().getAddress());
 
-        // 2. Tìm category mặc định là "Âm nhạc"
-        Category category = categoryRepository.findFirstByName("Âm nhạc")
+        // 2. Tìm category dựa trên categoryId hoặc sử dụng mặc định là "Âm nhạc"
+        Category category;
+        if (request.getBasicInfo().getCategoryId() != null) {
+            category = categoryRepository.findById(request.getBasicInfo().getCategoryId())
+                .orElseThrow(() -> new EntityNotFoundException("Category not found with id: " + request.getBasicInfo().getCategoryId()));
+            log.info("Using selected category: {}", category.getName());
+        } else {
+            category = categoryRepository.findFirstByName("Âm nhạc")
                 .orElseThrow(() -> new EntityNotFoundException("Default category 'Âm nhạc' not found"));
+            log.info("Using default category: Âm nhạc");
+        }
 
         // 3. Tạo và lưu entity Occa
         ApprovalStatus approvalStatus = parseApprovalStatus(request.getApprovalStatus());
@@ -299,6 +307,7 @@ public class OrganizerServices {
                 .location(occa.getVenue() != null ? occa.getVenue().getLocation() : "")
                 .image(occa.getImage())
                 .approvalStatus(occa.getApprovalStatus().toString().toLowerCase())
+                .categoryId(occa.getCategory() != null ? occa.getCategory().getId() : null)
                 .build();
     }
 
@@ -338,7 +347,7 @@ public class OrganizerServices {
             }
         }
 
-        // 5. Tạo response object
+        // 5. Tạo response object với categoryId
         BasicInfoDTO basicInfo = BasicInfoDTO.builder()
                 .title(occa.getTitle())
                 .artist(occa.getArtist())
@@ -346,6 +355,7 @@ public class OrganizerServices {
                 .address(occa.getVenue() != null ? occa.getVenue().getAddress() : "")
                 .description(detailInfo.getDescription())
                 .bannerUrl(detailInfo.getBannerUrl())
+                .categoryId(occa.getCategory() != null ? occa.getCategory().getId() : null)
                 .build();
 
         List<ShowDTO> showDTOs = shows.stream()
@@ -389,6 +399,14 @@ public class OrganizerServices {
         // 2. Cập nhật thông tin cơ bản nếu được cung cấp
         if (request.getBasicInfo() != null) {
             BasicInfoDTO basicInfo = request.getBasicInfo();
+            
+            // Cập nhật Category nếu categoryId được cung cấp
+            if (basicInfo.getCategoryId() != null) {
+                Category category = categoryRepository.findById(basicInfo.getCategoryId())
+                    .orElseThrow(() -> new EntityNotFoundException("Category not found with id: " + basicInfo.getCategoryId()));
+                occa.setCategory(category);
+                log.info("Updated occa category to: {}", category.getName());
+            }
             
             // Cập nhật Venue nếu location hoặc address được cung cấp
             if (basicInfo.getLocation() != null || basicInfo.getAddress() != null) {

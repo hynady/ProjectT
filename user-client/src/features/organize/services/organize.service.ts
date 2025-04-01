@@ -5,9 +5,9 @@ import {
   CreateOccaResponse,
   Page,
   OccaFilterParams,
-  OccaSubmitForApprovalPayload,
   ShowResponse,
-  OccaFormData
+  OccaFormData,
+  CategoryType
 } from '../internal-types/organize.type';
 import { organizeMockData } from './organize.mock';
 
@@ -141,22 +141,12 @@ class OrganizeService extends BaseService {
       })
     });
   }
-
-  async submitForApproval(payload: OccaSubmitForApprovalPayload): Promise<void> {
-    return this.request({
-      method: 'POST',
-      url: `/organize/occas/${payload.id}/submit`,
-      data: { notes: payload.notes },
-      mockResponse: () => new Promise((resolve) => {
-        setTimeout(() => resolve(), 1000);
-      })
-    });
-  }
-
+  
   private validateOccaForSubmission(data: CreateOccaPayload): boolean {
     return Boolean(
       data.basicInfo?.title &&
       data.basicInfo?.location &&
+      data.basicInfo?.categoryId && // Add check for categoryId
       data.shows?.length > 0 &&
       data.tickets?.length > 0 &&
       data.gallery?.length > 0
@@ -218,6 +208,9 @@ class OrganizeService extends BaseService {
               image: `https://picsum.photos/seed/${id}-${i}/800/600`
             }));
           
+          // Generate a random category ID (1-8)
+          const categoryId = (parseInt(id.replace(/\D/g, '')) % 8 + 1).toString();
+          
           resolve({
             basicInfo: {
               title: basicInfo.title,
@@ -232,6 +225,7 @@ class OrganizeService extends BaseService {
                 },
               ]),
               bannerUrl: basicInfo.image || "",
+              categoryId: categoryId, // Add category ID to the returned data
             },
             shows,
             tickets,
@@ -265,6 +259,15 @@ class OrganizeService extends BaseService {
             approvalStatus: data.approvalStatus
           });
         }, 1000);
+      })
+    });
+  }
+  async getCategories(): Promise<CategoryType[]> {
+    return this.request({
+      method: 'GET',
+      url: '/occas/categories',
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => resolve(organizeMockData.categories), 500);
       })
     });
   }

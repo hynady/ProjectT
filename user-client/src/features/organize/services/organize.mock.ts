@@ -1,4 +1,4 @@
-import { OrganizerOccaUnit, ShowResponse } from "../internal-types/organize.type";
+import { OrganizerOccaUnit, ShowResponse, CategoryType } from "../internal-types/organize.type";
 
 export const organizeMockData = {
   occas: [
@@ -167,5 +167,17 @@ export const organizeMockData = {
         { id: "ticket-8", type: "Standard", price: 300000, available: 0, sold: 100 },
       ],
     }
-  ]
+  ],
+
+  // Adding mock categories data
+  categories: [
+    {id: "1", name: "Âm nhạc"},
+    {id: "2", name: "Phim"},
+    {id: "3", name: "Thể thao"},
+    {id: "4", name: "Sân khấu"},
+    {id: "5", name: "Lễ hội"},
+    {id: "6", name: "Hội thảo"},
+    {id: "7", name: "Trải nghiệm"},
+    {id: "8", name: "Giải trí"},
+  ] as CategoryType[]
 };

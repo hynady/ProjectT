@@ -150,45 +150,51 @@ export const useOccaSubmission = ({
       // We'll build a partial object with only the changes
       const changedData: Partial<OccaFormData> = {};
 
-      // Helper function to check deep equality
-      const isEqual = (a: any, b: any): boolean => {
-        if (a === b) return true;
+      // Helper function to check deep equality with complete type safety
+      function isEqual<T>(a: T, b: T): boolean {
+        // Handle direct equality and primitives
+        if (Object.is(a, b)) return true;
         
-        if (typeof a !== typeof b) return false;
+        // Handle null/undefined
+        if (a == null || b == null) return false;
         
-        if (typeof a === 'object') {
-          if (a === null || b === null) return a === b;
-          
-          if (Array.isArray(a) && Array.isArray(b)) {
-            if (a.length !== b.length) return false;
-            
-            // Simple comparison for arrays
-            for (let i = 0; i < a.length; i++) {
-              if (!isEqual(a[i], b[i])) return false;
-            }
-            
-            return true;
-          }
-          
-          // Object comparison
-          const keysA = Object.keys(a);
-          const keysB = Object.keys(b);
-          
-          if (keysA.length !== keysB.length) return false;
-          
-          for (const key of keysA) {
-            // Skip file properties in comparison
-            if (key === 'file' || key === 'bannerFile') continue;
-            
-            if (!keysB.includes(key)) return false;
-            if (!isEqual(a[key], b[key])) return false;
-          }
-          
-          return true;
+        // Handle dates
+        if (a instanceof Date && b instanceof Date) {
+          return a.getTime() === b.getTime();
         }
         
-        return false;
-      };
+        // Handle non-objects (after Date check)
+        if (typeof a !== 'object' || typeof b !== 'object') return false;
+        
+        // Handle arrays
+        if (Array.isArray(a) && Array.isArray(b)) {
+          if (a.length !== b.length) return false;
+          return a.every((val, idx) => isEqual(val, b[idx]));
+        }
+        
+        // Ensure same constructors for objects
+        if (a.constructor !== b.constructor) return false;
+        
+        // Handle objects
+        const keysA = Object.keys(a as object) as (keyof T)[];
+        const keysB = new Set(Object.keys(b as object));
+        
+        if (keysA.length !== keysB.size) return false;
+        
+        return keysA.every(key => {
+          // Skip file properties
+          if (key === 'file' || key === 'bannerFile') return true;
+          
+          // Ensure key exists in b
+          if (!keysB.has(key as string)) return false;
+          
+          // Compare values
+          return isEqual(
+            a[key], 
+            (b as T)[key]
+          );
+        });
+      }
       
       // Check for changes in basic info
       if (!isEqual(cleanData.basicInfo, originalData.basicInfo)) {

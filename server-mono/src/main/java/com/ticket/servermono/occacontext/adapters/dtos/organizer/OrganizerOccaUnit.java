@@ -18,4 +18,5 @@ public class OrganizerOccaUnit {
     private String location;
     private String image;
     private String approvalStatus;
+    private UUID categoryId;
 }
