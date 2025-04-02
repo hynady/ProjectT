@@ -1,5 +1,8 @@
 package com.ticket.servermono.occacontext.usecases;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -8,9 +11,16 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ticket.servermono.occacontext.adapters.dtos.Show.AddShowPayload;
 import com.ticket.servermono.occacontext.adapters.dtos.Show.OccaShowDataResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.Show.OccaShowDataResponse.PriceInfo;
+import com.ticket.servermono.occacontext.adapters.dtos.Show.OrganizeShowResponse;
+import com.ticket.servermono.occacontext.adapters.dtos.Show.OrganizeShowResponse.TicketInfo;
+import com.ticket.servermono.occacontext.adapters.dtos.Show.ShowResponse;
+import com.ticket.servermono.occacontext.domain.enums.SaleStatus;
+import com.ticket.servermono.occacontext.entities.Occa;
 import com.ticket.servermono.occacontext.entities.Show;
+import com.ticket.servermono.occacontext.infrastructure.repositories.OccaRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.ShowRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -29,8 +39,110 @@ public class ShowServices {
 
     private final String CLASS_INIT = "ticket_class_init";
 
+    private final OccaRepository occaRepository;
+
     @GrpcClient("ticket-service")
     private TicketShowServicesBlockingStub ticketShowStub;
+
+    public List<OrganizeShowResponse> getOrganizeShowsByOccaId(UUID occaId) {
+        List<Show> shows = showRepository.findByOccaId(occaId);
+        if (shows.isEmpty()) {
+            throw new EntityNotFoundException("No shows found for occasion: " + occaId);
+        }
+
+        return shows.stream()
+                .map(show -> {
+                    OrganizeShowResponse response = new OrganizeShowResponse();
+                    response.setId(show.getId());
+                    response.setDate(show.getDate().toString());
+                    response.setTime(show.getTime().toString());
+                    
+                    // Determine sale status based on show's properties
+                    // This is a placeholder implementation - adjust according to your business logic
+                    response.setSaleStatus(formatSaleStatus(determineSaleStatus(show)));
+                    
+                    // Get ticket prices and availability for this show
+                    List<TicketInfo> tickets = getTicketInfoForShow(show.getId());
+                    response.setTickets(tickets);
+
+                    return response;
+                })
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Xác định trạng thái bán hàng của một show dựa trên nhiều yếu tố:
+     * 1. Nếu show đã lưu trạng thái và không phải là UPCOMING thì giữ nguyên
+     * 2. Nếu ngày của show đã qua thì ENDED
+     * 3. Nếu không có vé nào thì UPCOMING 
+     * 4. Nếu không có vé nào có sẵn (số lượng = 0) thì SOLD_OUT
+     * 5. Nếu có vé có sẵn thì ON_SALE
+     */
+    private SaleStatus determineSaleStatus(Show show) {
+        // Nếu show đã có trạng thái khác UPCOMING, giữ nguyên
+        if (show.getSaleStatus() != null && show.getSaleStatus() != SaleStatus.UPCOMING) {
+            return show.getSaleStatus();
+        }
+        
+        // Kiểm tra ngày - nếu show đã qua thì ENDED
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+        
+        if (show.getDate().isBefore(today) || 
+            (show.getDate().isEqual(today) && show.getTime().isBefore(now))) {
+            return SaleStatus.ENDED;
+        }
+        
+        // Kiểm tra tình trạng vé
+        List<PriceInfo> priceInfos = getTicketClassesForShow(show.getId());
+        
+        // Không có loại vé nào
+        if (priceInfos.isEmpty()) {
+            return SaleStatus.UPCOMING;
+        }
+        
+        // Kiểm tra số lượng vé còn lại
+        boolean hasAvailableTickets = priceInfos.stream()
+                .anyMatch(priceInfo -> priceInfo.getAvailable() != null && priceInfo.getAvailable() > 0);
+        
+        if (hasAvailableTickets) {
+            return SaleStatus.ON_SALE;
+        } else {
+            return SaleStatus.SOLD_OUT;
+        }
+    }
+    
+    /**
+     * Chuyển đổi enum SaleStatus thành chuỗi phù hợp với client
+     */
+    private String formatSaleStatus(SaleStatus status) {
+        if (status == null) {
+            return "upcoming"; // Giá trị mặc định
+        }
+        
+        return status.name().toLowerCase();
+    }
+    
+    private List<TicketInfo> getTicketInfoForShow(UUID showId) {
+        try {
+            List<PriceInfo> priceInfos = getTicketClassesForShow(showId);
+            
+            return priceInfos.stream()
+                    .map(priceInfo -> {
+                        TicketInfo ticketInfo = new TicketInfo();
+                        ticketInfo.setId(priceInfo.getId());
+                        ticketInfo.setType(priceInfo.getType());
+                        ticketInfo.setPrice(priceInfo.getPrice());
+                        ticketInfo.setAvailable(priceInfo.getAvailable());
+                        return ticketInfo;
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Failed to get ticket information for show: " + showId, e);
+            // For organizing view, we return empty list instead of throwing an exception
+            return List.of();
+        }
+    }
 
     public List<OccaShowDataResponse> getShowsByOccaId(UUID occaId) {
         List<Show> shows = showRepository.findByOccaId(occaId);
@@ -65,6 +177,12 @@ public class ShowServices {
                             .setShowId(showId.toString())
                             .build());
 
+            // Không ném ngoại lệ nếu không có ticket class, chỉ trả về danh sách rỗng
+            if (response.getTicketClassesList().isEmpty()) {
+                log.info("No ticket classes found for show ID: {}, returning empty list", showId);
+                return List.of();
+            }
+
             return response.getTicketClassesList().stream()
                     .map(ticketClass -> {
                         PriceInfo priceInfo = new PriceInfo();
@@ -77,7 +195,8 @@ public class ShowServices {
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Failed to get ticket classes for show: " + showId, e);
-            throw new RuntimeException("Failed to get ticket classes for show: " + showId);
+            // Trả về danh sách rỗng thay vì ném ngoại lệ
+            return List.of();
         }
     }
 
@@ -91,12 +210,17 @@ public class ShowServices {
         // Giả sử bạn có một phương thức để lấy tất cả các loại vé của một show
         List<PriceInfo> priceInfos = getTicketClassesForShow(showId);
         
+        // Nếu danh sách trống, trả về 0
+        if (priceInfos.isEmpty()) {
+            return 0.0;
+        }
+        
         // Tìm giá thấp nhất trong các loại vé
         return priceInfos.stream()
                 .map(PriceInfo::getPrice)
                 .filter(price -> price != null && price > 0) // Lọc ra các giá hợp lệ
                 .min(Double::compare)
-                .orElse(null);
+                .orElse(0.0);
     }
 
     public void initializeTicketClasses(UUID showId) {
@@ -104,4 +228,58 @@ public class ShowServices {
         kafkaTemplate.send(CLASS_INIT, showId.toString());
     }
     
+    /**
+     * Chuyển đổi string thành SaleStatus enum
+     * Tương tự như phương thức parseApprovalStatus trong OrganizerServices
+     */
+    private SaleStatus parseSaleStatus(String status) {
+        if (status == null || status.isEmpty()) {
+            return SaleStatus.UPCOMING;
+        }
+
+        try {
+            return SaleStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid sale status: {}, falling back to UPCOMING", status);
+            return SaleStatus.UPCOMING;
+        }
+    }
+    
+    /**
+     * Add a new show to an occasion
+     * @param occaId ID of the occasion
+     * @param showData Show data payload
+     * @return Created show response
+     */
+    @Transactional
+    public ShowResponse addShow(UUID occaId, AddShowPayload showData) {
+        // Find the occasion
+        Occa occa = occaRepository.findById(occaId)
+                .orElseThrow(() -> new EntityNotFoundException("Occasion not found with ID: " + occaId));
+        
+        // Parse date and time
+        LocalDate date = LocalDate.parse(showData.getDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        LocalTime time = LocalTime.parse(showData.getTime(), DateTimeFormatter.ofPattern("HH:mm"));
+        
+        // Create new show with parsed sale status
+        Show show = Show.builder()
+                .occa(occa)
+                .date(date)
+                .time(time)
+                .saleStatus(parseSaleStatus(showData.getSaleStatus()))
+                .build();
+        
+        // Save the show
+        Show savedShow = showRepository.save(show);
+        
+        // Prepare response
+        ShowResponse response = new ShowResponse();
+        response.setId(savedShow.getId());
+        response.setDate(savedShow.getDate().toString());
+        response.setTime(savedShow.getTime().toString());
+        response.setSaleStatus(formatSaleStatus(savedShow.getSaleStatus()));
+        response.setTickets(List.of()); // Empty tickets list for new show
+        
+        return response;
+    }
 }
