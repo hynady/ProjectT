@@ -31,29 +31,30 @@ public class TicketShowGrpc extends TicketShowServicesImplBase {
         log.info("Received gRPC request for ticket classes with show ID: {}", request.getShowId());
         try {
             List<TicketClass> ticketClasses = ticketClassRepository.findByShowId(UUID.fromString(request.getShowId()));
-            if (ticketClasses.isEmpty()) {
-                log.error("No ticket classes found for show ID: {}", request.getShowId());
-                responseObserver.onError(new Exception("No ticket classes found for show ID: " + request.getShowId()));
-                return;
-            }
             
+            // Không ném ngoại lệ nếu không tìm thấy ticket classes
+            // Thay vào đó, trả về danh sách rỗng
             TicketShowResponse.Builder responseBuilder = TicketShowResponse.newBuilder();
             
-            ticketClasses.forEach(ticketClass -> {
-                // Sử dụng phương thức từ TicketServices để tính số lượng vé còn lại
-                int available = ticketServices.calculateAvailableTickets(ticketClass);
-                
-                responseBuilder.addTicketClasses(TicketClassResponse.newBuilder()
-                    .setId(ticketClass.getId().toString())
-                    .setName(ticketClass.getName())
-                    .setPrice(ticketClass.getPrice())
-                    .setAvailable(available)
-                    .build());
-            });
+            if (ticketClasses.isEmpty()) {
+                log.info("No ticket classes found for show ID: {}, returning empty response", request.getShowId());
+            } else {
+                ticketClasses.forEach(ticketClass -> {
+                    // Sử dụng phương thức từ TicketServices để tính số lượng vé còn lại
+                    int available = ticketServices.calculateAvailableTickets(ticketClass);
+                    
+                    responseBuilder.addTicketClasses(TicketClassResponse.newBuilder()
+                        .setId(ticketClass.getId().toString())
+                        .setName(ticketClass.getName())
+                        .setPrice(ticketClass.getPrice())
+                        .setAvailable(available)
+                        .build());
+                });
+            }
             
             responseObserver.onNext(responseBuilder.build());
             responseObserver.onCompleted();
-            log.info("Successfully sent ticket classes for show ID: {}", request.getShowId());
+            log.info("Successfully sent ticket classes response for show ID: {}", request.getShowId());
         } catch (IllegalArgumentException e) {
             log.error("Invalid show ID: {}", request.getShowId());
             responseObserver.onError(new Exception("Invalid show ID: " + request.getShowId()));

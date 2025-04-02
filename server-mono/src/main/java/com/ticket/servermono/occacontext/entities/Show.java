@@ -3,6 +3,8 @@ package com.ticket.servermono.occacontext.entities;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import com.ticket.servermono.occacontext.domain.enums.SaleStatus;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,6 +34,7 @@ public class Show extends BaseSQLEntity {
     @Column(name = "time", nullable = false)
     private LocalTime time;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "sale_status")
-    private String saleStatus; // upcoming, on_sale, sold_out, ended
+    private SaleStatus saleStatus; // UPCOMING, ON_SALE, SOLD_OUT, ENDED
 }

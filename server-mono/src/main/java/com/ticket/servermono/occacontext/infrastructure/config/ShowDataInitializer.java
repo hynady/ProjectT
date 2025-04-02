@@ -1,5 +1,6 @@
 package com.ticket.servermono.occacontext.infrastructure.config;
 
+import com.ticket.servermono.occacontext.domain.enums.SaleStatus;
 import com.ticket.servermono.occacontext.entities.Occa;
 import com.ticket.servermono.occacontext.entities.Show;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaRepository;
@@ -53,11 +54,31 @@ public class ShowDataInitializer {
                         LocalDate date = showDate;
                         LocalTime time = LocalTime.of(hour, 0);
                         
+                        // Xác định SaleStatus dựa trên ngẫu nhiên
+                        SaleStatus saleStatus;
+                        int statusRandom = random.nextInt(10);
+                        if (statusRandom < 6) {
+                            // 60% là ON_SALE
+                            saleStatus = SaleStatus.ON_SALE;
+                        } else if (statusRandom < 8) {
+                            // 20% là UPCOMING
+                            saleStatus = SaleStatus.UPCOMING;
+                        } else if (statusRandom < 9) {
+                            // 10% là SOLD_OUT
+                            saleStatus = SaleStatus.SOLD_OUT;
+                        } else {
+                            // 10% là ENDED
+                            saleStatus = SaleStatus.ENDED;
+                            // Nếu là ENDED, đặt ngày trong quá khứ
+                            date = currentDate.minusDays(random.nextInt(30) + 1);
+                        }
+                        
                         // Tạo đối tượng Show
                         Show show = Show.builder()
                                 .date(date)
                                 .time(time)
                                 .occa(occa)
+                                .saleStatus(saleStatus)
                                 .build();
                         
                         shows.add(show);
@@ -66,7 +87,7 @@ public class ShowDataInitializer {
                 
                 // Lưu tất cả show vào database
                 List<Show> savedShows = showRepository.saveAll(shows);
-                log.info("Saved {} Show entities", savedShows.size());
+                log.info("Saved {} Show entities with SaleStatus", savedShows.size());
                 
                 // Khởi tạo ticket class cho mỗi show qua Kafka
                 for (Show show : savedShows) {

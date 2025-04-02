@@ -49,7 +49,7 @@ export const ShowHeader = ({ show, onEdit, onDelete }: ShowHeaderProps) => {
   return (
     <div className="flex items-center justify-between w-full gap-3">
       <div className="flex flex-col sm:flex-row sm:items-center flex-1 gap-1 sm:gap-3">
-        <div className="flex items-center min-w-[180px] w-[180px] sm:border-r sm:pr-2">
+        <div className="flex items-center min-w-[200px] w-[180px] sm:border-r sm:pr-2">
           <Calendar className="h-4 w-4 text-primary flex-shrink-0 mr-1.5" />
           <span className="font-medium truncate">{formatDate(show.date)}</span>
         </div>

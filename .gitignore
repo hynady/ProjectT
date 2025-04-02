@@ -30,3 +30,6 @@
 /user-client/dist
 /server-mono/*.env
 /user-client/.idea
+/user-client/.github
+/server-mono/.github
+/user-client/.vscode/launch.json

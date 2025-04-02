@@ -51,6 +51,7 @@ export interface TicketFormDialogProps {
   initialValues?: TicketFormValues;
   isEditing: boolean;
   title?: string;
+  isSubmitting?: boolean;
 }
 
 export const TicketFormDialog = ({
@@ -61,6 +62,7 @@ export const TicketFormDialog = ({
   initialValues,
   isEditing,
   title,
+  isSubmitting = false, // Default value if not provided
 }: TicketFormDialogProps) => {
   const form = useForm<TicketFormValues>({
     resolver: zodResolver(ticketSchema),
@@ -150,12 +152,14 @@ export const TicketFormDialog = ({
 
             <DialogFooter className="pt-4">
               <DialogClose asChild>
-                <Button variant="outline" type="button">
+                <Button variant="outline" type="button" disabled={isSubmitting}>
                   Hủy bỏ
                 </Button>
               </DialogClose>
-              <Button type="submit">
-                {isEditing ? "Cập nhật" : "Thêm"}
+              <Button type="submit" disabled={isSubmitting} loading={isSubmitting}>
+                {isSubmitting 
+                  ? (isEditing ? "Đang cập nhật..." : "Đang thêm...") 
+                  : (isEditing ? "Cập nhật" : "Thêm")}
               </Button>
             </DialogFooter>
           </form>

@@ -282,4 +282,82 @@ public class ShowServices {
         
         return response;
     }
+
+    /**
+     * Update an existing show
+     * @param occaId ID of the occasion
+     * @param showId ID of the show to update
+     * @param showData Updated show data
+     * @return Updated show response
+     */
+    @Transactional
+    public ShowResponse updateShow(UUID occaId, UUID showId, AddShowPayload showData) {
+        // Find the show and verify it belongs to the specified occasion
+        Show show = showRepository.findById(showId)
+                .orElseThrow(() -> new EntityNotFoundException("Show not found with ID: " + showId));
+        
+        // Verify the show belongs to the correct occasion
+        if (!show.getOcca().getId().equals(occaId)) {
+            throw new EntityNotFoundException("Show does not belong to the specified occasion");
+        }
+        
+        // Parse date and time
+        LocalDate date = LocalDate.parse(showData.getDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        LocalTime time = LocalTime.parse(showData.getTime(), DateTimeFormatter.ofPattern("HH:mm"));
+        
+        // Update show fields
+        show.setDate(date);
+        show.setTime(time);
+        show.setSaleStatus(parseSaleStatus(showData.getSaleStatus()));
+        
+        // Save the updated show
+        Show updatedShow = showRepository.save(show);
+        
+        // Prepare response
+        ShowResponse response = new ShowResponse();
+        response.setId(updatedShow.getId());
+        // Format date explicitly to ensure consistent format
+        response.setDate(updatedShow.getDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        response.setTime(updatedShow.getTime().format(DateTimeFormatter.ofPattern("HH:mm")));
+        response.setSaleStatus(formatSaleStatus(updatedShow.getSaleStatus()));
+        
+        // Get ticket information for the show - Convert to ShowResponse.TicketInfo
+        List<OrganizeShowResponse.TicketInfo> organizeTickets = getTicketInfoForShow(showId);
+        List<ShowResponse.TicketInfo> responseTickets = organizeTickets.stream()
+            .map(orgTicket -> {
+                ShowResponse.TicketInfo ticketInfo = new ShowResponse.TicketInfo();
+                ticketInfo.setId(orgTicket.getId());
+                ticketInfo.setType(orgTicket.getType());
+                ticketInfo.setPrice(orgTicket.getPrice());
+                ticketInfo.setAvailable(orgTicket.getAvailable());
+                // Setting sold to 0 as a default if not available
+                ticketInfo.setSold(0);
+                return ticketInfo;
+            })
+            .collect(Collectors.toList());
+            
+        response.setTickets(responseTickets);
+        
+        return response;
+    }
+
+    /**
+     * Delete a show
+     * @param occaId ID of the occasion
+     * @param showId ID of the show to delete
+     */
+    @Transactional
+    public void deleteShow(UUID occaId, UUID showId) {
+        // Find the show and verify it belongs to the specified occasion
+        Show show = showRepository.findById(showId)
+                .orElseThrow(() -> new EntityNotFoundException("Show not found with ID: " + showId));
+        
+        // Verify the show belongs to the correct occasion
+        if (!show.getOcca().getId().equals(occaId)) {
+            throw new EntityNotFoundException("Show does not belong to the specified occasion");
+        }
+        
+        // Delete the show
+        showRepository.delete(show);
+    }
 }

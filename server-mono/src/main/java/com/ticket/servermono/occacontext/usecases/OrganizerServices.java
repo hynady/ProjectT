@@ -31,6 +31,7 @@ import com.ticket.servermono.occacontext.adapters.dtos.organizer.OrganizerOccaUn
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.ShowDTO;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.TicketDTO;
 import com.ticket.servermono.occacontext.domain.enums.ApprovalStatus;
+import com.ticket.servermono.occacontext.domain.enums.SaleStatus;
 import com.ticket.servermono.occacontext.entities.Category;
 import com.ticket.servermono.occacontext.entities.Occa;
 import com.ticket.servermono.occacontext.entities.OccaDetailInfo;
@@ -208,12 +209,7 @@ public class OrganizerServices {
         if (request.getShows() != null) {
             for (ShowDTO showDTO : request.getShows()) {
                 // Tạo và lưu show mới
-                Show show = Show.builder()
-                        .occa(savedOcca)
-                        .date(LocalDate.parse(showDTO.getDate()))
-                        .time(LocalTime.parse(showDTO.getTime()))
-                        .saleStatus(showDTO.getSaleStatus())
-                        .build();
+                Show show = createShowFromDTO(showDTO, savedOcca);
 
                 Show savedShow = showRepository.save(show);
                 log.info("Created show with ID: {} for date: {}, time: {}", 
@@ -363,6 +359,7 @@ public class OrganizerServices {
                         .id(show.getId().toString())
                         .date(show.getDate().toString())
                         .time(show.getTime().toString())
+                        .saleStatus(formatSaleStatus(show.getSaleStatus())) // Thêm saleStatus
                         .build())
                 .collect(Collectors.toList());
 
@@ -489,13 +486,7 @@ public class OrganizerServices {
                 if (showId != null && !showId.isEmpty() && !showId.startsWith("temp-") && existingShowMap.containsKey(showId)) {
                     // Cập nhật show hiện có
                     show = existingShowMap.get(showId);
-                    show.setDate(LocalDate.parse(showDTO.getDate()));
-                    show.setTime(LocalTime.parse(showDTO.getTime()));
-                    
-                    // Nếu có status, cập nhật thêm
-                    if (showDTO.getSaleStatus() != null) {
-                        show.setSaleStatus(showDTO.getSaleStatus());
-                    }
+                    updateShowFromDTO(show, showDTO);
                     
                     show = showRepository.save(show);
                     showsToKeep.add(show);
@@ -506,7 +497,7 @@ public class OrganizerServices {
                             .occa(savedOcca)
                             .date(LocalDate.parse(showDTO.getDate()))
                             .time(LocalTime.parse(showDTO.getTime()))
-                            .saleStatus(showDTO.getSaleStatus()) // Có thể null, nhưng không sao
+                            .saleStatus(parseSaleStatus(showDTO.getSaleStatus())) // Có thể null, nhưng không sao
                             .build();
                     
                     show = showRepository.save(show);
@@ -618,4 +609,56 @@ public class OrganizerServices {
             }
         }
     }
+    
+    /**
+     * Tạo show mới từ ShowDTO
+     */
+    private Show createShowFromDTO(ShowDTO showDTO, Occa occa) {
+        return Show.builder()
+                .occa(occa)
+                .date(LocalDate.parse(showDTO.getDate()))
+                .time(LocalTime.parse(showDTO.getTime()))
+                .saleStatus(parseSaleStatus(showDTO.getSaleStatus()))
+                .build();
+    }
+
+    /**
+     * Cập nhật show hiện có từ ShowDTO
+     */
+    private void updateShowFromDTO(Show show, ShowDTO showDTO) {
+        show.setDate(LocalDate.parse(showDTO.getDate()));
+        show.setTime(LocalTime.parse(showDTO.getTime()));
+        
+        // Nếu có status, cập nhật thêm
+        if (showDTO.getSaleStatus() != null) {
+            show.setSaleStatus(parseSaleStatus(showDTO.getSaleStatus()));
+        }
+    }
+    
+    /**
+     * Chuyển đổi string thành SaleStatus enum
+     */
+    private SaleStatus parseSaleStatus(String status) {
+        if (status == null || status.isEmpty()) {
+            return SaleStatus.UPCOMING;
+        }
+
+        try {
+            return SaleStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid sale status: {}, falling back to UPCOMING", status);
+            return SaleStatus.UPCOMING;
+        }
+    }
+
+    /**
+     * Chuyển đổi SaleStatus từ enum thành chuỗi chữ thường
+     */
+   private String formatSaleStatus(SaleStatus status) {
+       if (status == null) {
+           return "upcoming"; // Giá trị mặc định
+       }
+       
+       return status.name().toLowerCase();
+   }
 }

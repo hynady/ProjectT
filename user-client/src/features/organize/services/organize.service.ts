@@ -10,6 +10,13 @@ import {
   CategoryType
 } from '../internal-types/organize.type';
 import { organizeMockData } from './organize.mock';
+import { 
+  AddShowPayload, 
+  UpdateShowPayload, 
+  AddTicketPayload, 
+  UpdateTicketPayload,
+  TicketResponse
+} from '../internal-types/show-operations.type';
 
 class OrganizeService extends BaseService {
   private static instance: OrganizeService;
@@ -156,12 +163,137 @@ class OrganizeService extends BaseService {
   async getShowsByOccaId(occaId: string): Promise<ShowResponse[]> {
     return this.request({
       method: 'GET',
-      url: `/organize/occas/${occaId}/shows`,
+      url: `/shows/organize/${occaId}`,
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => {
           const mockShows = organizeMockData.showsByOccaId(occaId);
           resolve(mockShows);
         }, 800);
+      })
+    });
+  }
+
+  // SHOWS MANAGEMENT
+  async addShow(occaId: string, showData: AddShowPayload): Promise<ShowResponse> {
+    return this.request({
+      method: 'POST',
+      url: `/shows/occas/${occaId}/shows`,
+      data: showData,
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => {
+          const newId = `show-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+          resolve({
+            id: newId,
+            date: showData.date,
+            time: showData.time,
+            saleStatus: showData.saleStatus,
+            tickets: []
+          });
+        }, 500);
+      })
+    });
+  }
+
+  async updateShow(occaId: string, showId: string, showData: UpdateShowPayload): Promise<ShowResponse> {
+    return this.request({
+      method: 'PUT',
+      url: `/organize/occas/${occaId}/shows/${showId}`,
+      data: showData,
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => {
+          const mockShows = organizeMockData.showsByOccaId(occaId);
+          const show = mockShows.find(s => s.id === showId);
+          
+          if (!show) {
+            throw new Error('Show not found');
+          }
+          
+          const updatedShow = {
+            ...show,
+            date: showData.date || show.date,
+            time: showData.time || show.time,
+            saleStatus: (showData.saleStatus) || show.saleStatus,
+          };
+          
+          resolve(updatedShow);
+        }, 500);
+      })
+    });
+  }
+
+  async deleteShow(occaId: string, showId: string): Promise<void> {
+    return this.request({
+      method: 'DELETE',
+      url: `/organize/occas/${occaId}/shows/${showId}`,
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => {
+          resolve();
+        }, 500);
+      })
+    });
+  }
+
+  // TICKETS MANAGEMENT
+  async addTicket(occaId: string, showId: string, ticketData: AddTicketPayload): Promise<TicketResponse> {
+    return this.request({
+      method: 'POST',
+      url: `/organize/occas/${occaId}/shows/${showId}/tickets`,
+      data: ticketData,
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => {
+          const newId = `ticket-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+          resolve({
+            id: newId,
+            type: ticketData.type,
+            price: ticketData.price,
+            available: ticketData.availableQuantity
+          });
+        }, 500);
+      })
+    });
+  }
+
+  async updateTicket(occaId: string, showId: string, ticketId: string, ticketData: UpdateTicketPayload): Promise<TicketResponse> {
+    return this.request({
+      method: 'PUT',
+      url: `/organize/occas/${occaId}/shows/${showId}/tickets/${ticketId}`,
+      data: ticketData,
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => {
+          const mockShows = organizeMockData.showsByOccaId(occaId);
+          const show = mockShows.find(s => s.id === showId);
+          
+          if (!show) {
+            throw new Error('Show not found');
+          }
+          
+          const ticket = show.tickets.find(t => t.id === ticketId);
+          
+          if (!ticket) {
+            throw new Error('Ticket not found');
+          }
+          
+          const updatedTicket = {
+            ...ticket,
+            type: ticketData.type || ticket.type,
+            price: ticketData.price ?? ticket.price,
+            available: ticketData.availableQuantity ?? ticket.available
+          };
+          
+          resolve(updatedTicket);
+        }, 500);
+      })
+    });
+  }
+
+  async deleteTicket(occaId: string, showId: string, ticketId: string): Promise<void> {
+    return this.request({
+      method: 'DELETE',
+      url: `/organize/occas/${occaId}/shows/${showId}/tickets/${ticketId}`,
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => {
+          resolve();
+        }, 500);
       })
     });
   }

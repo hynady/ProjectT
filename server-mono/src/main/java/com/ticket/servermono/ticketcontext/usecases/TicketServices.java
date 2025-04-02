@@ -10,8 +10,10 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ticket.servermono.ticketcontext.adapters.dtos.AddTicketClassRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingPayload;
 import com.ticket.servermono.ticketcontext.adapters.dtos.ListTicketsResponse;
+import com.ticket.servermono.ticketcontext.adapters.dtos.TicketClassResponse;
 import com.ticket.servermono.ticketcontext.entities.Ticket;
 import com.ticket.servermono.ticketcontext.entities.TicketClass;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
@@ -366,5 +368,93 @@ public class TicketServices {
             .mapToDouble(TicketClass::getPrice)
             .min()
             .orElse(0);
+    }
+
+    /**
+     * Add a new ticket class for a show
+     * @param showId ID of the show
+     * @param request Ticket class creation request
+     * @return Created ticket class response
+     */
+    @Transactional
+    public TicketClassResponse addTicketClass(UUID showId, AddTicketClassRequest request) {
+        // Create new TicketClass entity
+        TicketClass ticketClass = TicketClass.builder()
+                .name(request.getType())
+                .price(request.getPrice())
+                .capacity(request.getAvailableQuantity())
+                .showId(showId)
+                .build();
+        
+        // Save to database
+        TicketClass savedTicketClass = ticketClassRepository.save(ticketClass);
+        log.info("Created new ticket class with ID: {} for show: {}", 
+                savedTicketClass.getId(), showId);
+        
+        // Build and return response
+        return TicketClassResponse.builder()
+                .id(savedTicketClass.getId())
+                .type(savedTicketClass.getName())
+                .price(savedTicketClass.getPrice())
+                .available(savedTicketClass.getCapacity())
+                .build();
+    }
+
+    /**
+     * Update an existing ticket class
+     * @param ticketId ID of the ticket class to update
+     * @param request Ticket class update request
+     * @return Updated ticket class response
+     */
+    @Transactional
+    public TicketClassResponse updateTicketClass(UUID ticketId, AddTicketClassRequest request) {
+        // Find the ticket class by ID
+        TicketClass ticketClass = ticketClassRepository.findById(ticketId)
+                .orElseThrow(() -> new EntityNotFoundException("Ticket class not found with ID: " + ticketId));
+        
+        // Update ticket class properties
+        ticketClass.setName(request.getType());
+        ticketClass.setPrice(request.getPrice());
+        ticketClass.setCapacity(request.getAvailableQuantity());
+        
+        // Save to database
+        TicketClass updatedTicketClass = ticketClassRepository.save(ticketClass);
+        log.info("Updated ticket class with ID: {}, type: {}, price: {}, capacity: {}", 
+                updatedTicketClass.getId(), 
+                updatedTicketClass.getName(), 
+                updatedTicketClass.getPrice(), 
+                updatedTicketClass.getCapacity());
+        
+        // Calculate available tickets
+        int availableTickets = calculateAvailableTickets(updatedTicketClass);
+        
+        // Build and return response
+        return TicketClassResponse.builder()
+                .id(updatedTicketClass.getId())
+                .type(updatedTicketClass.getName())
+                .price(updatedTicketClass.getPrice())
+                .available(availableTickets)
+                .build();
+    }
+
+    /**
+     * Delete a ticket class
+     * @param ticketId ID of the ticket class to delete
+     */
+    @Transactional
+    public void deleteTicketClass(UUID ticketId) {
+        // Find the ticket class by ID to ensure it exists
+        TicketClass ticketClass = ticketClassRepository.findById(ticketId)
+                .orElseThrow(() -> new EntityNotFoundException("Ticket class not found with ID: " + ticketId));
+        
+        // Check if there are any sold tickets for this class
+        long soldTickets = ticketRepository.countByTicketClassId(ticketId);
+        if (soldTickets > 0) {
+            throw new IllegalStateException("Cannot delete ticket class with sold tickets");
+        }
+        
+        // Delete the ticket class
+        ticketClassRepository.delete(ticketClass);
+        log.info("Deleted ticket class with ID: {}", ticketId);
     }
 }

@@ -21,6 +21,8 @@ import { ShowList } from "./shows/ShowList";
 import { ShowFormDialog } from "./shows/ShowFormDialog";
 import { DeleteConfirmDialog } from "@/commons/components/data-table/DeleteConfirmDialog";
 import { vi } from "date-fns/locale";
+import { TicketFormValues } from "./shows/TicketFormDialog";
+import { AddShowPayload, AddTicketPayload, UpdateShowPayload } from "../internal-types/show-operations.type";
 
 interface ShowListModalProps {
   open: boolean;
@@ -38,7 +40,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
   const [sortOption, setSortOption] = useState<{
     field: 'date' | 'time';
     order: 'asc' | 'desc';
-  }>({
+  }>( {
     field: 'date',
     order: 'asc'
   });
@@ -157,8 +159,10 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
     try {
       setIsDeleting(true);
       
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Use service to delete the show
+      await organizeService.deleteShow(occa.id, showToDelete.id);
       
+      // Update local state
       setShows(prevShows => prevShows.filter(show => show.id !== showToDelete.id));
       
       toast({
@@ -168,8 +172,8 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
       
       setShowToDelete(null);
       setDeleteDialogOpen(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      console.error("Error deleting show:", error);
       toast({
         title: "Lỗi",
         description: "Không thể xóa suất diễn. Vui lòng thử lại sau.",
@@ -180,7 +184,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
     }
   };
   
-  const handleSaveShow = (date: string, time: string) => {
+  const handleSaveShow = async (date: string, time: string, status: string) => {
     try {
       const isDuplicate = shows.some(show => {
         if (editingShow && show.id === editingShow.id) return false;
@@ -197,32 +201,56 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
       }
 
       if (editingShow) {
-        const updatedShows = shows.map(show => {
-          if (show.id === editingShow.id) {
-            return {
-              ...show,
-              date,
-              time,
-            };
-          }
-          return show;
-        });
+        // Chuẩn bị payload theo interface
+        const updatePayload: UpdateShowPayload = {
+          date,
+          time,
+          saleStatus: status as ShowSaleStatus
+        };
         
-        setShows(updatedShows);
+        // Update existing show
+        await organizeService.updateShow(
+          occa.id,
+          editingShow.id,
+          updatePayload
+        );
+        
+        // Update local state
+        setShows(prevShows => prevShows.map(show => 
+          show.id === editingShow.id 
+            ? { ...show, date, time, saleStatus: status as ShowSaleStatus } 
+            : show
+        ));
+        
         toast({
           title: "Suất diễn đã được cập nhật",
           description: `Đã cập nhật suất diễn vào ngày ${format(new Date(date), "dd/MM/yyyy")}`,
         });
       } else {
-        const newShow: ShowInfo = {
-          id: `temp-show-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        // Chuẩn bị payload theo interface
+        const addPayload: AddShowPayload = {
           date,
           time,
-          saleStatus: "upcoming",
+          saleStatus: status as ShowSaleStatus
+        };
+        
+        // Add new show
+        const response = await organizeService.addShow(
+          occa.id,
+          addPayload
+        );
+        
+        // Add new show to local state
+        const newShow: ShowInfo = {
+          id: response.id,
+          date,
+          time,
+          saleStatus: status as ShowSaleStatus,
           tickets: []
         };
         
         setShows(prev => [...prev, newShow]);
+        
         toast({
           title: "Đã thêm suất diễn",
           description: `Đã thêm suất diễn vào ngày ${format(new Date(date), "dd/MM/yyyy")}`,
@@ -231,8 +259,8 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
       
       setShowDialogOpen(false);
       
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      console.error("Error saving show:", error);
       toast({
         title: "Lỗi",
         description: "Không thể lưu suất diễn. Vui lòng thử lại sau.",
@@ -241,7 +269,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
     }
   };
   
-  const handleAddTicket = (showId: string) => {
+  const handleAddTicket = async (showId: string, values: TicketFormValues) => {
     const show = shows.find(s => s.id === showId);
     if (!show) return;
     
@@ -254,57 +282,227 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
       return;
     }
     
-    toast({
-      title: "Thêm loại vé mới",
-      description: `Đang thêm vé cho suất diễn ${showId}`,
-    });
-  };
-  
-  const handleEditTicket = (ticketId: string) => {
-    for (const show of shows) {
-      const ticket = show.tickets.find(t => t.id === ticketId);
-      if (ticket) {
-        if (show.saleStatus === "ended") {
-          toast({
-            title: "Không thể chỉnh sửa",
-            description: "Không thể chỉnh sửa vé của suất diễn đã diễn ra",
-            variant: "destructive",
-          });
-          return;
-        }
-        
+    try {
+      // Check for duplicates
+      const isDuplicate = show.tickets.some(ticket => ticket.type === values.type);
+
+      if (isDuplicate) {
         toast({
-          title: "Chỉnh sửa loại vé",
-          description: `Đang chỉnh sửa vé ${ticketId}`,
-        });
-        return;
-      }
-    }
-  };
-  
-  const handleDeleteTicket = (ticketId: string) => {
-    for (const show of shows) {
-      const ticket = show.tickets.find(t => t.id === ticketId);
-      if (ticket) {
-        if (show.saleStatus === "ended") {
-          toast({
-            title: "Không thể xóa",
-            description: "Không thể xóa vé của suất diễn đã diễn ra",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        toast({
-          title: "Xóa loại vé",
-          description: `Đang xóa vé ${ticketId}`,
+          title: "Trùng lặp",
+          description: "Loại vé này đã tồn tại cho suất diễn này",
           variant: "destructive",
         });
         return;
       }
+      
+      // Chuẩn bị payload theo interface
+      const addTicketPayload: AddTicketPayload = {
+        type: values.type,
+        price: values.price,
+        availableQuantity: values.availableQuantity
+      };
+      
+      // Use service to add ticket
+      const response = await organizeService.addTicket(
+        occa.id,
+        showId,
+        addTicketPayload
+      );
+      
+      // Update local state
+      setShows(prevShows => 
+        prevShows.map(show => {
+          if (show.id === showId) {
+            return {
+              ...show,
+              tickets: [
+                ...show.tickets,
+                {
+                  id: response.id,
+                  type: response.type,
+                  price: response.price,
+                  available: response.available
+                }
+              ]
+            };
+          }
+          return show;
+        })
+      );
+      
+      toast({
+        title: "Đã thêm vé mới",
+        description: `Loại vé: ${values.type}, Giá: ${values.price.toLocaleString('vi-VN')}đ`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error adding ticket:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể thêm vé. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+      return false;
     }
   };
+  
+  const handleEditTicket = async (ticketId: string, values: TicketFormValues) => {
+    // Find the show that contains this ticket
+    let showWithTicket: ShowInfo | undefined;
+    let ticket;
+    
+    for (const show of shows) {
+      ticket = show.tickets.find(t => t.id === ticketId);
+      if (ticket) {
+        showWithTicket = show;
+        break;
+      }
+    }
+    
+    if (!showWithTicket || !ticket) return false;
+    
+    if (showWithTicket.saleStatus === "ended") {
+      toast({
+        title: "Không thể chỉnh sửa",
+        description: "Không thể chỉnh sửa vé của suất diễn đã diễn ra",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    try {
+      // Check for duplicates but exclude the current ticket
+      const isDuplicate = showWithTicket.tickets.some(t => 
+        t.id !== ticketId && t.type === values.type
+      );
 
+      if (isDuplicate) {
+        toast({
+          title: "Trùng lặp",
+          description: "Loại vé này đã tồn tại cho suất diễn này",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Use service to update ticket
+      await organizeService.updateTicket(
+        occa.id,
+        showWithTicket.id,
+        ticketId,
+        {
+          type: values.type,
+          price: values.price,
+          availableQuantity: values.availableQuantity
+        }
+      );
+      
+      // Update local state
+      setShows(prevShows => 
+        prevShows.map(show => {
+          if (show.id === showWithTicket?.id) {
+            return {
+              ...show,
+              tickets: show.tickets.map(t => 
+                t.id === ticketId 
+                  ? {
+                      ...t,
+                      type: values.type,
+                      price: values.price,
+                      available: values.availableQuantity
+                    }
+                  : t
+              )
+            };
+          }
+          return show;
+        })
+      );
+      
+      toast({
+        title: "Vé đã được cập nhật",
+        description: `Loại vé: ${values.type}, Giá: ${values.price.toLocaleString('vi-VN')}đ`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating ticket:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể cập nhật vé. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+  
+  const handleDeleteTicket = async (ticketId: string) => {
+    if (!ticketId) return;
+    
+    // Find the show that contains this ticket
+    let showWithTicket: ShowInfo | undefined;
+    let ticket;
+    
+    for (const show of shows) {
+      ticket = show.tickets.find(t => t.id === ticketId);
+      if (ticket) {
+        showWithTicket = show;
+        break;
+      }
+    }
+    
+    if (!showWithTicket || !ticket) return;
+    
+    if (showWithTicket.saleStatus === "ended") {
+      toast({
+        title: "Không thể xóa",
+        description: "Không thể xóa vé của suất diễn đã diễn ra",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      setIsDeleting(true);
+      
+      // Use service to delete ticket
+      await organizeService.deleteTicket(
+        occa.id,
+        showWithTicket.id,
+        ticketId
+      );
+      
+      // Update local state
+      setShows(prevShows => 
+        prevShows.map(show => {
+          if (show.id === showWithTicket?.id) {
+            return {
+              ...show,
+              tickets: show.tickets.filter(t => t.id !== ticketId)
+            };
+          }
+          return show;
+        })
+      );
+      
+      toast({
+        title: "Đã xóa vé",
+        description: "Vé đã được xóa thành công",
+      });
+      
+    } catch (error) {
+      console.error("Error deleting ticket:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể xóa vé. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+  
   const handleStatusToggle = (status: ShowSaleStatus) => {
     setSelectedStatuses(prev => {
       if (prev.includes(status)) {
@@ -384,8 +582,8 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
                   shows={filteredShows}
                   onEditShow={handleEditShow}
                   onDeleteShow={handleConfirmDeleteShow}
-                  onAddTicket={handleAddTicket}
-                  onEditTicket={handleEditTicket}
+                  onAddTicket={(showId, values) => handleAddTicket(showId, values)}
+                  onEditTicket={(ticketId, values) => handleEditTicket(ticketId, values)}
                   onDeleteTicket={handleDeleteTicket}
                 />
               )}

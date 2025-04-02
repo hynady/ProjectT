@@ -21,9 +21,9 @@ interface ShowListProps {
   shows: ShowInfo[];
   onEditShow: (e: React.MouseEvent, showId: string) => void;
   onDeleteShow: (e: React.MouseEvent, showId: string) => void;
-  onAddTicket: (showId: string) => void;
-  onEditTicket: (ticketId: string) => void;
-  onDeleteTicket: (ticketId: string) => void;
+  onAddTicket: (showId: string, values: TicketFormValues) => Promise<boolean | void>;
+  onEditTicket: (ticketId: string, values: TicketFormValues) => Promise<boolean | void>;
+  onDeleteTicket: (ticketId: string) => Promise<void> | void;
 }
 
 export const ShowList = ({
@@ -40,6 +40,7 @@ export const ShowList = ({
   const [deleteTicketDialogOpen, setDeleteTicketDialogOpen] = useState(false);
   const [ticketToDelete, setTicketToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleOpenTicketDialog = (showId: string) => {
     const show = shows.find(s => s.id === showId);
@@ -106,15 +107,13 @@ export const ShowList = ({
     try {
       setIsDeleting(true);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      onDeleteTicket(ticketToDelete);
+      // Call the parent onDeleteTicket callback
+      await onDeleteTicket(ticketToDelete);
       
       setTicketToDelete(null);
       setDeleteTicketDialogOpen(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      console.error("Error deleting ticket:", error);
       toast({
         title: "Lỗi",
         description: "Không thể xóa vé. Vui lòng thử lại sau.",
@@ -125,23 +124,38 @@ export const ShowList = ({
     }
   };
 
-  const handleSaveTicket = (values: TicketFormValues) => {
-    if (editingTicketId) {
-      onEditTicket(editingTicketId);
-    } else if (selectedShowId) {
-      onAddTicket(selectedShowId);
+  const handleSaveTicket = async (values: TicketFormValues) => {
+    if (isSubmitting) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      let success = false;
+      
+      if (editingTicketId) {
+        // Edit existing ticket
+        success = await onEditTicket(editingTicketId, values) as boolean;
+      } else if (selectedShowId) {
+        // Add new ticket
+        success = await onAddTicket(selectedShowId, values) as boolean;
+      }
+      
+      if (success !== false) {
+        // Close the dialog if the operation was successful
+        setTicketDialogOpen(false);
+        setSelectedShowId(null);
+        setEditingTicketId(null);
+      }
+    } catch (error) {
+      console.error("Error saving ticket:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể lưu thông tin vé. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    // Close the dialog
-    setTicketDialogOpen(false);
-    setSelectedShowId(null);
-    setEditingTicketId(null);
-    
-    // Show success toast
-    toast({
-      title: editingTicketId ? "Vé đã được cập nhật" : "Đã thêm vé mới",
-      description: `Loại vé: ${values.type}, Giá: ${values.price.toLocaleString('vi-VN')}đ`,
-    });
   };
 
   const getSelectedTicket = () => {
@@ -253,6 +267,7 @@ export const ShowList = ({
         showName={getShowName(selectedShowId)}
         initialValues={getSelectedTicket()}
         isEditing={!!editingTicketId}
+        isSubmitting={isSubmitting}
       />
       
       {/* Delete Confirmation Dialog */}
