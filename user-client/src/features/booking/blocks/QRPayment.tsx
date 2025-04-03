@@ -1,16 +1,19 @@
-import { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/commons/components/card.tsx';
-import { Button } from '@/commons/components/button.tsx';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { Card, CardContent } from '@/commons/components/card';
+import { Button } from '@/commons/components/button';
 import { PaymentDetails } from '@/features/booking/internal-types/booking.type';
-import { AlertCircle, ArrowLeft, Clock, Download, Loader2, CheckCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/commons/components/alert.tsx';
-import { ScrollToTop } from '@/commons/blocks/ScrollToTop.tsx';
-import { Separator } from '@/commons/components/separator.tsx';
+import { AlertCircle, ArrowLeft, Clock, Download, Loader2, CheckCircle, Timer } from 'lucide-react';
+import { Alert, AlertDescription } from '@/commons/components/alert';
+import { ScrollToTop } from '@/commons/blocks/ScrollToTop';
+import { Separator } from '@/commons/components/separator';
 import { usePaymentProcess } from '../hooks/usePaymentProcess';
 import { toast } from '@/commons/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { paymentWebSocketService } from '../services/payment-websocket.service';
-import { WebSocketStatus } from '@/commons/base-websocket.service';
+import { paymentWebSocketService, PaymentMessage, PaymentStatus } from '../services/payment-websocket.service';
+import { Progress } from '@/commons/components/progress';
+
+// Thời gian thanh toán tối đa (15 phút = 900 giây)
+const PAYMENT_TIMEOUT_SECONDS = 900;
 
 interface QRPaymentProps {
   occaId: string;
@@ -24,8 +27,6 @@ interface QRPaymentProps {
   onPaymentSuccess: () => void;
 }
 
-type PaymentStatus = 'waiting_payment' | 'payment_received' | 'processing' | 'completed' | 'failed';
-
 export const QRPayment = ({
   occaId,
   showId,
@@ -35,9 +36,11 @@ export const QRPayment = ({
 }: QRPaymentProps) => {
   const navigate = useNavigate();
   const [paymentInfo, setPaymentInfo] = useState<PaymentDetails | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('waiting_payment');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [websocketStatus, setWebsocketStatus] = useState<WebSocketStatus>(WebSocketStatus.CLOSED);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.WAITING_PAYMENT);
+  
+  // State cho đồng hồ đếm ngược
+  const [timeRemaining, setTimeRemaining] = useState<number>(PAYMENT_TIMEOUT_SECONDS);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const { isProcessing, error, startPayment } = usePaymentProcess({
     bookingData: {
@@ -47,7 +50,8 @@ export const QRPayment = ({
     occaId,
     onSuccess: (details) => {
       setPaymentInfo(details);
-      // Không kết nối WebSocket ở đây nữa, để useEffect lo
+      // Khởi tạo thời gian đếm ngược khi có thông tin thanh toán
+      setTimeRemaining(PAYMENT_TIMEOUT_SECONDS);
     },
     onError: (error) => {
       toast({
@@ -58,57 +62,106 @@ export const QRPayment = ({
     }
   });
 
+  // Type guard để kiểm tra tin nhắn có phải là PaymentMessage không
+  const isPaymentStatusMessage = (data: unknown): data is PaymentMessage => {
+    if (typeof data !== 'object' || data === null) return false;
+    
+    const message = data as Partial<PaymentMessage>;
+    return message.type === 'payment_status' && typeof message.status === 'string';
+  };
+
+  // Xử lý khi hết thời gian thanh toán
+  const handlePaymentTimeout = useCallback(() => {
+    // Cập nhật trạng thái thanh toán thành hết hạn
+    setPaymentStatus(PaymentStatus.EXPIRED);
+    
+    // Hiển thị thông báo
+    toast({
+      title: "Hết thời gian thanh toán",
+      description: "Phiên thanh toán đã hết hạn. Vui lòng thử lại.",
+      variant: "destructive",
+    });
+    
+    // Ngắt kết nối WebSocket
+    paymentWebSocketService.disconnect();
+    
+    // Xóa timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  // Bắt đầu đếm ngược khi có thông tin thanh toán
+  useEffect(() => {
+    if (paymentInfo && paymentStatus === PaymentStatus.WAITING_PAYMENT) {
+      // Đảm bảo xóa timer cũ nếu có
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      
+      // Thiết lập timer mới
+      timerRef.current = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            // Nếu hết thời gian, xử lý timeout
+            handlePaymentTimeout();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    
+    // Cleanup function
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [paymentInfo, paymentStatus, handlePaymentTimeout]);
+
+  // Dừng đếm ngược khi thanh toán thành công hoặc thất bại
+  useEffect(() => {
+    if (
+      paymentStatus === PaymentStatus.COMPLETED || 
+      paymentStatus === PaymentStatus.FAILED ||
+      paymentStatus === PaymentStatus.EXPIRED
+    ) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  }, [paymentStatus]);
+
   // Kết nối WebSocket khi paymentInfo có sẵn - chỉ kết nối một lần
   useEffect(() => {
     if (paymentInfo?.paymentId) {
-      const effectId = Math.random().toString(36).substring(2, 8);
-      console.log(`[WS-DEBUG-COMPONENT] Effect #${effectId} running for paymentId: ${paymentInfo.paymentId}`);
-      console.log(`[WS-DEBUG-COMPONENT] Effect dependencies:`, { paymentId: paymentInfo?.paymentId, onPaymentSuccess });
-      
       // Ngắt kết nối cũ nếu có
-      console.log(`[WS-DEBUG-COMPONENT] Effect #${effectId} calling disconnect`);
       paymentWebSocketService.disconnect();
-      
-      // Thiết lập WebSocket event listeners
-      const onStatusChange = (status: WebSocketStatus) => {
-        console.log(`[WS-DEBUG-COMPONENT] Effect #${effectId} status change handler called with status:`, status);
-        setWebsocketStatus(status);
-      };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const onMessage = (data: any) => {
-        console.log(`[WS-DEBUG-COMPONENT] Effect #${effectId} message handler called with data:`, data);
-        
-        if (data.type === 'payment_status') {
-          // Kiểm tra xem tin nhắn này đã được xử lý chưa
-          if (paymentWebSocketService.isMessageProcessed && paymentWebSocketService.isMessageProcessed(data)) {
-            console.log(`[WS-DEBUG-COMPONENT] Effect #${effectId} Skipping duplicate message:`, data);
-            return;
-          }
-          
-          // Đánh dấu tin nhắn đã được xử lý để tránh xử lý lại
-          if (paymentWebSocketService.markMessageAsProcessed) {
-            paymentWebSocketService.markMessageAsProcessed(data);
-            console.log(`[WS-DEBUG-COMPONENT] Effect #${effectId} Marked message as processed:`, data);
-          }
-          
-          console.log(`[WS-DEBUG-COMPONENT] Effect #${effectId} Setting payment status to:`, data.status);
-          setPaymentStatus(data.status as PaymentStatus);
+      const onMessage = (data: unknown) => {
+        // Sử dụng type guard để kiểm tra cấu trúc đúng của PaymentMessage
+        if (isPaymentStatusMessage(data) && data.type === 'payment_status') {
+          const status = data.status as PaymentStatus;
+          setPaymentStatus(status);
           
           // Show appropriate toast based on status
-          if (data.status === 'payment_received') {
+          if (status === PaymentStatus.PAYMENT_RECEIVED) {
             toast({
               title: "Đã nhận thanh toán",
               description: "Hệ thống đang xử lý thanh toán của bạn",
               variant: "default",
             });
-          } else if (data.status === 'processing') {
+          } else if (status === PaymentStatus.PROCESSING) {
             toast({
               title: "Đang xử lý",
               description: "Vé của bạn đang được chuẩn bị",
               variant: "default",
             });
-          } else if (data.status === 'completed') {
+          } else if (status === PaymentStatus.COMPLETED) {
             toast({
               title: "Thanh toán thành công",
               description: "Vé đã được gửi tới email của bạn",
@@ -118,7 +171,7 @@ export const QRPayment = ({
             setTimeout(() => {
               onPaymentSuccess();
             }, 1500);
-          } else if (data.status === 'failed') {
+          } else if (status === PaymentStatus.FAILED) {
             toast({
               title: "Thanh toán thất bại",
               description: "Vui lòng thử lại hoặc chọn phương thức thanh toán khác",
@@ -127,25 +180,17 @@ export const QRPayment = ({
           }
         }
       };
-
-      // In ra object listeners hiện tại trước khi đăng ký mới
-      console.log(`[WS-DEBUG-COMPONENT] Effect #${effectId} Registering event listeners`);
       
       // Đăng ký event listeners trước khi kết nối
-      paymentWebSocketService.on('status_change', onStatusChange);
       paymentWebSocketService.on('message', onMessage);
       
-      // Thực hiện kết nối
-      console.log(`[WS-DEBUG-COMPONENT] Effect #${effectId} Calling connect with paymentId: ${paymentInfo.paymentId}`);
-      paymentWebSocketService.connect(paymentInfo.paymentId);
+      // Thực hiện kết nối sử dụng phương thức mới
+      paymentWebSocketService.connectToPayment(paymentInfo.paymentId);
 
       // Clean up event listeners và ngắt kết nối khi component unmount
       return () => {
-        console.log(`[WS-DEBUG-COMPONENT] Effect #${effectId} cleanup function running`);
-        paymentWebSocketService.off('status_change', onStatusChange);
         paymentWebSocketService.off('message', onMessage);
         paymentWebSocketService.disconnect();
-        console.log(`[WS-DEBUG-COMPONENT] Effect #${effectId} cleanup completed`);
       };
     }
   }, [paymentInfo?.paymentId, onPaymentSuccess]);
@@ -179,10 +224,20 @@ export const QRPayment = ({
     });
   };
 
+  // Format time remaining để hiển thị
+  const formatTimeRemaining = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // Tính toán phần trăm thời gian còn lại
+  const timeRemainingPercentage = (timeRemaining / PAYMENT_TIMEOUT_SECONDS) * 100;
+
   // Render appropriate status alert
   const renderStatusAlert = () => {
     switch(paymentStatus) {
-      case 'waiting_payment':
+      case PaymentStatus.WAITING_PAYMENT:
         return (
           <Alert className="border-primary/50 bg-primary/10">
             <Clock className="h-4 w-4 text-primary" />
@@ -195,7 +250,7 @@ export const QRPayment = ({
             </AlertDescription>
           </Alert>
         );
-      case 'payment_received':
+      case PaymentStatus.PAYMENT_RECEIVED:
         return (
           <Alert className="border-amber-500/50 bg-amber-500/10">
             <Clock className="h-4 w-4 text-amber-500" />
@@ -208,7 +263,7 @@ export const QRPayment = ({
             </AlertDescription>
           </Alert>
         );
-      case 'processing':
+      case PaymentStatus.PROCESSING:
         return (
           <Alert className="border-amber-500/50 bg-amber-500/10">
             <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
@@ -218,7 +273,7 @@ export const QRPayment = ({
             </AlertDescription>
           </Alert>
         );
-      case 'completed':
+      case PaymentStatus.COMPLETED:
         return (
           <Alert className="border-green-500/50 bg-green-500/10">
             <CheckCircle className="h-4 w-4 text-green-500" />
@@ -228,7 +283,7 @@ export const QRPayment = ({
             </AlertDescription>
           </Alert>
         );
-      case 'failed':
+      case PaymentStatus.FAILED:
         return (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -238,9 +293,57 @@ export const QRPayment = ({
             </AlertDescription>
           </Alert>
         );
+      case PaymentStatus.EXPIRED:
+        return (
+          <Alert variant="destructive">
+            <Timer className="h-4 w-4" />
+            <AlertDescription className="text-sm flex items-center gap-1">
+              <span>Trạng thái:</span> 
+              <span className="font-medium">Hết thời gian thanh toán</span>
+            </AlertDescription>
+          </Alert>
+        );
       default:
         return null;
     }
+  };
+
+  // Render countdown timer
+  const renderCountdownTimer = () => {
+    if (
+      paymentStatus !== PaymentStatus.WAITING_PAYMENT || 
+      !paymentInfo
+    ) {
+      return null;
+    }
+
+    // Xác định màu sắc dựa trên thời gian còn lại
+    let progressColor = "bg-primary";
+    if (timeRemaining < 300) { // Dưới 5 phút
+      progressColor = "bg-amber-500";
+    }
+    if (timeRemaining < 60) { // Dưới 1 phút
+      progressColor = "bg-red-500";
+    }
+
+    return (
+      <div className="space-y-2 mb-4">
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium flex items-center gap-1">
+            <Timer className="h-4 w-4" />
+            Thời gian còn lại:
+          </span>
+          <span className={`font-bold ${timeRemaining < 60 ? 'text-red-500' : timeRemaining < 300 ? 'text-amber-500' : 'text-primary'}`}>
+            {formatTimeRemaining(timeRemaining)}
+          </span>
+        </div>
+        <Progress className="h-2" value={timeRemainingPercentage} 
+          style={{ 
+            '--progress-background': progressColor 
+          } as React.CSSProperties}
+        />
+      </div>
+    );
   };
 
   // If there's an error with availability
@@ -285,13 +388,19 @@ export const QRPayment = ({
   // Generate QR URL
   const qrUrl = `https://qr.sepay.vn/img?acc=${paymentInfo.soTaiKhoan}&bank=${paymentInfo.nganHang}&amount=${paymentInfo.soTien}&des=${paymentInfo.noiDung}`;
   
-  // Should we disable the UI when payment is completed or failed
-  const isPaymentFinished = paymentStatus === 'completed' || paymentStatus === 'failed';
+  // Should we disable the UI when payment is completed or failed or expired
+  const isPaymentFinished = 
+    paymentStatus === PaymentStatus.COMPLETED || 
+    paymentStatus === PaymentStatus.FAILED || 
+    paymentStatus === PaymentStatus.EXPIRED;
 
   return (
     <ScrollToTop>
       <div className="space-y-6">
         {renderStatusAlert()}
+        
+        {/* Countdown Timer */}
+        {renderCountdownTimer()}
 
         {/* QR Code */}
         <Card className={isPaymentFinished ? "opacity-60" : ""}>
@@ -307,10 +416,15 @@ export const QRPayment = ({
                 />
                 {isPaymentFinished && (
                   <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-lg">
-                    {paymentStatus === 'completed' ? (
+                    {paymentStatus === PaymentStatus.COMPLETED ? (
                       <span className="text-green-500 font-medium flex items-center gap-1">
                         <CheckCircle className="h-5 w-5" />
                         Thanh toán thành công
+                      </span>
+                    ) : paymentStatus === PaymentStatus.EXPIRED ? (
+                      <span className="text-destructive font-medium flex items-center gap-1">
+                        <Timer className="h-5 w-5" />
+                        Hết thời gian thanh toán
                       </span>
                     ) : (
                       <span className="text-destructive font-medium">Thanh toán thất bại</span>
@@ -369,21 +483,37 @@ export const QRPayment = ({
                 <li>Vui lòng chuyển khoản đúng số tiền và nội dung</li>
                 <li>Hệ thống sẽ tự động xác nhận khi nhận được thanh toán</li>
                 <li>Vé sẽ được gửi tới email của bạn ngay sau khi thanh toán thành công</li>
+                <li>Phiên thanh toán chỉ có hiệu lực trong <span className="font-medium">{Math.floor(PAYMENT_TIMEOUT_SECONDS/60)} phút</span></li>
                 <li>Nếu không nhận được vé sau 15 phút, vui lòng liên hệ với chúng tôi</li>
               </ul>
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex justify-start">
+        <div className="flex justify-between">
           <Button
             variant="outline"
             onClick={onBack}
-            disabled={paymentStatus !== 'waiting_payment'}
+            disabled={paymentStatus !== PaymentStatus.WAITING_PAYMENT}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Quay lại
           </Button>
+          
+          {paymentStatus === PaymentStatus.EXPIRED && (
+            <Button 
+              onClick={() => {
+                // Khởi tạo lại quá trình thanh toán
+                setTimeRemaining(PAYMENT_TIMEOUT_SECONDS);
+                startPayment().catch(err => {
+                  console.error("Failed to restart payment:", err);
+                });
+              }}
+            >
+              <Timer className="mr-2 h-4 w-4" />
+              Thử lại
+            </Button>
+          )}
         </div>
       </div>
     </ScrollToTop>

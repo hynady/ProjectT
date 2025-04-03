@@ -1,15 +1,26 @@
-import { BaseWebSocketService, WebSocketStatus } from '@/commons/base-websocket.service';
+import { BaseWebSocketService, WebSocketMessage, WebSocketStatus, WebSocketConfig } from '@/commons/base-websocket.service';
 
-// Lưu các tin nhắn đã xử lý để tránh xử lý lặp lại
-interface ProcessedMessage {
-  timestamp: string;
+// Interface định nghĩa cấu trúc của tin nhắn thanh toán
+export interface PaymentMessage extends WebSocketMessage {
   type: string;
   status: string;
+  timestamp: string;
+  [key: string]: unknown;
+}
+
+// Các trạng thái thanh toán có thể có
+export enum PaymentStatus {
+  WAITING_PAYMENT = 'waiting_payment',
+  PAYMENT_RECEIVED = 'payment_received',
+  PROCESSING = 'processing',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  EXPIRED = 'expired',
+  CANCELLED = 'cancelled'
 }
 
 export class PaymentWebSocketService extends BaseWebSocketService {
   private static instance: PaymentWebSocketService;
-  private processedMessages: Set<string> = new Set(); // Dùng Set để lưu trữ ID của các tin nhắn đã xử lý
   private isConnecting: boolean = false;
 
   private constructor() {
@@ -23,99 +34,123 @@ export class PaymentWebSocketService extends BaseWebSocketService {
     return PaymentWebSocketService.instance;
   }
 
-  // Tính toán messageId dựa trên nội dung tin nhắn để tránh xử lý lặp lại
-  private getMessageId(message: ProcessedMessage): string {
-    return `${message.type}_${message.status}_${message.timestamp}`;
-  }
-  
-  // Kiểm tra xem tin nhắn đã được xử lý chưa
-  public isMessageProcessed(message: ProcessedMessage): boolean {
-    const messageId = this.getMessageId(message);
-    return this.processedMessages.has(messageId);
-  }
-  
-  // Đánh dấu tin nhắn đã được xử lý
-  public markMessageAsProcessed(message: ProcessedMessage): void {
-    const messageId = this.getMessageId(message);
-    this.processedMessages.add(messageId);
-    
-    // Xóa tin nhắn cũ sau 60 giây để tránh tràn bộ nhớ
-    setTimeout(() => {
-      this.processedMessages.delete(messageId);
-    }, 60000);
-  }
-
-  public connect(paymentId: string): void {
+  // Phương thức kết nối riêng cho Payment, giữ cùng signature với lớp cha
+  public override connect(config: WebSocketConfig): void {
     // Tránh kết nối nhiều lần
     if (this.isConnecting || this.getStatus() === WebSocketStatus.CONNECTING) {
-      console.log('WebSocket already connecting, skipping redundant connection request');
       return;
     }
 
     this.isConnecting = true;
-    this.processedMessages.clear(); // Xóa danh sách tin nhắn đã xử lý khi bắt đầu kết nối mới
     
-    console.log(`Payment WebSocket connecting with ${this.isMockEnabled ? 'MOCK' : 'REAL'} mode for payment ID: ${paymentId}`);
-    
-    // Define WebSocket server URL - adjust this to match your actual WebSocket server
-    // If you don't have a VITE_WS_BASE_URL set in your environment, uncomment and set the explicit URL below
-    const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8080';
-    
-    // Override onopen handle để cập nhật trạng thái isConnecting
+    // Override handlers để cập nhật trạng thái isConnecting
     const originalHandleOpen = this.handleOpen.bind(this);
     this.handleOpen = () => {
       this.isConnecting = false;
       originalHandleOpen();
     };
     
-    // Override handleClose để cập nhật trạng thái isConnecting
     const originalHandleClose = this.handleClose.bind(this);
     this.handleClose = (event: CloseEvent) => {
       this.isConnecting = false;
       originalHandleClose(event);
     };
     
-    // Override handleError để cập nhật trạng thái isConnecting
     const originalHandleError = this.handleError.bind(this);
     this.handleError = (event: Event) => {
       this.isConnecting = false;
       originalHandleError(event);
     };
+    
+    // Gọi phương thức connect của lớp cha
+    super.connect(config);
+  }
 
-    super.connect({
+  // Helper method để dễ dàng kết nối với payment ID
+  public connectToPayment(paymentId: string, customConfig?: Partial<WebSocketConfig>): void {
+    // Chuẩn bị cấu hình mặc định
+    const defaultConfig: WebSocketConfig = {
       resourceId: paymentId,
       endpoint: '/api/payment-ws',
-      wsUrl: wsBaseUrl
+      useMock: this.isMockEnabled
+    };
+    
+    // Áp dụng cấu hình tùy chỉnh nếu có
+    const config = { ...defaultConfig, ...(customConfig || {}) };
+    
+    // Gọi phương thức connect đã override
+    this.connect(config);
+  }
+
+  // Gửi thông báo cập nhật thanh toán
+  public sendPaymentUpdate(status: PaymentStatus, additionalData: Record<string, unknown> = {}): boolean {
+    const message: PaymentMessage = {
+      type: 'payment_update',
+      status: status,
+      timestamp: new Date().toISOString(),
+      ...additionalData
+    };
+    
+    return this.send(message);
+  }
+
+  // Lấy trạng thái thanh toán hiện tại (nếu server hỗ trợ)
+  public requestPaymentStatus(): boolean {
+    const message: WebSocketMessage = {
+      type: 'get_payment_status',
+      timestamp: new Date().toISOString()
+    };
+    
+    return this.send(message);
+  }
+
+  // Phương thức tiện ích để đăng ký nhận cập nhật trạng thái thanh toán
+  public onPaymentStatusChange(callback: (status: PaymentStatus, data: PaymentMessage) => void): void {
+    this.on('message', (data: unknown) => {
+      // Type guard để kiểm tra cấu trúc đúng của PaymentMessage
+      if (this.isPaymentStatusMessage(data)) {
+        callback(data.status as PaymentStatus, data);
+      }
     });
   }
 
-  // Override the simulation method with payment-specific mock behavior
+  // Type guard để kiểm tra tin nhắn có phải là PaymentMessage không
+  private isPaymentStatusMessage(data: unknown): data is PaymentMessage {
+    if (typeof data !== 'object' || data === null) return false;
+    
+    const message = data as Partial<PaymentMessage>;
+    return message.type === 'payment_status' && typeof message.status === 'string';
+  }
+
+  // Override phương thức mô phỏng cho chế độ mock
   protected override simulateConnection(): void {
-    // Simulate connection establishment
+    // Mô phỏng thiết lập kết nối
     setTimeout(() => {
       this.setStatus(WebSocketStatus.OPEN);
       this.events.emit('open');
       
-      // Simulate initial payment status
+      // Mô phỏng trạng thái thanh toán ban đầu
       setTimeout(() => {
-        this.events.emit('message', {
+        const initialStatusMessage: PaymentMessage = {
           type: 'payment_status',
-          status: 'waiting_payment',
+          status: PaymentStatus.WAITING_PAYMENT,
           timestamp: new Date().toISOString()
-        });
+        };
         
-        // Simulate payment progress updates
+        this.events.emit('message', initialStatusMessage);
+        
+        // Mô phỏng các cập nhật trạng thái thanh toán
         this.simulatePaymentUpdates();
       }, 1000);
     }, 800);
   }
 
-  // Simulate payment status updates over time
+  // Mô phỏng các cập nhật trạng thái thanh toán theo thời gian
   private simulatePaymentUpdates(): void {
     const statuses = [
-      { status: 'payment_received', delay: 10000 },
-      { status: 'processing', delay: 5000 },
-      { status: 'completed', delay: 3000 }
+      { status: PaymentStatus.PAYMENT_RECEIVED, delay: 10000 },
+      { status: PaymentStatus.PROCESSING, delay: 5000 },
+      { status: PaymentStatus.COMPLETED, delay: 3000 }
     ];
     
     let cumulativeDelay = 0;
@@ -125,14 +160,16 @@ export class PaymentWebSocketService extends BaseWebSocketService {
       
       setTimeout(() => {
         if (this.getStatus() === WebSocketStatus.OPEN) {
-          this.events.emit('message', {
+          const statusMessage: PaymentMessage = {
             type: 'payment_status',
             status: statusInfo.status,
             timestamp: new Date().toISOString()
-          });
+          };
           
-          // Close the connection when complete
-          if (statusInfo.status === 'completed') {
+          this.events.emit('message', statusMessage);
+          
+          // Đóng kết nối khi hoàn thành
+          if (statusInfo.status === PaymentStatus.COMPLETED) {
             setTimeout(() => this.disconnect(), 1000);
           }
         }
@@ -141,4 +178,5 @@ export class PaymentWebSocketService extends BaseWebSocketService {
   }
 }
 
+// Xuất singleton instance để sử dụng trong ứng dụng
 export const paymentWebSocketService = PaymentWebSocketService.getInstance();
