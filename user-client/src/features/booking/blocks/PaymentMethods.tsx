@@ -1,29 +1,16 @@
-import {useState} from 'react';
-import {Card, CardContent} from '@/commons/components/card.tsx';
-import {RadioGroup, RadioGroupItem} from '@/commons/components/radio-group.tsx';
-import {Label} from '@/commons/components/label.tsx';
-import {Button} from '@/commons/components/button.tsx';
-import {QrCode} from 'lucide-react';
-import {useNavigate} from 'react-router-dom';
-import {ScrollToTop} from "@/commons/blocks/ScrollToTop.tsx";
-import {ConfirmCancelDialog} from "@/features/booking/components/ConfirmCancelDialog.tsx";
-import {useBookingPayment} from "../hooks/useBookingPayment";
-import { toast } from '@/commons/hooks/use-toast';
+import { useState } from 'react';
+import { Card, CardContent } from '@/commons/components/card.tsx';
+import { RadioGroup, RadioGroupItem } from '@/commons/components/radio-group.tsx';
+import { Label } from '@/commons/components/label.tsx';
+import { Button } from '@/commons/components/button.tsx';
+import { QrCode } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ScrollToTop } from "@/commons/blocks/ScrollToTop.tsx";
+import { ConfirmCancelDialog } from "@/features/booking/components/ConfirmCancelDialog.tsx";
 import { BookingState } from '@/features/booking/internal-types/booking.type';
+import { QRPayment } from './QRPayment';
 
 const paymentMethods = [
-  // {
-  //   id: 'credit_card',
-  //   title: 'Thẻ tín dụng/ghi nợ',
-  //   description: 'Thanh toán bằng Visa, Mastercard, JCB',
-  //   icon: <CreditCard className="h-5 w-5"/>
-  // },
-  // {
-  //   id: 'e_wallet',
-  //   title: 'Ví điện tử',
-  //   description: 'Momo',
-  //   icon: <Wallet className="h-5 w-5"/>
-  // },
   {
     id: 'qr_code',
     title: 'Quét mã QR',
@@ -48,39 +35,13 @@ export const PaymentMethods = ({
   onPaymentSuccess
 }: PaymentMethodsProps) => {
   const navigate = useNavigate();
-  const [selectedMethod, setSelectedMethod] = useState<string>('');
+  const [selectedMethod, setSelectedMethod] = useState<string>('qr_code'); // Default to QR code
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-
-  const { isProcessing, error, processPayment } = useBookingPayment({
-    bookingData: {
-      showId: showId,
-      tickets: tickets
-    },
-    onSuccess: () => {
-      toast({
-        title: "Thanh toán thành công",
-        description: "Vé của bạn đã được đặt thành công",
-        variant: "success",
-      });
-      onPaymentSuccess();
-    },
-    onError: (error) => {
-      toast({
-        title: "Thanh toán thất bại",
-        description: error.message || "Vui lòng thử lại sau",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const handlePayment = async () => {
+  const [showPayment, setShowPayment] = useState(false);
+  
+  const handlePayment = () => {
     if (!selectedMethod) return;
-    try {
-      await processPayment();
-    } catch (error) {
-      // Error is already handled in the hook
-      console.error("Payment processing error:", error);
-    }
+    setShowPayment(true);
   };
 
   const handleCancelClick = () => {
@@ -90,6 +51,23 @@ export const PaymentMethods = ({
   const handleCancelConfirm = () => {
     navigate(`/occas/${occaId}`);
   };
+
+  // Show QR payment immediately if already selected
+  if (showPayment) {
+    return (
+      <QRPayment
+        occaId={occaId}
+        showId={showId}
+        tickets={tickets.map(t => ({
+          id: t.id,
+          type: t.type,
+          quantity: t.quantity
+        }))}
+        onBack={() => setShowPayment(false)}
+        onPaymentSuccess={onPaymentSuccess}
+      />
+    );
+  }
 
   return (
     <ScrollToTop>
@@ -126,17 +104,10 @@ export const PaymentMethods = ({
           ))}
         </RadioGroup>
 
-        {error && (
-          <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">
-            {error.message || "Đã xảy ra lỗi khi thanh toán. Vui lòng thử lại."}
-          </div>
-        )}
-
         <div className="grid grid-cols-3 gap-4">
           <Button
             variant="outline"
             onClick={onBack}
-            disabled={isProcessing}
             className="col-span-1"
           >
             Quay lại
@@ -144,17 +115,16 @@ export const PaymentMethods = ({
           <Button
             variant="destructive"
             onClick={handleCancelClick}
-            disabled={isProcessing}
             className="col-span-1"
           >
             Hủy đặt vé
           </Button>
           <Button
             className="col-span-1"
-            disabled={!selectedMethod || isProcessing}
+            disabled={!selectedMethod}
             onClick={handlePayment}
           >
-            {isProcessing ? 'Đang xử lý...' : 'Thanh toán'}
+            Tiếp tục
           </Button>
         </div>
 

@@ -1,9 +1,10 @@
 import { BaseService } from "@/commons/base.service";
-import { OccaBookingInfo, OccaShowUnit, BookingResponse, BookingPayload } from "../internal-types/booking.type";
+import { OccaBookingInfo, OccaShowUnit, BookingResponse, BookingPayload, PaymentDetails } from "../internal-types/booking.type";
 import { bookingMockData } from "./booking.mock";
 
 class BookingService extends BaseService {
-    private static instance: BookingService;
+
+private static instance: BookingService;
 
     private constructor() {
         super();
@@ -42,7 +43,7 @@ class BookingService extends BaseService {
         };
         
         console.log('response', response);
-
+    
         return response;
     }
 
@@ -53,6 +54,37 @@ class BookingService extends BaseService {
             data: payload,
             mockResponse: () => new Promise((resolve) => {
                 setTimeout(() => resolve({ status: "success" }), 1000);
+            })
+        });
+    }
+
+    // Method for locking tickets and getting payment details
+    async lockTickets(payload: BookingPayload): Promise<PaymentDetails> {
+        return this.request({
+            method: 'POST',
+            url: '/booking/lock',
+            data: payload,
+            mockResponse: () => new Promise((resolve, reject) => {
+                // Randomly simulate availability issues (20% chance of failure)
+                if (Math.random() < 0.2) {
+                    setTimeout(() => reject(new Error("Vé đã hết hoặc đã được đặt bởi người khác")), 800);
+                    return;
+                }
+                
+                // Generate a unique payment ID for WebSocket connection
+                const paymentId = `payment_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+                
+                setTimeout(() => resolve({
+                    soTaiKhoan: "1234567890",
+                    nganHang: "TECHCOMBANK",
+                    soTien: payload.tickets.reduce((total, ticket) => {
+                        // Mock calculation - would be more precise in real API
+                        return total + (ticket.quantity * 200000);
+                    }, 0),
+                    noiDung: `TICKET${Math.floor(Math.random() * 1000000)}`,
+                    status: "waiting_payment",
+                    paymentId: paymentId
+                }), 1000);
             })
         });
     }

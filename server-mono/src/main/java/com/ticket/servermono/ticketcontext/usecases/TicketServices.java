@@ -1,5 +1,6 @@
 package com.ticket.servermono.ticketcontext.usecases;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,15 +8,23 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ticket.servermono.ticketcontext.adapters.dtos.AddTicketClassRequest;
+import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockRequest;
+import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockResponse;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingPayload;
 import com.ticket.servermono.ticketcontext.adapters.dtos.ListTicketsResponse;
 import com.ticket.servermono.ticketcontext.adapters.dtos.TicketClassResponse;
+import com.ticket.servermono.ticketcontext.domain.enums.PaymentStatus;
+import com.ticket.servermono.ticketcontext.entities.Invoice;
+import com.ticket.servermono.ticketcontext.entities.PaymentInfo;
 import com.ticket.servermono.ticketcontext.entities.Ticket;
 import com.ticket.servermono.ticketcontext.entities.TicketClass;
+import com.ticket.servermono.ticketcontext.infrastructure.repositories.InvoiceRepository;
+import com.ticket.servermono.ticketcontext.infrastructure.repositories.PaymentInfoRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketRepository;
 
@@ -39,6 +48,8 @@ import user.UserServiceGrpc;
 public class TicketServices {
     private final TicketClassRepository ticketClassRepository;
     private final TicketRepository ticketRepository;
+    private final InvoiceRepository invoiceRepository;
+    private final PaymentInfoRepository paymentInfoRepository;
 
     @GrpcClient("user-service")
     private UserServiceGrpc.UserServiceBlockingStub userStub;
@@ -51,7 +62,8 @@ public class TicketServices {
 
     public int calculateAvailableTickets(TicketClass ticketClass) {
         Long soldTickets = ticketRepository.countByTicketClassId(ticketClass.getId());
-        return ticketClass.getCapacity() - soldTickets.intValue();
+        // Subtract both sold tickets and locked tickets from capacity
+        return ticketClass.getCapacity() - soldTickets.intValue() - ticketClass.getLockedCapacity();
     }
 
     @Transactional
@@ -456,5 +468,95 @@ public class TicketServices {
         // Delete the ticket class
         ticketClassRepository.delete(ticketClass);
         log.info("Deleted ticket class with ID: {}", ticketId);
+    }
+
+    /**
+     * Lock tickets for booking to prevent race conditions
+     * @param request the booking lock request
+     * @return booking lock response with payment information
+     */
+    @Transactional
+    public BookingLockResponse lockTicketsForBooking(BookingLockRequest request) {
+        // Validate request
+        if (request.getTickets() == null || request.getTickets().isEmpty()) {
+            throw new IllegalArgumentException("No tickets specified for booking");
+        }
+        
+        // Parse showId from String to UUID
+        UUID showId;
+        try {
+            showId = UUID.fromString(request.getShowId());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid show ID format: " + request.getShowId());
+        }
+        
+        // Total amount to pay
+        double totalAmount = 0.0;
+        
+        // Process each ticket class in the request
+        for (BookingLockRequest.TicketItem ticketItem : request.getTickets()) {
+            // Parse ticketClassId from String to UUID
+            UUID ticketClassId;
+            try {
+                ticketClassId = UUID.fromString(ticketItem.getId());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid ticket class ID format: " + ticketItem.getId());
+            }
+            
+            // Find the ticket class
+            TicketClass ticketClass = ticketClassRepository.findById(ticketClassId)
+                    .orElseThrow(() -> new EntityNotFoundException("Ticket class not found: " + ticketItem.getId()));
+            
+            // Calculate available tickets (capacity - sold - locked)
+            int availableTickets = calculateAvailableTickets(ticketClass);
+            
+            // Check if enough tickets are available
+            if (availableTickets < ticketItem.getQuantity()) {
+                throw new IllegalStateException("Vé đã hết hoặc đã được đặt bởi người khác. " +
+                        "Requested: " + ticketItem.getQuantity() + ", Available: " + availableTickets);
+            }
+            
+            // Lock the requested tickets by increasing the locked capacity
+            ticketClass.setLockedCapacity(ticketClass.getLockedCapacity() + ticketItem.getQuantity());
+            ticketClassRepository.save(ticketClass);
+            
+            // Add to total amount - using ticket class price * quantity
+            totalAmount += ticketClass.getPrice() * ticketItem.getQuantity();
+        }
+        
+        // Generate payment ID - timestamp + random string
+        String timestamp = String.valueOf(System.currentTimeMillis()).substring(0, 10);
+        String randomStr = UUID.randomUUID().toString().substring(0, 12);
+        String paymentId = timestamp + "_" + randomStr;
+        
+        // Generate payment reference code
+        String referenceCode = "TICKET" + timestamp.substring(4);
+        
+        // Get active payment info with proper error handling
+        PaymentInfo paymentInfo = paymentInfoRepository.findActivePaymentInfo()
+                .orElseThrow(() -> new IllegalStateException("No active payment information found in database"));
+        
+        // Create Invoice entity - completely separate from PaymentInfo
+        Invoice invoice = Invoice.builder()
+                .soTien(totalAmount)
+                .noiDung(referenceCode)
+                .status(PaymentStatus.WAITING_PAYMENT)
+                .paymentId(paymentId)
+                .showId(showId)
+                .expiresAt(LocalDateTime.now().plusMinutes(15))
+                .build();
+        
+        // Save invoice information
+        invoiceRepository.save(invoice);
+        
+        // Create and return response with payment details
+        return BookingLockResponse.builder()
+                .soTaiKhoan(paymentInfo.getSoTaiKhoan())
+                .nganHang(paymentInfo.getNganHang())
+                .soTien(invoice.getSoTien())
+                .noiDung(invoice.getNoiDung())
+                .status("waiting_payment")
+                .paymentId(invoice.getPaymentId())
+                .build();
     }
 }

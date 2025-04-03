@@ -28,6 +28,9 @@ public class TicketClass extends BaseSQLEntity {
     @Column(name = "capacity", nullable = false)
     private Integer capacity;
 
+    @Column(name = "locked_capacity", nullable = false)
+    private Integer lockedCapacity = 0;
+
     @Column(name = "show_id", nullable = false)
     private UUID showId;
 

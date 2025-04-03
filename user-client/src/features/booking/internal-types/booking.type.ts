@@ -59,4 +59,14 @@ export interface BookingPayload {
     }[];
 }
 
+// New interface for payment details returned by the server
+export interface PaymentDetails {
+    soTaiKhoan: string;
+    nganHang: string;
+    soTien: number;
+    noiDung: string;
+    status: string;
+    paymentId: string; // Added for WebSocket connection
+}
+
 import { UserProfileCard } from '@/features/setting/internal-types/settings.types';
