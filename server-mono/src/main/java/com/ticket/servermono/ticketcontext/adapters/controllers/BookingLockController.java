@@ -1,7 +1,7 @@
 package com.ticket.servermono.ticketcontext.adapters.controllers;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingErrorResponse;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockResponse;
+import com.ticket.servermono.ticketcontext.entities.Invoice;
+import com.ticket.servermono.ticketcontext.infrastructure.repositories.InvoiceRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.services.PaymentService;
 import com.ticket.servermono.ticketcontext.usecases.TicketServices;
 
@@ -28,6 +30,7 @@ public class BookingLockController {
     
     private final TicketServices ticketServices;
     private final PaymentService paymentService;
+    private final InvoiceRepository invoiceRepository;
     
     /**
      * Khóa vé để đặt, ngăn chặn tình trạng đặt trùng
@@ -38,44 +41,56 @@ public class BookingLockController {
             @RequestBody BookingLockRequest request,
             HttpServletRequest servletRequest) {
         try {
-            log.info("Đang khóa vé để đặt: showId={}, số lượng vé={}", 
+            log.info("Dang khoa ve de dat: showId={}, so luong ve={}", 
                     request.getShowId(), request.getTickets().size());
             
             // Khóa vé và lấy thông tin thanh toán
             BookingLockResponse response = ticketServices.lockTicketsForBooking(request);
             
-            // Đảm bảo response có paymentId
-            if (response.getPaymentId() == null) {
-                response.setPaymentId("payment_" + UUID.randomUUID().toString());
+            log.info("Da khoa ve thanh cong, paymentId: {}", response.getPaymentId());
+            
+            // Lấy dữ liệu invoice để có referenceCode và totalAmount
+            if (response.getPaymentId() != null) {
+                Optional<Invoice> invoiceOpt = invoiceRepository.findByPaymentId(response.getPaymentId());
+                
+                if (invoiceOpt.isPresent()) {
+                    Invoice invoice = invoiceOpt.get();
+                    String referenceCode = invoice.getNoiDung(); // Mã tham chiếu nằm trong nội dung
+                    double totalAmount = invoice.getSoTien();
+                    
+                    log.info("Bat dau theo doi thanh toan Sepay cho paymentId={}, referenceCode={}, totalAmount={}", 
+                            response.getPaymentId(), referenceCode, totalAmount);
+                    
+                    // Bắt đầu theo dõi thanh toán Sepay
+                    paymentService.startPaymentTracking(
+                            response.getPaymentId(),
+                            totalAmount,
+                            referenceCode);
+                }
             }
-            
-            // Đăng ký thanh toán và bắt đầu mô phỏng
-            paymentService.registerPayment(response.getPaymentId());
-            paymentService.startPaymentSimulation(response.getPaymentId());
-            
-            log.info("Đã khóa vé thành công, paymentId: {}", response.getPaymentId());
+
             return ResponseEntity.ok(response);
             
         } catch (IllegalArgumentException e) {
-            log.error("Yêu cầu đặt vé không hợp lệ: {}", e.getMessage());
+            log.error("Yeu cau dat ve khong hop le: {}", e.getMessage());
             return ResponseEntity
                     .badRequest()
                     .body(createErrorResponse(HttpStatus.BAD_REQUEST, 
                             e.getMessage(), servletRequest.getRequestURI()));
                             
         } catch (IllegalStateException e) {
-            log.error("Lỗi trạng thái đặt vé: {}", e.getMessage());
+            log.error("Loi trang thai dat ve: {}", e.getMessage());
             return ResponseEntity
                     .badRequest()
                     .body(createErrorResponse(HttpStatus.BAD_REQUEST, 
-                            "Vé đã hết hoặc đã được đặt bởi người khác", servletRequest.getRequestURI()));
+                            "Ve da het hoac da duoc dat boi nguoi khac", servletRequest.getRequestURI()));
                             
         } catch (Exception e) {
-            log.error("Lỗi không mong đợi khi đặt vé: {}", e.getMessage(), e);
+            log.error("Loi khong mong doi khi dat ve: {}", e.getMessage(), e);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, 
-                            "Có lỗi xảy ra khi xử lý đặt vé", servletRequest.getRequestURI()));
+                            "Co loi xay ra khi xu ly dat ve", servletRequest.getRequestURI()));
         }
     }
     

@@ -530,7 +530,7 @@ public class TicketServices {
         String paymentId = timestamp + "_" + randomStr;
         
         // Generate payment reference code
-        String referenceCode = "TICKET" + timestamp.substring(4);
+        String referenceCode = "TK" + timestamp.substring(4);
         
         // Get active payment info with proper error handling
         PaymentInfo paymentInfo = paymentInfoRepository.findActivePaymentInfo()

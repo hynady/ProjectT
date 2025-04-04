@@ -28,6 +28,8 @@ spring:
 app:
   jwtSecret: ${JWT_SECRET}
   googleClientId: ${GOOGLE_CLIENT_ID}
+  sepayApiKey: ${SEPAY_API_KEY}
+  sepayUrl: ${SEPAY_URL}
 
   mail:
     username: ${MAIL_USERNAME:Tack Ticket}
