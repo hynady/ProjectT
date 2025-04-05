@@ -2,6 +2,7 @@ package com.ticket.servermono.ticketcontext.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -27,8 +28,9 @@ public class TicketClass extends BaseSQLEntity {
 
     @Column(name = "capacity", nullable = false)
     private Integer capacity;
-
     @Column(name = "locked_capacity", nullable = false)
+    
+    @Builder.Default
     private Integer lockedCapacity = 0;
 
     @Column(name = "show_id", nullable = false)

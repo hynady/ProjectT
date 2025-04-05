@@ -23,33 +23,34 @@ interface PaymentMethodsProps {
   occaId: string;
   showId: string;
   tickets: BookingState['selectedTickets'];
-  onBack: () => void;
+  recipient?: BookingState['selectedProfile'];
   onPaymentSuccess: () => void;
+  onPaymentStart?: () => void;
 }
 
 export const PaymentMethods = ({
   occaId,
   showId,
   tickets,
-  onBack,
-  onPaymentSuccess
+  recipient,
+  onPaymentSuccess,
+  onPaymentStart
 }: PaymentMethodsProps) => {
   const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState<string>('qr_code'); // Default to QR code
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   
-  const handlePayment = () => {
+  const handleContinue = () => {
     if (!selectedMethod) return;
     setShowPayment(true);
+    // Signal that payment is starting to prevent navigation back
+    if (onPaymentStart) onPaymentStart();
   };
 
-  const handleCancelClick = () => {
-    setShowCancelDialog(true);
-  };
-
-  const handleCancelConfirm = () => {
-    navigate(`/occas/${occaId}`);
+  const handleChangePaymentMethod = () => {
+    // Quay lại màn hình chọn phương thức thanh toán
+    setShowPayment(false);
   };
 
   // Show QR payment immediately if already selected
@@ -63,8 +64,9 @@ export const PaymentMethods = ({
           type: t.type,
           quantity: t.quantity
         }))}
-        onBack={() => setShowPayment(false)}
+        recipient={recipient}
         onPaymentSuccess={onPaymentSuccess}
+        onChangePaymentMethod={handleChangePaymentMethod}
       />
     );
   }
@@ -104,25 +106,12 @@ export const PaymentMethods = ({
           ))}
         </RadioGroup>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="flex justify-end">
+
           <Button
-            variant="outline"
-            onClick={onBack}
-            className="col-span-1"
-          >
-            Quay lại
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleCancelClick}
-            className="col-span-1"
-          >
-            Hủy đặt vé
-          </Button>
-          <Button
-            className="col-span-1"
+            onClick={handleContinue}
             disabled={!selectedMethod}
-            onClick={handlePayment}
+            className="col-span-2"
           >
             Tiếp tục
           </Button>
@@ -131,7 +120,7 @@ export const PaymentMethods = ({
         <ConfirmCancelDialog
           isOpen={showCancelDialog}
           onClose={() => setShowCancelDialog(false)}
-          onConfirm={handleCancelConfirm}
+          onConfirm={() => navigate(`/occas/${occaId}`)}
         />
       </div>
     </ScrollToTop>

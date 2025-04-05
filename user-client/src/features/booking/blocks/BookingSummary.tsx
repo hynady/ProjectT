@@ -3,10 +3,7 @@ import {vi} from 'date-fns/locale';
 import {Card, CardContent} from '@/commons/components/card.tsx';
 import {Separator} from '@/commons/components/separator.tsx';
 import {Alert, AlertDescription} from "@/commons/components/alert.tsx"
-import {InfoIcon} from "lucide-react"
-import {useEffect, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {Timer} from "lucide-react";
+import {InfoIcon, User, Calendar, MapPin, TicketIcon} from "lucide-react"
 import { BookingState, OccaShortInfo } from '@/features/booking/internal-types/booking.type';
 
 interface BookingSummaryProps {
@@ -16,37 +13,7 @@ interface BookingSummaryProps {
   step: number;
 }
 
-export const BookingSummary = ({bookingState, occaInfo, step, occaId}: BookingSummaryProps) => {
-  const navigate = useNavigate();
-  const [timeLeft, setTimeLeft] = useState(300); // 5 phút = 300 giây
-
-  useEffect(() => {
-    if (timeLeft === 0) {
-      navigate(`/occas/${occaId}`);
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeLeft, navigate, occaId]);
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const countdown = (
-    <Alert className="mb-4 border-destructive/50 bg-destructive/10">
-      <Timer className="h-4 w-4 text-destructive"/>
-      <AlertDescription className="text-sm text-destructive">
-        Vui lòng hoàn tất đặt vé trong: {formatTime(timeLeft)}
-      </AlertDescription>
-    </Alert>
-  );
+export const BookingSummary = ({bookingState, occaInfo, step}: BookingSummaryProps) => {
 
   if (step === 0) return null;
 
@@ -55,7 +22,6 @@ export const BookingSummary = ({bookingState, occaInfo, step, occaId}: BookingSu
     return (
       <Card>
         <CardContent className="p-4">
-          {countdown}
           <Alert className="border-primary/50 bg-primary/10">
             <InfoIcon className="h-4 w-4 text-primary"/>
             <AlertDescription className="text-sm text-primary">
@@ -76,79 +42,104 @@ export const BookingSummary = ({bookingState, occaInfo, step, occaId}: BookingSu
   // Hiển thị summary bình thường cho các step khác
   return (
     <Card>
-      <CardContent className="p-4 md">
-        {countdown}
+      <CardContent className="p-4 md:p-5">
+        {/* Header section */}
+        <div className="mb-4">
+          <h3 className="font-bold text-lg text-foreground mb-1">
+            Thông tin đặt vé
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {occaInfo.title}
+          </p>
+        </div>
+
+        <Separator className="my-3"/>
+
+        {/* Main content */}
         <div className="space-y-4">
-          {/* Thông tin Occa */}
-          <div className="space-y-2">
-            <h3 className="font-bold text-xl text-foreground">
-              {occaInfo.title}
-            </h3>
-            <div className="flex items-start gap-2">
-              <div className="text-muted-foreground min-w-[80px]">Thời lượng:</div>
-              <div>{occaInfo.duration}</div>
+          {/* Event info section */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-muted-foreground">Địa điểm:</span>
+              <span className="font-medium truncate">{occaInfo.location}</span>
             </div>
-            <div className="flex items-start gap-2">
-              <div className="text-muted-foreground min-w-[80px]">Địa điểm:</div>
-              <div>{occaInfo.location}</div>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="text-muted-foreground min-w-[80px]">Địa chỉ:</div>
-              <div className="text-pretty">{occaInfo.address}</div>
-            </div>
-          </div>
-
-          <Separator/>
-
-          {/* Thông tin đã chọn */}
-          <div className="space-y-3 text-sm">
-            {/* Suất đã chọn */}
+            
             {bookingState.selectedShow && (
-              <div className="flex items-start gap-2">
-                <div className="text-muted-foreground min-w-[80px]">Suất:</div>
-                <div>
-                  {format(new Date(bookingState.selectedShow.date), 'EEEE, dd/MM/yyyy', {locale: vi})}
-                  <span className="mx-1">-</span>
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-muted-foreground">Suất diễn:</span>
+                <span className="font-medium">
+                  {format(new Date(bookingState.selectedShow.date), 'dd/MM/yyyy', {locale: vi})}
+                  <span className="mx-1">•</span>
                   {bookingState.selectedShow.time}
+                </span>
+              </div>
+            )}
+            
+            {bookingState.selectedProfile && (
+              <div className="flex items-start gap-2 text-sm">
+                <User className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <span className="text-muted-foreground">Thông tin người nhận:</span>
+                  <div className="mt-2 border rounded-md p-3 bg-muted/20 space-y-2">
+                    <div className="flex items-center">
+                      <span className="text-muted-foreground min-w-[54px]">Tên:</span>
+                      <span className="font-medium">{bookingState.selectedProfile.name}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-muted-foreground min-w-[54px]">SĐT:</span>
+                      <span className="font-medium">{bookingState.selectedProfile.phoneNumber}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-muted-foreground min-w-[54px]">Email:</span>
+                      <span className="font-medium">{bookingState.selectedProfile.email}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
+          </div>
 
-            {/* Vé đã chọn - chỉ hiển thị khi có vé */}
-            {bookingState.selectedTickets.length > 0 && (
-              <>
-                <div className="flex items-start gap-2">
-                  <div className="text-muted-foreground min-w-[80px]">Vé:</div>
-                  <div className="space-y-1">
-                    {bookingState.selectedTickets.map((ticket, index) => (
-                      <div key={index} className="flex justify-between">
-                        <span>
-                          {ticket.type} x {ticket.quantity}
-                        </span>
-                        <span className="text-primary ml-4">
-                          {(ticket.price * ticket.quantity)
-                            .toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+          {/* Tickets section */}
+          {bookingState.selectedTickets.length > 0 && (
+            <>
+              <Separator className="my-3" />
+              
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2 text-sm">
+                  <TicketIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground">Vé đã chọn:</span>
                 </div>
-
-                <Separator className="my-2"/>
-
-                {/* Tổng tiền */}
-                <div className="flex items-center justify-between font-medium">
-                  <span className="text-muted-foreground">Tổng tiền:</span>
-                  <span className="text-primary text-xl">
+                
+                <div className="space-y-1.5">
+                  {bookingState.selectedTickets.map((ticket, index) => (
+                    <div key={index} className="flex justify-between text-sm">
+                      <span>
+                        {ticket.type} <span className="text-muted-foreground">x{ticket.quantity}</span>
+                      </span>
+                      <span className="font-medium">
+                        {(ticket.price * ticket.quantity)
+                          .toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                
+                <Separator className="my-3" />
+                
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Tổng tiền:</span>
+                  <span className="text-primary font-bold text-lg">
                     {bookingState.totalAmount.toLocaleString('vi-VN', {
                       style: 'currency',
                       currency: 'VND'
                     })}
                   </span>
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -17,8 +17,8 @@ public class PaymentInfoDataInitializer {
         return args -> {
             if (repository.count() == 0) {
                 PaymentInfo defaultPaymentInfo = PaymentInfo.builder()
-                        .soTaiKhoan("1234567890")
-                        .nganHang("TECHCOMBANK")
+                        .soTaiKhoan("0834643661")
+                        .nganHang("MBBank")
                         .isActive(true)
                         .build();
                 

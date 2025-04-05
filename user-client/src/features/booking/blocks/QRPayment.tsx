@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/commons/components/card';
 import { Button } from '@/commons/components/button';
 import { PaymentDetails } from '@/features/booking/internal-types/booking.type';
-import { AlertCircle, ArrowLeft, Clock, Download, Loader2, CheckCircle, Timer } from 'lucide-react';
+import { AlertCircle, Clock, Download, Loader2, CheckCircle, Timer } from 'lucide-react';
 import { Alert, AlertDescription } from '@/commons/components/alert';
 import { ScrollToTop } from '@/commons/blocks/ScrollToTop';
 import { Separator } from '@/commons/components/separator';
@@ -10,10 +10,10 @@ import { usePaymentProcess } from '../hooks/usePaymentProcess';
 import { toast } from '@/commons/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { paymentWebSocketService, PaymentMessage, PaymentStatus } from '../services/payment-websocket.service';
-import { Progress } from '@/commons/components/progress';
+import { ConfirmCancelDialog } from '@/features/booking/components/ConfirmCancelDialog.tsx';
 
-// Thời gian thanh toán tối đa (15 phút = 900 giây)
-const PAYMENT_TIMEOUT_SECONDS = 900;
+// Thời gian thanh toán tối đa (3 phút = 180 giây)
+const PAYMENT_TIMEOUT_SECONDS = 180;
 
 interface QRPaymentProps {
   occaId: string;
@@ -23,16 +23,23 @@ interface QRPaymentProps {
     type: string;
     quantity: number;
   }[];
-  onBack: () => void;
+  recipient?: {
+    id: string;
+    name: string;
+    email: string;
+    phoneNumber: string;
+  };
   onPaymentSuccess: () => void;
+  onChangePaymentMethod?: () => void;
 }
 
 export const QRPayment = ({
   occaId,
   showId,
   tickets,
-  onBack,
-  onPaymentSuccess
+  recipient,
+  onPaymentSuccess,
+  onChangePaymentMethod
 }: QRPaymentProps) => {
   const navigate = useNavigate();
   const [paymentInfo, setPaymentInfo] = useState<PaymentDetails | null>(null);
@@ -41,11 +48,13 @@ export const QRPayment = ({
   // State cho đồng hồ đếm ngược
   const [timeRemaining, setTimeRemaining] = useState<number>(PAYMENT_TIMEOUT_SECONDS);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   
   const { isProcessing, error, startPayment } = usePaymentProcess({
     bookingData: {
       showId,
-      tickets
+      tickets,
+      recipient // Thêm thông tin người nhận vào payload
     },
     occaId,
     onSuccess: (details) => {
@@ -90,7 +99,12 @@ export const QRPayment = ({
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  }, []);
+
+    // Tự động chuyển hướng về trang chi tiết sau 3 giây
+    setTimeout(() => {
+      navigate(`/occas/${occaId}`);
+    }, 3000);
+  }, [navigate, occaId]);
 
   // Bắt đầu đếm ngược khi có thông tin thanh toán
   useEffect(() => {
@@ -174,9 +188,23 @@ export const QRPayment = ({
           } else if (status === PaymentStatus.FAILED) {
             toast({
               title: "Thanh toán thất bại",
-              description: "Vui lòng thử lại hoặc chọn phương thức thanh toán khác",
+              description: "Phiên thanh toán đã thất bại. Bạn sẽ được chuyển về trang chi tiết.",
               variant: "destructive",
             });
+            
+            // Ngắt kết nối WebSocket
+            paymentWebSocketService.disconnect();
+            
+            // Xóa timer
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
+            
+            // Tự động chuyển hướng về trang chi tiết sau 3 giây
+            setTimeout(() => {
+              navigate(`/occas/${occaId}`);
+            }, 3000);
           }
         }
       };
@@ -200,6 +228,7 @@ export const QRPayment = ({
     startPayment().catch(err => {
       console.error("Failed to start payment:", err);
     });
+    // Don't add startPayment to the dependency array to avoid infinite loop
   }, []);
 
   // This would handle the download of the QR code image
@@ -231,8 +260,19 @@ export const QRPayment = ({
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  // Tính toán phần trăm thời gian còn lại
-  const timeRemainingPercentage = (timeRemaining / PAYMENT_TIMEOUT_SECONDS) * 100;
+  // Handle cancellation
+  const handleCancelClick = () => {
+    setShowCancelDialog(true);
+  };
+  
+  const handleCancelConfirm = () => {
+    // Cancel payment
+    paymentWebSocketService.disconnect();
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    navigate(`/occas/${occaId}`);
+  };
 
   // Render appropriate status alert
   const renderStatusAlert = () => {
@@ -317,15 +357,6 @@ export const QRPayment = ({
       return null;
     }
 
-    // Xác định màu sắc dựa trên thời gian còn lại
-    let progressColor = "bg-primary";
-    if (timeRemaining < 300) { // Dưới 5 phút
-      progressColor = "bg-amber-500";
-    }
-    if (timeRemaining < 60) { // Dưới 1 phút
-      progressColor = "bg-red-500";
-    }
-
     return (
       <div className="space-y-2 mb-4">
         <div className="flex justify-between items-center">
@@ -333,15 +364,10 @@ export const QRPayment = ({
             <Timer className="h-4 w-4" />
             Thời gian còn lại:
           </span>
-          <span className={`font-bold ${timeRemaining < 60 ? 'text-red-500' : timeRemaining < 300 ? 'text-amber-500' : 'text-primary'}`}>
+          <span className={`font-bold ${timeRemaining < 60 ? 'text-red-500' : 'text-primary'}`}>
             {formatTimeRemaining(timeRemaining)}
           </span>
         </div>
-        <Progress className="h-2" value={timeRemainingPercentage} 
-          style={{ 
-            '--progress-background': progressColor 
-          } as React.CSSProperties}
-        />
       </div>
     );
   };
@@ -367,7 +393,6 @@ export const QRPayment = ({
             variant="outline" 
             onClick={() => navigate(`/occas/${occaId}`)}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
             Quay lại trang chi tiết
           </Button>
         </div>
@@ -492,15 +517,13 @@ export const QRPayment = ({
 
         <div className="flex justify-between">
           <Button
-            variant="outline"
-            onClick={onBack}
-            disabled={paymentStatus !== PaymentStatus.WAITING_PAYMENT}
+            variant="destructive"
+            onClick={handleCancelClick}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Quay lại
+            Hủy đặt vé
           </Button>
           
-          {paymentStatus === PaymentStatus.EXPIRED && (
+          {paymentStatus === PaymentStatus.EXPIRED ? (
             <Button 
               onClick={() => {
                 // Khởi tạo lại quá trình thanh toán
@@ -513,8 +536,56 @@ export const QRPayment = ({
               <Timer className="mr-2 h-4 w-4" />
               Thử lại
             </Button>
+          ) : paymentStatus === PaymentStatus.FAILED ? (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  // Báo cho component cha biết để quay lại chọn phương thức thanh toán
+                  if (onChangePaymentMethod) {
+                    onChangePaymentMethod();
+                  }
+                }}
+              >
+                Chọn lại phương thức
+              </Button>
+              
+              <Button
+                onClick={() => {
+                  // Khởi tạo lại quá trình thanh toán
+                  setTimeRemaining(PAYMENT_TIMEOUT_SECONDS);
+                  startPayment().catch(err => {
+                    console.error("Failed to restart payment:", err);
+                  });
+                }}
+              >
+                <Timer className="mr-2 h-4 w-4" />
+                Thử lại
+              </Button>
+            </div>
+          ) : (
+            paymentStatus !== PaymentStatus.COMPLETED && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  // Báo cho component cha biết để quay lại chọn phương thức thanh toán
+                  if (onChangePaymentMethod) {
+                    onChangePaymentMethod();
+                  }
+                }}
+              >
+                Chọn lại phương thức
+              </Button>
+            )
           )}
         </div>
+        
+        {/* Cancel Dialog */}
+        <ConfirmCancelDialog
+          isOpen={showCancelDialog}
+          onClose={() => setShowCancelDialog(false)}
+          onConfirm={handleCancelConfirm}
+        />
       </div>
     </ScrollToTop>
   );

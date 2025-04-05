@@ -24,20 +24,32 @@ import {
   PopoverTrigger,
 } from "@/commons/components/popover";
 import { cn } from '@/commons/lib/utils/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/commons/components/alert-dialog";
 
 interface ConfirmationProps {
   bookingState: BookingState;
   occaInfo: OccaShortInfo;
   onConfirmPayment: () => void;
   onBack: () => void;
+  updateSelectedProfile?: (profile: UserProfileCard) => void;
 }
 
-export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack }: ConfirmationProps) => {
+export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack, updateSelectedProfile }: ConfirmationProps) => {
   const [profileCards, setProfileCards] = useState<UserProfileCard[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<UserProfileCard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddProfileDialog, setShowAddProfileDialog] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -50,10 +62,16 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack 
         const defaultProfile = data.find(profile => profile.isDefault);
         if (defaultProfile) {
           setSelectedProfile(defaultProfile);
+          if (updateSelectedProfile) {
+            updateSelectedProfile(defaultProfile);
+          }
         } else if (data.length > 0) {
           setSelectedProfile(data[0]);
+          if (updateSelectedProfile) {
+            updateSelectedProfile(data[0]);
+          }
         }
-      } catch (error) {
+      } catch {
         toast({
           title: "Lỗi",
           description: "Không thể tải thông tin thẻ. Vui lòng thử lại sau.",
@@ -65,7 +83,7 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack 
     };
 
     fetchProfiles();
-  }, []);
+  }, [updateSelectedProfile]);
 
   const handleProfileCreated = async () => {
     try {
@@ -77,13 +95,16 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack 
       const newProfile = data[data.length - 1];
       if (newProfile) {
         setSelectedProfile(newProfile);
+        if (updateSelectedProfile) {
+          updateSelectedProfile(newProfile);
+        }
       }
       
       toast({
         title: "Thành công",
         description: "Đã thêm thẻ thông tin mới và chọn để nhận vé"
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Lỗi",
         description: "Không thể tải thông tin thẻ sau khi tạo mới.",
@@ -92,6 +113,19 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack 
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleConfirmPayment = () => {
+    if (!selectedProfile) {
+      toast({
+        title: "Vui lòng chọn thông tin nhận vé",
+        description: "Hãy chọn hoặc tạo hồ sơ mới để tiếp tục",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setShowConfirmDialog(true);
   };
 
   return (
@@ -162,6 +196,9 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack 
                               value={profile.id}
                               onSelect={() => {
                                 setSelectedProfile(profile);
+                                if (updateSelectedProfile) {
+                                  updateSelectedProfile(profile);
+                                }
                                 setOpen(false);
                               }}
                             >
@@ -285,7 +322,7 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack 
           Quay lại
         </Button>
         <Button
-          onClick={onConfirmPayment}
+          onClick={handleConfirmPayment}
           disabled={!selectedProfile || isLoading}
         >
           Xác nhận và Thanh toán
@@ -298,6 +335,31 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack 
         mode="create"
         onSuccess={handleProfileCreated}
       />
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận thanh toán</AlertDialogTitle>
+            <AlertDialogDescription>
+              Lưu ý quan trọng: Sau khi chuyển sang bước thanh toán, bạn sẽ <span className="font-semibold">không thể quay lại</span> để chỉnh sửa thông tin vé đã chọn.
+              <br/><br/>
+              Vui lòng kiểm tra kỹ lại các thông tin sau:
+              <ul className="list-disc list-inside mt-2">
+                <li>Thông tin liên hệ nhận vé</li>
+                <li>Suất diễn đã chọn</li>
+                <li>Loại vé và số lượng</li>
+                <li>Tổng số tiền thanh toán</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Kiểm tra lại</AlertDialogCancel>
+            <AlertDialogAction onClick={onConfirmPayment}>
+              Tiếp tục đến thanh toán
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

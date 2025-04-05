@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Request payload for locking tickets during booking
@@ -18,7 +17,8 @@ import java.util.UUID;
 public class BookingLockRequest {
     private String showId;
     private List<TicketItem> tickets;
-    
+    private Recipient recipient;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -26,5 +26,15 @@ public class BookingLockRequest {
         private String id;        // ID của ticket class
         private String type;      // Loại vé (VIP, Thường, etc.)
         private Integer quantity; // Số lượng vé
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Recipient {
+        private String id; // ID của người nhận
+        private String name;
+        private String email;
+        private String phoneNumber;
     }
 }

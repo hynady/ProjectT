@@ -32,7 +32,7 @@ const BookingPage = () => {
     loading,
     setData: setOccaData,
   } = useBookingData(id || "", shouldFetchData);
-  const { bookingState, selectShow, updateTickets } = useBooking();
+  const { bookingState, selectShow, updateTickets, updateSelectedProfile } = useBooking();
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
   const navigate = useNavigate();
 
@@ -89,7 +89,13 @@ const BookingPage = () => {
   ];
 
   const handleStepClick = (index: number) => {
-    if (isPaymentSuccess) return; // Ngăn chặn điều hướng nếu đã thanh toán thành công
+    // Block navigation if payment is successful
+    if (isPaymentSuccess) return;
+    
+    // Không thể quay lại bước trước sau khi đã ở bước thanh toán (step 4)
+    if (step === 4 && index < step) {
+      return;
+    }
     
     // Chỉ cho phép chuyển đến các bước đã hoàn thành hoặc bước tiếp theo
     if (index < step || (index === step + 1 && steps[step - 1].completed)) {
@@ -98,6 +104,11 @@ const BookingPage = () => {
   };
 
   const handleBack = () => {
+    // Không thể quay lại từ bước thanh toán (step 4)
+    if (step === 4) {
+      return;
+    }
+    
     setStep((prev) => prev - 1);
   };
 
@@ -226,6 +237,7 @@ const BookingPage = () => {
                     occaInfo={occaData!}
                     onConfirmPayment={handleConfirmPayment}
                     onBack={handleBack}
+                    updateSelectedProfile={updateSelectedProfile}
                   />
                 </div>
               )}
@@ -243,8 +255,10 @@ const BookingPage = () => {
                         occaId={occaData!.id}
                         showId={bookingState.selectedShow!.id}
                         tickets={bookingState.selectedTickets}
-                        onBack={handleBack}
-                        onPaymentSuccess={() => setIsPaymentSuccess(true)}
+                        recipient={bookingState.selectedProfile}
+                        onPaymentSuccess={() => {
+                          setIsPaymentSuccess(true);
+                        }}
                       />
                     </>
                   )}

@@ -57,6 +57,12 @@ export interface BookingPayload {
         type: string;
         quantity: number;
     }[];
+    recipient?: {
+        id: string;
+        name: string;
+        email: string;
+        phoneNumber: string;
+    };
 }
 
 // New interface for payment details returned by the server

@@ -1,6 +1,7 @@
 // hooks/useBooking.ts
 import { useState, useCallback } from 'react';
 import { BookingState, ShowTime, TicketType } from '@/features/booking/internal-types/booking.type.ts';
+import { UserProfileCard } from '@/features/setting/internal-types/settings.types';
 
 const useBooking = () => {
   const [bookingState, setBookingState] = useState<BookingState>({
@@ -57,10 +58,18 @@ const useBooking = () => {
     });
   }, []);
 
+  const updateSelectedProfile = useCallback((profile: UserProfileCard) => {
+    setBookingState(prev => ({
+      ...prev,
+      selectedProfile: profile
+    }));
+  }, []);
+
   return {
     bookingState,
     selectShow,
     updateTickets,
+    updateSelectedProfile
   };
 };
 
