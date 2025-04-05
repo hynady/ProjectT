@@ -5,17 +5,18 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
-import lombok.RequiredArgsConstructor;
-
 /**
  * Cấu hình WebSocket đơn giản 
  */
 @Configuration
 @EnableWebSocket
-@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final PaymentStatusWebSocketHandler paymentStatusWebSocketHandler;
+
+    public WebSocketConfig(PaymentStatusWebSocketHandler paymentStatusWebSocketHandler) {
+        this.paymentStatusWebSocketHandler = paymentStatusWebSocketHandler;
+    }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {

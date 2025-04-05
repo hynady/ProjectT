@@ -472,7 +472,7 @@ public class TicketServices {
     /**
      * Lock tickets for booking to prevent race conditions
      * @param request the booking lock request
-     * @return booking lock response with payment information
+     * @return booking lock response with basic information, without payment details
      */
     @Transactional
     public BookingLockResponse lockTicketsForBooking(BookingLockRequest request) {
@@ -537,10 +537,6 @@ public class TicketServices {
         // Generate payment reference code
         String referenceCode = "TK" + timestamp.substring(4);
         
-        // Get active payment info with proper error handling
-        PaymentInfo paymentInfo = paymentInfoRepository.findActivePaymentInfo()
-                .orElseThrow(() -> new IllegalStateException("No active payment information found in database"));
-        
         // Create Invoice entity - completely separate from PaymentInfo
         Invoice invoice = Invoice.builder()
                 .soTien(totalAmount)
@@ -555,14 +551,94 @@ public class TicketServices {
         // Save invoice information
         invoiceRepository.save(invoice);
         
-        // Create and return response with payment details
+        // Create and return response with basic information, without payment details
         return BookingLockResponse.builder()
-                .soTaiKhoan(paymentInfo.getSoTaiKhoan())
-                .nganHang(paymentInfo.getNganHang())
                 .soTien(invoice.getSoTien())
                 .noiDung(invoice.getNoiDung())
                 .status("waiting_payment")
                 .paymentId(invoice.getPaymentId())
                 .build();
+    }
+    
+    /**
+     * Lấy thông tin thanh toán cho đơn đặt vé
+     * @param paymentId ID của thanh toán
+     * @return Thông tin thanh toán bao gồm số tài khoản, ngân hàng
+     */
+    public Map<String, Object> getPaymentInfo(String paymentId) {
+        // Xác thực paymentId
+        Invoice invoice = invoiceRepository.findByPaymentId(paymentId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng với ID: " + paymentId));
+        
+        // Kiểm tra trạng thái của invoice
+        if (invoice.getStatus() != PaymentStatus.WAITING_PAYMENT) {
+            throw new IllegalStateException("Đơn hàng không ở trạng thái chờ thanh toán");
+        }
+        
+        // Kiểm tra thời gian hết hạn
+        if (invoice.getExpiresAt() != null && LocalDateTime.now().isAfter(invoice.getExpiresAt())) {
+            invoice.setStatus(PaymentStatus.PAYMENT_EXPIRED);
+            invoiceRepository.save(invoice);
+            throw new IllegalStateException("Đơn hàng đã hết hạn thanh toán");
+        }
+        
+        // Lấy thông tin thanh toán từ database - chỉ bao gồm thông tin tài khoản nhận tiền
+        PaymentInfo paymentInfo = paymentInfoRepository.findActivePaymentInfo()
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy thông tin thanh toán trong hệ thống"));
+        
+        // Tạo response chỉ với thông tin thanh toán (payment info)
+        Map<String, Object> response = new HashMap<>();
+        response.put("soTaiKhoan", paymentInfo.getSoTaiKhoan());
+        response.put("nganHang", paymentInfo.getNganHang());
+        
+        return response;
+    }
+    
+    /**
+     * Lấy chi tiết hóa đơn theo paymentId
+     * @param paymentId ID của thanh toán
+     * @return Thông tin hóa đơn bao gồm số tiền, nội dung, trạng thái
+     */
+    public Map<String, Object> getInvoiceDetails(String paymentId) {
+        // Xác thực paymentId
+        Invoice invoice = invoiceRepository.findByPaymentId(paymentId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng với ID: " + paymentId));
+        
+        // Kiểm tra thời gian hết hạn
+        if (invoice.getStatus() == PaymentStatus.WAITING_PAYMENT && 
+            invoice.getExpiresAt() != null && 
+            LocalDateTime.now().isAfter(invoice.getExpiresAt())) {
+            invoice.setStatus(PaymentStatus.PAYMENT_EXPIRED);
+            invoiceRepository.save(invoice);
+        }
+        
+        // Tạo response với thông tin hóa đơn
+        Map<String, Object> response = new HashMap<>();
+        response.put("soTien", invoice.getSoTien());
+        response.put("noiDung", invoice.getNoiDung());
+        response.put("paymentId", invoice.getPaymentId());
+        response.put("status", convertPaymentStatus(invoice.getStatus()));
+        
+        return response;
+    }
+    
+    /**
+     * Chuyển đổi PaymentStatus sang chuỗi cho client
+     */
+    private String convertPaymentStatus(PaymentStatus status) {
+        switch (status) {
+            case WAITING_PAYMENT:
+                return "waiting_payment";
+            case PAYMENT_SUCCESS:
+                return "payment_received";
+            case PAYMENT_FAILED:
+                return "failed";
+            case PAYMENT_EXPIRED:
+                return "expired";
+            case PAYMENT_CANCELLED:
+                return "cancelled";
+            default:
+                return "unknown";
+        }
     }
 }

@@ -67,12 +67,12 @@ export interface BookingPayload {
 
 // New interface for payment details returned by the server
 export interface PaymentDetails {
-    soTaiKhoan: string;
-    nganHang: string;
     soTien: number;
     noiDung: string;
     status: string;
-    paymentId: string; // Added for WebSocket connection
+    paymentId: string; // Được sử dụng cho kết nối WebSocket
+    soTaiKhoan?: string; // Optional vì có thể chưa được lấy từ API thứ hai
+    nganHang?: string;   // Optional vì có thể chưa được lấy từ API thứ hai
 }
 
 import { UserProfileCard } from '@/features/setting/internal-types/settings.types';

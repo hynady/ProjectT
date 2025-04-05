@@ -3,12 +3,14 @@ import { Card, CardContent } from '@/commons/components/card.tsx';
 import { RadioGroup, RadioGroupItem } from '@/commons/components/radio-group.tsx';
 import { Label } from '@/commons/components/label.tsx';
 import { Button } from '@/commons/components/button.tsx';
-import { QrCode } from 'lucide-react';
+import { QrCode, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ScrollToTop } from "@/commons/blocks/ScrollToTop.tsx";
 import { ConfirmCancelDialog } from "@/features/booking/components/ConfirmCancelDialog.tsx";
-import { BookingState } from '@/features/booking/internal-types/booking.type';
+import { PaymentDetails } from '@/features/booking/internal-types/booking.type';
 import { QRPayment } from './QRPayment';
+import { bookingService } from '@/features/booking/services/booking.service';
+import { toast } from '@/commons/hooks/use-toast';
 
 const paymentMethods = [
   {
@@ -21,31 +23,46 @@ const paymentMethods = [
 
 interface PaymentMethodsProps {
   occaId: string;
-  showId: string;
-  tickets: BookingState['selectedTickets'];
-  recipient?: BookingState['selectedProfile'];
+  paymentInfo: PaymentDetails | null;
   onPaymentSuccess: () => void;
-  onPaymentStart?: () => void;
 }
 
 export const PaymentMethods = ({
   occaId,
-  showId,
-  tickets,
-  recipient,
-  onPaymentSuccess,
-  onPaymentStart
+  paymentInfo,
+  onPaymentSuccess
 }: PaymentMethodsProps) => {
   const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState<string>('qr_code'); // Default to QR code
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [fullPaymentInfo, setFullPaymentInfo] = useState<PaymentDetails | null>(null);
+
   
-  const handleContinue = () => {
-    if (!selectedMethod) return;
-    setShowPayment(true);
-    // Signal that payment is starting to prevent navigation back
-    if (onPaymentStart) onPaymentStart();
+  const handleContinue = async () => {
+    if (!selectedMethod || !paymentInfo) return;
+    
+    try {      
+      // Chỉ lấy thông tin tài khoản ngân hàng khi người dùng nhấn nút thanh toán
+      const bankInfo = await bookingService.getPaymentInfo(paymentInfo.paymentId);
+      
+      // Kết hợp thông tin thanh toán cơ bản và thông tin tài khoản ngân hàng
+      setFullPaymentInfo({
+        ...paymentInfo,
+        ...bankInfo
+      });
+      
+      // Hiển thị giao diện thanh toán QR
+      setShowPayment(true);
+      
+    } catch (error) {
+      // Xử lý lỗi khi không thể lấy thông tin ngân hàng
+      toast({
+        title: "Không thể lấy thông tin thanh toán",
+        description: (error as Error).message || "Vui lòng thử lại sau",
+        variant: "destructive",
+      });
+    } 
   };
 
   const handleChangePaymentMethod = () => {
@@ -55,16 +72,19 @@ export const PaymentMethods = ({
 
   // Show QR payment immediately if already selected
   if (showPayment) {
+    if (!fullPaymentInfo) {
+      return (
+        <div className="flex flex-col items-center justify-center py-8 space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Đang tải thông tin thanh toán...</p>
+        </div>
+      );
+    }
+    
     return (
       <QRPayment
         occaId={occaId}
-        showId={showId}
-        tickets={tickets.map(t => ({
-          id: t.id,
-          type: t.type,
-          quantity: t.quantity
-        }))}
-        recipient={recipient}
+        paymentInfo={fullPaymentInfo}
         onPaymentSuccess={onPaymentSuccess}
         onChangePaymentMethod={handleChangePaymentMethod}
       />

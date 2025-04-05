@@ -4,13 +4,15 @@ import { Button } from '@/commons/components/button.tsx';
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Separator } from "@/commons/components/separator.tsx";
-import { BookingState, OccaShortInfo } from '@/features/booking/internal-types/booking.type';
-import { Check, ChevronDown, PlusCircle, AlertTriangle } from 'lucide-react';
+import { BookingState, OccaShortInfo, PaymentDetails } from '@/features/booking/internal-types/booking.type';
+import { Check, ChevronDown, PlusCircle, AlertTriangle, Loader2, AlertCircle } from 'lucide-react';
 import { UserProfileCard } from '@/features/setting/internal-types/settings.types';
 import { settingsService } from '@/features/setting/services/settings.service';
 import { toast } from '@/commons/hooks/use-toast';
 import { ProfileCardDialog } from '@/features/setting/components/ProfileCardDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/commons/components/alert.tsx';
+import { bookingService } from '@/features/booking/services/booking.service';
+import { useNavigate } from 'react-router-dom';
 import {
   Command,
   CommandEmpty,
@@ -38,18 +40,23 @@ import {
 interface ConfirmationProps {
   bookingState: BookingState;
   occaInfo: OccaShortInfo;
-  onConfirmPayment: () => void;
+  onConfirmPayment: (paymentDetails: PaymentDetails) => void;
   onBack: () => void;
   updateSelectedProfile?: (profile: UserProfileCard) => void;
+  occaId: string;
 }
 
-export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack, updateSelectedProfile }: ConfirmationProps) => {
+export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack, updateSelectedProfile, occaId }: ConfirmationProps) => {
+  const navigate = useNavigate();
   const [profileCards, setProfileCards] = useState<UserProfileCard[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<UserProfileCard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddProfileDialog, setShowAddProfileDialog] = useState(false);
   const [open, setOpen] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isLockingTickets, setIsLockingTickets] = useState(false);
+  const [bookingError, setBookingError] = useState<Error | null>(null);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -126,6 +133,49 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack,
     }
     
     setShowConfirmDialog(true);
+  };
+  
+  // Xử lý khi người dùng xác nhận thanh toán - tiến hành khóa vé ở bước này
+  const handleLockTickets = async () => {
+    setShowConfirmDialog(false);
+    
+    if (!bookingState.selectedShow || !selectedProfile) {
+      return;
+    }
+    
+    try {
+      setIsLockingTickets(true);
+      setBookingError(null);
+      
+      // Tạo payload cho việc khóa vé
+      const lockPayload = {
+        showId: bookingState.selectedShow.id,
+        tickets: bookingState.selectedTickets.map(ticket => ({
+          id: ticket.id,
+          type: ticket.type,
+          quantity: ticket.quantity
+        })),
+        recipient: {
+          id: selectedProfile.id,
+          name: selectedProfile.name,
+          email: selectedProfile.email,
+          phoneNumber: selectedProfile.phoneNumber
+        }
+      };
+      
+      // Chỉ gọi API để khóa vé tại bước này
+      const lockResponse = await bookingService.lockTickets(lockPayload);
+      
+      // Nếu thành công, chuyển đến trang thanh toán chỉ với thông tin cơ bản
+      onConfirmPayment(lockResponse);
+      
+    } catch (error) {
+      // Xử lý lỗi nếu không thể khóa vé
+      setBookingError(error as Error);
+      setShowErrorDialog(true);
+    } finally {
+      setIsLockingTickets(false);
+    }
   };
 
   return (
@@ -340,9 +390,11 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack,
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận thanh toán</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="mb-2">
               Lưu ý quan trọng: Sau khi chuyển sang bước thanh toán, bạn sẽ <span className="font-semibold">không thể quay lại</span> để chỉnh sửa thông tin vé đã chọn.
-              <br/><br/>
+            </AlertDialogDescription>
+            
+            <div className="text-sm text-muted-foreground mt-2">
               Vui lòng kiểm tra kỹ lại các thông tin sau:
               <ul className="list-disc list-inside mt-2">
                 <li>Thông tin liên hệ nhận vé</li>
@@ -350,16 +402,49 @@ export const Confirmation = ({ bookingState, occaInfo, onConfirmPayment, onBack,
                 <li>Loại vé và số lượng</li>
                 <li>Tổng số tiền thanh toán</li>
               </ul>
-            </AlertDialogDescription>
+            </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Kiểm tra lại</AlertDialogCancel>
-            <AlertDialogAction onClick={onConfirmPayment}>
+            <AlertDialogAction onClick={handleLockTickets}>
               Tiếp tục đến thanh toán
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Dialog hiển thị lỗi khi không thể khóa vé */}
+      <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Không thể đặt vé
+            </AlertDialogTitle>
+            <AlertDialogDescription className="mt-4">
+              {bookingError?.message || "Có lỗi xảy ra khi đặt vé. Vui lòng thử lại sau."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => navigate(`/occas/${occaId}`)}>
+              Quay lại trang chi tiết
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Overlay hiển thị khi đang khóa vé */}
+      {isLockingTickets && (
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg shadow-lg flex flex-col items-center gap-4 max-w-md">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-center">Đang xử lý đặt vé của bạn...</p>
+            <p className="text-sm text-muted-foreground text-center">
+              Vui lòng không đóng trình duyệt hoặc tải lại trang.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

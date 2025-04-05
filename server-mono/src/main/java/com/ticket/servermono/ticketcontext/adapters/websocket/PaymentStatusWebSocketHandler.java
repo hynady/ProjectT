@@ -1,100 +1,116 @@
 package com.ticket.servermono.ticketcontext.adapters.websocket;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ticket.servermono.ticketcontext.domain.enums.PaymentStatus;
+import com.ticket.servermono.ticketcontext.entities.Invoice;
+import com.ticket.servermono.ticketcontext.infrastructure.events.PaymentStatusEvent;
+import com.ticket.servermono.ticketcontext.infrastructure.repositories.InvoiceRepository;
+import com.ticket.servermono.ticketcontext.usecases.PaymentService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * WebSocket handler đơn giản để thông báo trạng thái thanh toán
+ * WebSocket handler cho việc theo dõi trạng thái thanh toán
+ * Sử dụng EventListener để lắng nghe sự kiện thay đổi trạng thái thanh toán
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class PaymentStatusWebSocketHandler extends TextWebSocketHandler {
     
-    private final ObjectMapper objectMapper;
+    private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+    private final InvoiceRepository invoiceRepository;
+    private final PaymentService paymentService;
     
-    // Lưu trữ các phiên kết nối theo paymentId
-    private static final Map<String, WebSocketSession> PAYMENT_SESSIONS = new ConcurrentHashMap<>();
+    public PaymentStatusWebSocketHandler(
+            InvoiceRepository invoiceRepository,
+            PaymentService paymentService) {
+        this.invoiceRepository = invoiceRepository;
+        this.paymentService = paymentService;
+    }
     
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        // Lấy payment ID từ đường dẫn
-        String paymentId = extractPaymentId(session.getUri().getPath());
+        String path = session.getUri().getPath();
+        String paymentId = extractPaymentIdFromPath(path);
         
-        log.info("Kết nối WebSocket mới: paymentId={}, sessionId={}", paymentId, session.getId());
+        if (paymentId == null) {
+            session.close(CloseStatus.BAD_DATA.withReason("Invalid payment ID format"));
+            return;
+        }
         
-        // Lưu session
-        PAYMENT_SESSIONS.put(paymentId, session);
+        log.info("WebSocket connection established for payment: {}", paymentId);
+        sessions.put(paymentId, session);
+        
+        // Gửi trạng thái hiện tại
+        Optional<Invoice> invoiceOpt = invoiceRepository.findByPaymentId(paymentId);
+        if (invoiceOpt.isPresent()) {
+            Invoice invoice = invoiceOpt.get();
+            
+            // Bắt đầu theo dõi thanh toán khi kết nối WebSocket thiết lập
+            if (invoice.getStatus() == PaymentStatus.WAITING_PAYMENT) {
+                log.info("Bắt đầu theo dõi thanh toán khi WebSocket được thiết lập: {}", paymentId);
+                paymentService.startPaymentTracking(
+                    paymentId,
+                    invoice.getSoTien(),
+                    invoice.getNoiDung()
+                );
+            }
+        } else {
+            session.close(CloseStatus.BAD_DATA.withReason("Payment ID not found"));
+        }
     }
     
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        // Lấy payment ID từ đường dẫn
-        String paymentId = extractPaymentId(session.getUri().getPath());
+        String path = session.getUri().getPath();
+        String paymentId = extractPaymentIdFromPath(path);
         
-        log.info("Đóng kết nối WebSocket: paymentId={}, sessionId={}, status={}", 
-                paymentId, session.getId(), status);
-        
-        // Xóa session
-        PAYMENT_SESSIONS.remove(paymentId);
-    }
-    
-    /**
-     * Gửi cập nhật trạng thái thanh toán tới client
-     */
-    public void sendPaymentStatusUpdate(String paymentId, String status) {
-        WebSocketSession session = PAYMENT_SESSIONS.get(paymentId);
-        
-        if (session != null && session.isOpen()) {
-            try {
-                // Tạo message thông báo trạng thái
-                Map<String, Object> message = Map.of(
-                        "type", "payment_status",
-                        "status", status,
-                        "timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
-                );
-                
-                // Chuyển thành JSON và gửi đi
-                String json = objectMapper.writeValueAsString(message);
-                session.sendMessage(new TextMessage(json));
-                
-                log.info("Đã gửi cập nhật trạng thái thanh toán: paymentId={}, status={}", paymentId, status);
-            } catch (IOException e) {
-                log.error("Lỗi khi gửi cập nhật trạng thái thanh toán", e);
-            }
-        } else {
-            log.warn("Không thể gửi cập nhật - không có phiên kết nối cho paymentId: {}", paymentId);
+        if (paymentId != null) {
+            sessions.remove(paymentId);
+            log.info("WebSocket connection closed for payment: {}", paymentId);
         }
     }
     
     /**
-     * Lấy payment ID từ đường dẫn WebSocket
+     * Lắng nghe sự kiện thay đổi trạng thái thanh toán và gửi đến client qua WebSocket
      */
-    private String extractPaymentId(String path) {
-        // Định dạng đường dẫn: /payment-ws/{paymentId}
-        String[] parts = path.split("/");
-        return parts[parts.length - 1];
+    @EventListener
+    public void handlePaymentStatusChange(PaymentStatusEvent event) {
+        String paymentId = event.getPaymentId();
+        WebSocketSession session = sessions.get(paymentId);
+        
+        if (session != null && session.isOpen()) {
+            try {
+                // Gửi dữ liệu JSON đã được chuẩn bị trước đó
+                session.sendMessage(new TextMessage(event.getJsonData()));
+                log.debug("Đã gửi cập nhật trạng thái thanh toán qua WebSocket: paymentId={}, status={}", 
+                        paymentId, event.getStatus());
+            } catch (IOException e) {
+                log.error("Lỗi gửi cập nhật qua WebSocket: {}", e.getMessage(), e);
+            }
+        }
     }
     
     /**
-     * Kiểm tra xem có session đang hoạt động cho payment ID cụ thể không
+     * Extracts payment ID from the path /api/payment-ws/{paymentId}
      */
-    public boolean hasActiveSession(String paymentId) {
-        WebSocketSession session = PAYMENT_SESSIONS.get(paymentId);
-        return session != null && session.isOpen();
+    private String extractPaymentIdFromPath(String path) {
+        if (path == null) return null;
+        
+        String[] parts = path.split("/");
+        if (parts.length < 2) return null;
+        
+        return parts[parts.length - 1];
     }
 }

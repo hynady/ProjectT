@@ -18,7 +18,6 @@ import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockResponse;
 import com.ticket.servermono.ticketcontext.entities.Invoice;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.InvoiceRepository;
-import com.ticket.servermono.ticketcontext.usecases.PaymentService;
 import com.ticket.servermono.ticketcontext.usecases.TicketServices;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,12 +31,12 @@ import lombok.extern.slf4j.Slf4j;
 public class BookingLockController {
     
     private final TicketServices ticketServices;
-    private final PaymentService paymentService;
     private final InvoiceRepository invoiceRepository;
     
     /**
      * Khóa vé để đặt, ngăn chặn tình trạng đặt trùng
      * Endpoint: POST /booking/lock
+     * Chỉ lock vé, không bắt đầu theo dõi thanh toán
      */
     @PostMapping("/booking/lock")
     public ResponseEntity<?> lockTicketsForBooking(
@@ -54,33 +53,17 @@ public class BookingLockController {
             log.info("Dang khoa ve de dat: showId={}, so luong ve={}, userId={}", 
                     request.getShowId(), request.getTickets().size(), userId);
             
-            // Khóa vé và lấy thông tin thanh toán
+            // Chỉ khóa vé và lấy thông tin thanh toán, không bắt đầu theo dõi
             BookingLockResponse response = ticketServices.lockTicketsForBooking(request);
             
             log.info("Da khoa ve thanh cong, paymentId: {}", response.getPaymentId());
             
-            // Lấy dữ liệu invoice để có referenceCode và totalAmount
-            if (response.getPaymentId() != null) {
-                Optional<Invoice> invoiceOpt = invoiceRepository.findByPaymentId(response.getPaymentId());
-                
-                if (invoiceOpt.isPresent()) {
-                    Invoice invoice = invoiceOpt.get();
-                    String referenceCode = invoice.getNoiDung(); // Mã tham chiếu nằm trong nội dung
-                    double totalAmount = invoice.getSoTien();
-                    
-                    // Store userId in invoice for later use in payment processing
-                    invoice.setUserId(userId);
-                    invoiceRepository.save(invoice);
-                    
-                    log.info("Bat dau theo doi thanh toan Sepay cho paymentId={}, referenceCode={}, totalAmount={}, userId={}", 
-                            response.getPaymentId(), referenceCode, totalAmount, userId);
-                    
-                    // Bắt đầu theo dõi thanh toán Sepay
-                    paymentService.startPaymentTracking(
-                            response.getPaymentId(),
-                            totalAmount,
-                            referenceCode);
-                }
+            // Lưu userId vào invoice cho việc sử dụng sau này
+            Optional<Invoice> invoiceOpt = invoiceRepository.findByPaymentId(response.getPaymentId());
+            if (invoiceOpt.isPresent()) {
+                Invoice invoice = invoiceOpt.get();
+                invoice.setUserId(userId);
+                invoiceRepository.save(invoice);
             }
 
             return ResponseEntity.ok(response);

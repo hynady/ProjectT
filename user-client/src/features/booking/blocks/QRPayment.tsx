@@ -6,7 +6,6 @@ import { AlertCircle, Clock, Download, Loader2, CheckCircle, Timer } from 'lucid
 import { Alert, AlertDescription } from '@/commons/components/alert';
 import { ScrollToTop } from '@/commons/blocks/ScrollToTop';
 import { Separator } from '@/commons/components/separator';
-import { usePaymentProcess } from '../hooks/usePaymentProcess';
 import { toast } from '@/commons/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { paymentWebSocketService, PaymentMessage, PaymentStatus } from '../services/payment-websocket.service';
@@ -17,59 +16,24 @@ const PAYMENT_TIMEOUT_SECONDS = 180;
 
 interface QRPaymentProps {
   occaId: string;
-  showId: string;
-  tickets: {
-    id: string;
-    type: string;
-    quantity: number;
-  }[];
-  recipient?: {
-    id: string;
-    name: string;
-    email: string;
-    phoneNumber: string;
-  };
+  paymentInfo: PaymentDetails;
   onPaymentSuccess: () => void;
   onChangePaymentMethod?: () => void;
 }
 
 export const QRPayment = ({
   occaId,
-  showId,
-  tickets,
-  recipient,
+  paymentInfo,
   onPaymentSuccess,
   onChangePaymentMethod
 }: QRPaymentProps) => {
   const navigate = useNavigate();
-  const [paymentInfo, setPaymentInfo] = useState<PaymentDetails | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.WAITING_PAYMENT);
   
   // State cho đồng hồ đếm ngược
   const [timeRemaining, setTimeRemaining] = useState<number>(PAYMENT_TIMEOUT_SECONDS);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  
-  const { isProcessing, error, startPayment } = usePaymentProcess({
-    bookingData: {
-      showId,
-      tickets,
-      recipient // Thêm thông tin người nhận vào payload
-    },
-    occaId,
-    onSuccess: (details) => {
-      setPaymentInfo(details);
-      // Khởi tạo thời gian đếm ngược khi có thông tin thanh toán
-      setTimeRemaining(PAYMENT_TIMEOUT_SECONDS);
-    },
-    onError: (error) => {
-      toast({
-        title: "Không thể xử lý thanh toán",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
 
   // Type guard để kiểm tra tin nhắn có phải là PaymentMessage không
   const isPaymentStatusMessage = (data: unknown): data is PaymentMessage => {
@@ -223,14 +187,6 @@ export const QRPayment = ({
     }
   }, [paymentInfo?.paymentId, onPaymentSuccess]);
 
-  // Start payment process immediately when component mounts
-  useEffect(() => {
-    startPayment().catch(err => {
-      console.error("Failed to start payment:", err);
-    });
-    // Don't add startPayment to the dependency array to avoid infinite loop
-  }, []);
-
   // This would handle the download of the QR code image
   const handleDownloadQR = () => {
     if (!paymentInfo) return;
@@ -372,36 +328,8 @@ export const QRPayment = ({
     );
   };
 
-  // If there's an error with availability
-  if (error) {
-    return (
-      <ScrollToTop>
-        <div className="space-y-6">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-sm">
-              {error.message}
-            </AlertDescription>
-          </Alert>
-          
-          <div className="text-center text-muted-foreground text-sm">
-            <p>Bạn sẽ được chuyển về trang chi tiết trong vài giây...</p>
-          </div>
-          
-          <Button 
-            className="w-full" 
-            variant="outline" 
-            onClick={() => navigate(`/occas/${occaId}`)}
-          >
-            Quay lại trang chi tiết
-          </Button>
-        </div>
-      </ScrollToTop>
-    );
-  }
-
   // Loading state
-  if (isProcessing || !paymentInfo) {
+  if (!paymentInfo) {
     return (
       <div className="flex flex-col items-center justify-center py-8 space-y-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -528,9 +456,6 @@ export const QRPayment = ({
               onClick={() => {
                 // Khởi tạo lại quá trình thanh toán
                 setTimeRemaining(PAYMENT_TIMEOUT_SECONDS);
-                startPayment().catch(err => {
-                  console.error("Failed to restart payment:", err);
-                });
               }}
             >
               <Timer className="mr-2 h-4 w-4" />
@@ -554,9 +479,6 @@ export const QRPayment = ({
                 onClick={() => {
                   // Khởi tạo lại quá trình thanh toán
                   setTimeRemaining(PAYMENT_TIMEOUT_SECONDS);
-                  startPayment().catch(err => {
-                    console.error("Failed to restart payment:", err);
-                  });
                 }}
               >
                 <Timer className="mr-2 h-4 w-4" />

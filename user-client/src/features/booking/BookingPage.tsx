@@ -19,6 +19,7 @@ import { CalendarNormal } from "@/features/booking/components/Calender.tsx";
 import {
   OccaShowUnit,
   TicketType,
+  PaymentDetails
 } from "@/features/booking/internal-types/booking.type.ts";
 
 const BookingPage = () => {
@@ -26,6 +27,7 @@ const BookingPage = () => {
   const { state } = useLocation();
   const [step, setStep] = useState(1);
   const [shouldFetchData] = useState(!state?.selectedInfo);
+  const [paymentInfo, setPaymentInfo] = useState<PaymentDetails | null>(null);
   // Only fetch data if no selectedInfo from detail page
   const {
     data: occaData,
@@ -112,7 +114,10 @@ const BookingPage = () => {
     setStep((prev) => prev - 1);
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = (paymentDetails: PaymentDetails) => {
+    // Lưu thông tin thanh toán được trả về từ API lockTickets
+    setPaymentInfo(paymentDetails);
+    // Chuyển đến bước thanh toán
     setStep(4);
   };
 
@@ -238,6 +243,7 @@ const BookingPage = () => {
                     onConfirmPayment={handleConfirmPayment}
                     onBack={handleBack}
                     updateSelectedProfile={updateSelectedProfile}
+                    occaId={id || ""}
                   />
                 </div>
               )}
@@ -253,9 +259,7 @@ const BookingPage = () => {
                       </h2>
                       <PaymentMethods
                         occaId={occaData!.id}
-                        showId={bookingState.selectedShow!.id}
-                        tickets={bookingState.selectedTickets}
-                        recipient={bookingState.selectedProfile}
+                        paymentInfo={paymentInfo}
                         onPaymentSuccess={() => {
                           setIsPaymentSuccess(true);
                         }}

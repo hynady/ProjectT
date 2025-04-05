@@ -1,6 +1,7 @@
 package com.ticket.servermono.ticketcontext.usecases;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,16 +29,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingPayload;
-import com.ticket.servermono.ticketcontext.adapters.websocket.PaymentStatusWebSocketHandler;
 import com.ticket.servermono.ticketcontext.domain.enums.PaymentStatus;
 import com.ticket.servermono.ticketcontext.entities.Invoice;
 import com.ticket.servermono.ticketcontext.entities.TicketClass;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.InvoiceRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
 
-
 import jakarta.annotation.PreDestroy;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -45,10 +43,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PaymentService {
 
-    private final PaymentStatusWebSocketHandler webSocketHandler;
+    private final PaymentStatusNotifier statusNotifier;
     private final InvoiceRepository invoiceRepository;
     private final TicketClassRepository ticketClassRepository;
     private final TicketServices ticketServices;
@@ -61,37 +58,147 @@ public class PaymentService {
     @Value("${app.sepayApiKey}")
     private String sepayApiKey;
     
-    // Lưu trữ trạng thái thanh toán
-    private final Map<String, String> paymentStatuses = new ConcurrentHashMap<>();
-    
-    // Lưu trữ các task theo lịch
-    private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
+    // Lưu trữ các task đang chạy để tránh trùng lặp
+    private final Map<String, ScheduledFuture<?>> runningTrackers = new ConcurrentHashMap<>();
     
     // Executor để lên lịch các task
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
     
     /**
-     * Bắt đầu theo dõi thanh toán qua Sepay
+     * Constructor với PaymentStatusNotifier 
+     */
+    public PaymentService(
+            PaymentStatusNotifier statusNotifier,
+            InvoiceRepository invoiceRepository,
+            TicketClassRepository ticketClassRepository,
+            TicketServices ticketServices,
+            RestTemplate restTemplate,
+            ObjectMapper objectMapper) {
+        this.statusNotifier = statusNotifier;
+        this.invoiceRepository = invoiceRepository;
+        this.ticketClassRepository = ticketClassRepository;
+        this.ticketServices = ticketServices;
+        this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
+    }
+    
+    /**
+     * Bắt đầu theo dõi thanh toán khi WebSocket được thiết lập
      * @param paymentId ID của thanh toán cần theo dõi
      * @param amount Số tiền thanh toán
      * @param referenceCode Mã tham chiếu để đối chiếu với giao dịch từ Sepay
      */
-    public void startPaymentTracking(String paymentId, double amount, String referenceCode) {
-        log.info("Bắt đầu theo dõi thanh toán với Sepay: paymentId={}, amount={}, referenceCode={}",
-                paymentId, amount, referenceCode);
+    public synchronized void startPaymentTracking(String paymentId, double amount, String referenceCode) {
+        // Kiểm tra xem đã đang theo dõi payment này chưa
+        if (runningTrackers.containsKey(paymentId)) {
+            log.info("Da co tien trinh theo doi thanh toan cho paymentId={}", paymentId);
+            return;
+        }
         
-        // Hủy các task đã lên lịch trước đó (nếu có)
-        cancelScheduledTasks(paymentId);
+        log.info("Bat dau theo doi thanh toan cho paymentId={}, referenceCode={}, amount={}", 
+                paymentId, referenceCode, amount);
         
         // Cập nhật trạng thái ban đầu
         updatePaymentStatus(paymentId, "waiting_payment");
         
-        // Bắt đầu polling thanh toán trong một thread riêng
-        ScheduledFuture<?> future = scheduler.schedule(() -> {
-            pollSepayForPayment(paymentId, amount, referenceCode);
-        }, 0, TimeUnit.SECONDS);
+        // Lên lịch polling thanh toán trong một thread riêng
+        ScheduledFuture<?> trackerTask = scheduler.scheduleAtFixedRate(
+            () -> checkPaymentStatus(paymentId, amount, referenceCode),
+            10, // Delay ban đầu (giây)
+            10, // Khoảng thời gian giữa các lần kiểm tra (giây)
+            TimeUnit.SECONDS
+        );
         
-        scheduledTasks.put(paymentId, future);
+        runningTrackers.put(paymentId, trackerTask);
+    }
+
+    /**
+     * Kiểm tra trạng thái thanh toán
+     */
+    private void checkPaymentStatus(String paymentId, double amount, String referenceCode) {
+        try {
+            log.debug("Kiểm tra thanh toán: paymentId={}, amount={}, referenceCode={}", 
+                    paymentId, amount, referenceCode);
+            
+            // Lấy thông tin invoice từ database
+            Invoice invoice = invoiceRepository.findByPaymentId(paymentId).orElse(null);
+            if (invoice == null) {
+                log.warn("Không tìm thấy invoice với paymentId: {}", paymentId);
+                stopPaymentTracking(paymentId);
+                return;
+            }
+            
+            // Kiểm tra xem invoice có hết hạn không
+            if (invoice.getExpiresAt() != null && LocalDateTime.now().isAfter(invoice.getExpiresAt())) {
+                log.info("Invoice đã hết hạn: {}", paymentId);
+                invoice.setStatus(PaymentStatus.PAYMENT_EXPIRED);
+                invoiceRepository.save(invoice);
+                updatePaymentStatus(paymentId, "expired");
+                stopPaymentTracking(paymentId);
+                return;
+            }
+            
+            // Kiểm tra nếu trạng thái đã thay đổi (không còn ở WAITING_PAYMENT)
+            if (invoice.getStatus() != PaymentStatus.WAITING_PAYMENT) {
+                log.info("Invoice không còn ở trạng thái chờ thanh toán: {}, status={}", 
+                        paymentId, invoice.getStatus());
+                updatePaymentStatus(paymentId, convertPaymentStatus(invoice.getStatus()));
+                stopPaymentTracking(paymentId);
+                return;
+            }
+            
+            // Gọi API Sepay để lấy giao dịch mới nhất
+            JsonNode transactionsNode = getSepayTransactions(amount);
+            
+            // Xử lý response khi nhận được dữ liệu từ Sepay
+            if (transactionsNode != null && transactionsNode.isArray()) {
+                for (JsonNode transaction : transactionsNode) {
+                    if (transaction.has("code")) {
+                        String code = transaction.get("code").asText();
+                        
+                        // So sánh mã tham chiếu
+                        if (referenceCode.equals(code)) {
+                            log.info("Tìm thấy giao dịch phù hợp: {}", transaction.toString());
+                            processSuccessfulTransaction(paymentId, transaction);
+                            return;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi kiểm tra thanh toán: {}", e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Dừng theo dõi thanh toán
+     */
+    private void stopPaymentTracking(String paymentId) {
+        ScheduledFuture<?> future = runningTrackers.remove(paymentId);
+        if (future != null && !future.isDone()) {
+            future.cancel(false);
+            log.info("Đã dừng theo dõi thanh toán cho: {}", paymentId);
+        }
+    }
+    
+    /**
+     * Chuyển đổi PaymentStatus sang string
+     */
+    private String convertPaymentStatus(PaymentStatus status) {
+        switch (status) {
+            case WAITING_PAYMENT:
+                return "waiting_payment";
+            case PAYMENT_SUCCESS:
+                return "payment_received";
+            case PAYMENT_FAILED:
+                return "failed";
+            case PAYMENT_EXPIRED:
+                return "expired";
+            case PAYMENT_CANCELLED:
+                return "cancelled";
+            default:
+                return "unknown";
+        }
     }
     
     /**
@@ -306,26 +413,11 @@ public class PaymentService {
     }
     
     /**
-     * Cập nhật trạng thái thanh toán và thông báo qua WebSocket
+     * Cập nhật trạng thái thanh toán và thông báo
      */
     public void updatePaymentStatus(String paymentId, String status) {
-        // Cập nhật trạng thái
-        paymentStatuses.put(paymentId, status);
-        log.info("Đã cập nhật trạng thái thanh toán: paymentId={}, status={}", paymentId, status);
-        
-        // Gửi cập nhật qua WebSocket
-        webSocketHandler.sendPaymentStatusUpdate(paymentId, status);
-    }
-    
-    /**
-     * Hủy các task đã lên lịch
-     */
-    private void cancelScheduledTasks(String paymentId) {
-        ScheduledFuture<?> future = scheduledTasks.remove(paymentId);
-        if (future != null && !future.isDone()) {
-            future.cancel(false);
-            log.debug("Đã hủy các task theo lịch cho thanh toán: {}", paymentId);
-        }
+        log.info("Cập nhật trạng thái thanh toán: paymentId={}, status={}", paymentId, status);
+        statusNotifier.sendPaymentStatusUpdate(paymentId, status);
     }
     
     /**
@@ -335,90 +427,5 @@ public class PaymentService {
     public void cleanup() {
         scheduler.shutdownNow();
         log.info("Đã dọn dẹp tài nguyên PaymentService");
-    }
-    
-    /**
-     * Polling API Sepay để kiểm tra giao dịch thực tế
-     */
-    private void pollSepayForPayment(String paymentId, double amount, String referenceCode) {
-        log.info("Bat dau kiem tra thanh toan voi Sepay cho ID: {}, So tien: {}, Ma tham chieu: {}", 
-                paymentId, amount, referenceCode);
-        
-        // Số lần retry tối đa (3 phút, mỗi 10 giây kiểm tra một lần = 18 lần)
-        int maxRetries = 18;
-        int retryCount = 0;
-        boolean transactionFound = false;
-        
-        while (retryCount < maxRetries && !transactionFound) {
-            try {
-                // Gọi API Sepay để lấy giao dịch mới nhất
-                JsonNode transactionsNode = getSepayTransactions(amount);
-                
-                // Xử lý response khi nhận được dữ liệu từ Sepay
-                if (transactionsNode != null && transactionsNode.isArray()) {
-                    log.debug("Nhận được {} giao dịch từ Sepay", transactionsNode.size());
-                    
-                    // Lặp qua các giao dịch để tìm giao dịch phù hợp
-                    for (JsonNode transaction : transactionsNode) {
-                        if (transaction.has("code")) {
-                            String code = transaction.get("code").asText();
-                            
-                            // So sánh mã tham chiếu
-                            if (referenceCode.equals(code)) {
-                                log.info("Tom thay giao dich phu hop: {}", transaction.toString());
-                                
-                                // Ghi log thông tin giao dịch để debug
-                                if (transaction.has("transaction_content")) {
-                                    log.info("Noi dung giao dich: {}", transaction.get("transaction_content").asText());
-                                }
-                                if (transaction.has("amount_in")) {
-                                    log.info("So tien nhan duoc: {}", transaction.get("amount_in").asText());
-                                }
-                                if (transaction.has("transaction_date")) {
-                                    log.info("Thoi gian giao dich: {}", transaction.get("transaction_date").asText());
-                                }
-                                
-                                transactionFound = true;
-                                
-                                // Xử lý giao dịch thành công
-                                processSuccessfulTransaction(paymentId, transaction);
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    log.warn("Khong nhan duoc du lieu giao dich hop le tu Sepay");
-                }
-                
-                if (!transactionFound) {
-                    // Tăng số lần thử và đợi trước khi thử lại
-                    retryCount++;
-                    log.debug("Khong tim thay giao dich, thu lai lan {}/{}", retryCount, maxRetries);
-                    
-                    if (retryCount < maxRetries) {
-                        Thread.sleep(10000); // Đợi 10 giây trước khi thử lại
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Loi khi kiem tra thanh toan voi Sepay: {}", e.getMessage(), e);
-                retryCount++;
-                
-                try {
-                    if (retryCount < maxRetries) {
-                        Thread.sleep(10000); // Đợi 10 giây trước khi thử lại
-                    }
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    log.error("Luong bi ngat khi doi thu lai: {}", ie.getMessage());
-                    break;
-                }
-            }
-        }
-        
-        // Xử lý trường hợp không tìm thấy giao dịch sau khi đã thử hết số lần
-        if (!transactionFound) {
-            log.warn("Khong tim thay giao dich sau {} lan thu, thanh toan that bai: {}", maxRetries, paymentId);
-            updatePaymentStatus(paymentId, "failed");
-        }
     }
 }
