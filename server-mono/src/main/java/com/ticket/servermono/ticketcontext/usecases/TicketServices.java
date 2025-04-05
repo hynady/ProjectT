@@ -589,7 +589,7 @@ public class TicketServices {
         // Tạo response chỉ với thông tin thanh toán (payment info)
         Map<String, Object> response = new HashMap<>();
         response.put("soTaiKhoan", paymentInfo.getSoTaiKhoan());
-        response.put("nganHang", paymentInfo.getNganHang());
+        response.put("  ", paymentInfo.getNganHang());
         
         return response;
     }
