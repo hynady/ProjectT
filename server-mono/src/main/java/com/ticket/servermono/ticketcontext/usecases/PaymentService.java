@@ -1,13 +1,18 @@
-package com.ticket.servermono.ticketcontext.infrastructure.services;
+package com.ticket.servermono.ticketcontext.usecases;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -21,10 +26,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockRequest;
+import com.ticket.servermono.ticketcontext.adapters.dtos.BookingPayload;
 import com.ticket.servermono.ticketcontext.adapters.websocket.PaymentStatusWebSocketHandler;
 import com.ticket.servermono.ticketcontext.domain.enums.PaymentStatus;
 import com.ticket.servermono.ticketcontext.entities.Invoice;
+import com.ticket.servermono.ticketcontext.entities.TicketClass;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.InvoiceRepository;
+import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
+
 
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +50,8 @@ public class PaymentService {
 
     private final PaymentStatusWebSocketHandler webSocketHandler;
     private final InvoiceRepository invoiceRepository;
+    private final TicketClassRepository ticketClassRepository;
+    private final TicketServices ticketServices;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     
@@ -150,28 +162,146 @@ public class PaymentService {
             Invoice invoice = invoiceRepository.findByPaymentId(paymentId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy invoice cho paymentId: " + paymentId));
             
-            // Delay 2 giây sau đó chuyển sang trạng thái processing
-            scheduler.schedule(() -> {
-                updatePaymentStatus(paymentId, "processing");
+            // Chuyển sang trạng thái processing
+            updatePaymentStatus(paymentId, "processing");
+            
+            try {
+                // Cập nhật invoice thành PAYMENT_SUCCESS
+                invoice.setStatus(PaymentStatus.PAYMENT_SUCCESS);
+                invoiceRepository.save(invoice);
+                log.info("Đã cập nhật invoice thành PAYMENT_SUCCESS: {}", paymentId);
                 
-                try {
-                    // Cập nhật invoice thành PAYMENT_SUCCESS
-                    invoice.setStatus(PaymentStatus.PAYMENT_SUCCESS);
-                    invoiceRepository.save(invoice);
-                    log.info("Đã cập nhật invoice thành PAYMENT_SUCCESS: {}", paymentId);
-                    
-                    // Delay 2 giây sau đó chuyển sang trạng thái completed
-                    scheduler.schedule(() -> {
-                        updatePaymentStatus(paymentId, "completed");
-                    }, 2, TimeUnit.SECONDS);
-                } catch (Exception e) {
-                    log.error("Lỗi khi cập nhật trạng thái invoice: {}", e.getMessage(), e);
-                    updatePaymentStatus(paymentId, "failed");
+                // Lấy thông tin từ invoice để tạo vé
+                UUID userId = invoice.getUserId();
+                UUID showId = invoice.getShowId();
+                
+                if (userId != null && showId != null) {
+                    try {
+                        // Chuyển BookingLockRequest sang BookingPayload để tạo vé
+                        List<BookingLockRequest.TicketItem> ticketItems = getTicketItemsFromInvoice(paymentId);
+                        if (ticketItems != null && !ticketItems.isEmpty()) {
+                            BookingPayload payload = createBookingPayload(showId, ticketItems);
+                            
+                            // Tạo vé cho người dùng
+                            log.info("Bắt đầu tạo vé cho userId: {}, showId: {}", userId, showId);
+                            ticketServices.bookTicket(payload, userId);
+                            log.info("Đã tạo vé thành công cho userId: {}, showId: {}", userId, showId);
+                            
+                            // Giải phóng (xóa) khóa vé
+                            releaseTicketLocks(ticketItems);
+                        }
+                    } catch (Exception e) {
+                        log.error("Lỗi khi tạo vé sau thanh toán: {}", e.getMessage(), e);
+                    }
+                } else {
+                    log.warn("Không tìm thấy userId hoặc showId trong invoice: {}", paymentId);
                 }
-            }, 2, TimeUnit.SECONDS);
+                
+                // Delay 2 giây sau đó chuyển sang trạng thái completed
+                scheduler.schedule(() -> {
+                    updatePaymentStatus(paymentId, "completed");
+                }, 2, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                log.error("Lỗi khi cập nhật trạng thái invoice: {}", e.getMessage(), e);
+                updatePaymentStatus(paymentId, "failed");
+            }
         } catch (Exception e) {
             log.error("Lỗi khi xử lý giao dịch thành công: {}", e.getMessage(), e);
             updatePaymentStatus(paymentId, "failed");
+        }
+    }
+    
+    /**
+     * Lấy danh sách TicketItem từ database dựa trên paymentId
+     */
+    private List<BookingLockRequest.TicketItem> getTicketItemsFromInvoice(String paymentId) {
+        try {
+            // Lấy invoice theo paymentId
+            Invoice invoice = invoiceRepository.findByPaymentId(paymentId).orElse(null);
+            if (invoice == null) {
+                log.warn("Không tìm thấy invoice với paymentId: {}", paymentId);
+                return new ArrayList<>();
+            }
+            
+            // Lấy thông tin chi tiết vé từ invoice.ticketDetails
+            Map<String, Integer> ticketDetails = invoice.getTicketDetails();
+            if (ticketDetails == null || ticketDetails.isEmpty()) {
+                log.warn("Không có thông tin chi tiết vé trong invoice: {}", paymentId);
+                return new ArrayList<>();
+            }
+            
+            // Chuyển đổi map thành danh sách TicketItem
+            List<BookingLockRequest.TicketItem> items = new ArrayList<>();
+            
+            for (Map.Entry<String, Integer> entry : ticketDetails.entrySet()) {
+                String ticketClassId = entry.getKey();
+                Integer quantity = entry.getValue();
+                
+                if (quantity <= 0) continue;
+                
+                // Lấy thông tin tên loại vé từ database
+                try {
+                    UUID ticketClassUUID = UUID.fromString(ticketClassId);
+                    TicketClass ticketClass = ticketClassRepository.findById(ticketClassUUID).orElse(null);
+                    
+                    if (ticketClass != null) {
+                        BookingLockRequest.TicketItem item = new BookingLockRequest.TicketItem();
+                        item.setId(ticketClassId);
+                        item.setType(ticketClass.getName());
+                        item.setQuantity(quantity);
+                        items.add(item);
+                    }
+                } catch (IllegalArgumentException e) {
+                    log.error("ID vé không hợp lệ trong ticketDetails: {}", ticketClassId);
+                }
+            }
+            
+            return items;
+                
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy thông tin chi tiết vé từ invoice: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Tạo BookingPayload từ danh sách TicketItem
+     */
+    private BookingPayload createBookingPayload(UUID showId, List<BookingLockRequest.TicketItem> ticketItems) {
+        List<BookingPayload.TicketPayload> tickets = ticketItems.stream()
+            .map(item -> BookingPayload.TicketPayload.builder()
+                .id(UUID.fromString(item.getId()))
+                .type(item.getType())
+                .quantity(item.getQuantity())
+                .build())
+            .collect(Collectors.toList());
+            
+        return BookingPayload.builder()
+            .showId(showId)
+            .tickets(tickets)
+            .build();
+    }
+    
+    /**
+     * Giải phóng khóa vé sau khi đã tạo vé thành công
+     */
+    private void releaseTicketLocks(List<BookingLockRequest.TicketItem> ticketItems) {
+        try {
+            for (BookingLockRequest.TicketItem item : ticketItems) {
+                UUID ticketClassId = UUID.fromString(item.getId());
+                Optional<TicketClass> ticketClassOpt = ticketClassRepository.findById(ticketClassId);
+                
+                if (ticketClassOpt.isPresent()) {
+                    TicketClass ticketClass = ticketClassOpt.get();
+                    // Đảm bảo không đặt lockedCapacity thành số âm
+                    int newLockedCapacity = Math.max(0, ticketClass.getLockedCapacity() - item.getQuantity());
+                    ticketClass.setLockedCapacity(newLockedCapacity);
+                    ticketClassRepository.save(ticketClass);
+                    log.info("Đã giải phóng khóa {} vé cho hạng vé {}", item.getQuantity(), ticketClass.getName());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi giải phóng khóa vé: {}", e.getMessage(), e);
         }
     }
     
@@ -211,7 +341,7 @@ public class PaymentService {
      * Polling API Sepay để kiểm tra giao dịch thực tế
      */
     private void pollSepayForPayment(String paymentId, double amount, String referenceCode) {
-        log.info("Bắt đầu kiểm tra thanh toán với Sepay cho ID: {}, Số tiền: {}, Mã tham chiếu: {}", 
+        log.info("Bat dau kiem tra thanh toan voi Sepay cho ID: {}, So tien: {}, Ma tham chieu: {}", 
                 paymentId, amount, referenceCode);
         
         // Số lần retry tối đa (3 phút, mỗi 10 giây kiểm tra một lần = 18 lần)
@@ -235,17 +365,17 @@ public class PaymentService {
                             
                             // So sánh mã tham chiếu
                             if (referenceCode.equals(code)) {
-                                log.info("Tìm thấy giao dịch phù hợp: {}", transaction.toString());
+                                log.info("Tom thay giao dich phu hop: {}", transaction.toString());
                                 
                                 // Ghi log thông tin giao dịch để debug
                                 if (transaction.has("transaction_content")) {
-                                    log.info("Nội dung giao dịch: {}", transaction.get("transaction_content").asText());
+                                    log.info("Noi dung giao dich: {}", transaction.get("transaction_content").asText());
                                 }
                                 if (transaction.has("amount_in")) {
-                                    log.info("Số tiền nhận được: {}", transaction.get("amount_in").asText());
+                                    log.info("So tien nhan duoc: {}", transaction.get("amount_in").asText());
                                 }
                                 if (transaction.has("transaction_date")) {
-                                    log.info("Thời gian giao dịch: {}", transaction.get("transaction_date").asText());
+                                    log.info("Thoi gian giao dich: {}", transaction.get("transaction_date").asText());
                                 }
                                 
                                 transactionFound = true;
@@ -257,20 +387,20 @@ public class PaymentService {
                         }
                     }
                 } else {
-                    log.warn("Không nhận được dữ liệu giao dịch hợp lệ từ Sepay");
+                    log.warn("Khong nhan duoc du lieu giao dich hop le tu Sepay");
                 }
                 
                 if (!transactionFound) {
                     // Tăng số lần thử và đợi trước khi thử lại
                     retryCount++;
-                    log.debug("Không tìm thấy giao dịch, thử lại lần {}/{}", retryCount, maxRetries);
+                    log.debug("Khong tim thay giao dich, thu lai lan {}/{}", retryCount, maxRetries);
                     
                     if (retryCount < maxRetries) {
                         Thread.sleep(10000); // Đợi 10 giây trước khi thử lại
                     }
                 }
             } catch (Exception e) {
-                log.error("Lỗi khi kiểm tra thanh toán với Sepay: {}", e.getMessage(), e);
+                log.error("Loi khi kiem tra thanh toan voi Sepay: {}", e.getMessage(), e);
                 retryCount++;
                 
                 try {
@@ -279,7 +409,7 @@ public class PaymentService {
                     }
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    log.error("Luồng bị ngắt khi đợi thử lại: {}", ie.getMessage());
+                    log.error("Luong bi ngat khi doi thu lai: {}", ie.getMessage());
                     break;
                 }
             }
@@ -287,7 +417,7 @@ public class PaymentService {
         
         // Xử lý trường hợp không tìm thấy giao dịch sau khi đã thử hết số lần
         if (!transactionFound) {
-            log.warn("Không tìm thấy giao dịch sau {} lần thử, thanh toán thất bại: {}", maxRetries, paymentId);
+            log.warn("Khong tim thay giao dich sau {} lan thu, thanh toan that bai: {}", maxRetries, paymentId);
             updatePaymentStatus(paymentId, "failed");
         }
     }

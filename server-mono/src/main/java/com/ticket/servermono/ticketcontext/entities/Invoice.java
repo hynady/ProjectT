@@ -1,6 +1,8 @@
 package com.ticket.servermono.ticketcontext.entities;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.persistence.*;
@@ -9,6 +11,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import com.ticket.servermono.ticketcontext.domain.enums.PaymentStatus;
 
@@ -40,6 +45,18 @@ public class Invoice extends BaseSQLEntity {
     @Column(name = "show_id", nullable = true)
     private UUID showId;
     
+    @Column(name = "user_id", nullable = true)
+    private UUID userId;
+    
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
+    
+    /**
+     * Lưu trữ thông tin chi tiết về các loại vé và số lượng đã đặt
+     * Key: ID của TicketClass (UUID.toString())
+     * Value: Số lượng vé đặt
+     */
+    @Column(name = "ticket_details", columnDefinition = "json")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Integer> ticketDetails = new HashMap<>();
 }

@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -493,6 +492,9 @@ public class TicketServices {
         // Total amount to pay
         double totalAmount = 0.0;
         
+        // Map to store ticket details (will be saved to invoice)
+        Map<String, Integer> ticketDetails = new HashMap<>();
+        
         // Process each ticket class in the request
         for (BookingLockRequest.TicketItem ticketItem : request.getTickets()) {
             // Parse ticketClassId from String to UUID
@@ -522,6 +524,9 @@ public class TicketServices {
             
             // Add to total amount - using ticket class price * quantity
             totalAmount += ticketClass.getPrice() * ticketItem.getQuantity();
+            
+            // Store ticket details for this ticket class
+            ticketDetails.put(ticketClassId.toString(), ticketItem.getQuantity());
         }
         
         // Generate payment ID - timestamp + random string
@@ -544,6 +549,7 @@ public class TicketServices {
                 .paymentId(paymentId)
                 .showId(showId)
                 .expiresAt(LocalDateTime.now().plusMinutes(15))
+                .ticketDetails(ticketDetails) // Lưu chi tiết vé vào invoice
                 .build();
         
         // Save invoice information

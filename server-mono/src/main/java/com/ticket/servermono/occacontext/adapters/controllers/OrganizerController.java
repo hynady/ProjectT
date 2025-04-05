@@ -1,6 +1,5 @@
 package com.ticket.servermono.occacontext.adapters.controllers;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -15,12 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ticket.servermono.occacontext.adapters.dtos.CategoryResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaRequest;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OrganizerOccaUnit;
-import com.ticket.servermono.occacontext.usecases.CategoryServices;
 import com.ticket.servermono.occacontext.usecases.OrganizerServices;
 
 import jakarta.persistence.EntityNotFoundException;

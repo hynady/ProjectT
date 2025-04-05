@@ -1,10 +1,13 @@
 package com.ticket.servermono.ticketcontext.adapters.controllers;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,7 +18,7 @@ import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockResponse;
 import com.ticket.servermono.ticketcontext.entities.Invoice;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.InvoiceRepository;
-import com.ticket.servermono.ticketcontext.infrastructure.services.PaymentService;
+import com.ticket.servermono.ticketcontext.usecases.PaymentService;
 import com.ticket.servermono.ticketcontext.usecases.TicketServices;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,10 +42,17 @@ public class BookingLockController {
     @PostMapping("/booking/lock")
     public ResponseEntity<?> lockTicketsForBooking(
             @RequestBody BookingLockRequest request,
-            HttpServletRequest servletRequest) {
+            HttpServletRequest servletRequest,
+            @Nullable Principal principal) {
         try {
-            log.info("Dang khoa ve de dat: showId={}, so luong ve={}", 
-                    request.getShowId(), request.getTickets().size());
+            // Check if user is authenticated
+            if (principal == null || principal.getName() == null) {
+                return ResponseEntity.status(401).body("Authentication required for booking");
+            }
+            
+            UUID userId = UUID.fromString(principal.getName());
+            log.info("Dang khoa ve de dat: showId={}, so luong ve={}, userId={}", 
+                    request.getShowId(), request.getTickets().size(), userId);
             
             // Khóa vé và lấy thông tin thanh toán
             BookingLockResponse response = ticketServices.lockTicketsForBooking(request);
@@ -58,8 +68,12 @@ public class BookingLockController {
                     String referenceCode = invoice.getNoiDung(); // Mã tham chiếu nằm trong nội dung
                     double totalAmount = invoice.getSoTien();
                     
-                    log.info("Bat dau theo doi thanh toan Sepay cho paymentId={}, referenceCode={}, totalAmount={}", 
-                            response.getPaymentId(), referenceCode, totalAmount);
+                    // Store userId in invoice for later use in payment processing
+                    invoice.setUserId(userId);
+                    invoiceRepository.save(invoice);
+                    
+                    log.info("Bat dau theo doi thanh toan Sepay cho paymentId={}, referenceCode={}, totalAmount={}, userId={}", 
+                            response.getPaymentId(), referenceCode, totalAmount, userId);
                     
                     // Bắt đầu theo dõi thanh toán Sepay
                     paymentService.startPaymentTracking(
