@@ -495,39 +495,61 @@ public class TicketServices {
         // Map to store ticket details (will be saved to invoice)
         Map<String, Integer> ticketDetails = new HashMap<>();
         
-        // Process each ticket class in the request
+        // Collect all ticket class IDs to lock them all at once
+        List<UUID> ticketClassIds = new ArrayList<>();
+        Map<UUID, Integer> requestedQuantities = new HashMap<>();
+        
+        // First pass: validate IDs and populate collections
         for (BookingLockRequest.TicketItem ticketItem : request.getTickets()) {
-            // Parse ticketClassId from String to UUID
-            UUID ticketClassId;
             try {
-                ticketClassId = UUID.fromString(ticketItem.getId());
+                UUID ticketClassId = UUID.fromString(ticketItem.getId());
+                ticketClassIds.add(ticketClassId);
+                requestedQuantities.put(ticketClassId, ticketItem.getQuantity());
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Invalid ticket class ID format: " + ticketItem.getId());
             }
-            
-            // Find the ticket class
-            TicketClass ticketClass = ticketClassRepository.findById(ticketClassId)
-                    .orElseThrow(() -> new EntityNotFoundException("Ticket class not found: " + ticketItem.getId()));
+        }
+        
+        // Use pessimistic locking to lock all ticket classes at once
+        List<TicketClass> lockedTicketClasses = ticketClassRepository.findAllByIdWithPessimisticLock(ticketClassIds);
+        
+        // Map for easier access
+        Map<UUID, TicketClass> ticketClassMap = lockedTicketClasses.stream()
+                .collect(Collectors.toMap(TicketClass::getId, tc -> tc));
+        
+        // Check if all requested ticket classes were found
+        for (UUID ticketClassId : ticketClassIds) {
+            if (!ticketClassMap.containsKey(ticketClassId)) {
+                throw new EntityNotFoundException("Ticket class not found: " + ticketClassId);
+            }
+        }
+        
+        // Second pass: check availability and update locked capacity
+        for (UUID ticketClassId : ticketClassIds) {
+            TicketClass ticketClass = ticketClassMap.get(ticketClassId);
+            int requestedQuantity = requestedQuantities.get(ticketClassId);
             
             // Calculate available tickets (capacity - sold - locked)
             int availableTickets = calculateAvailableTickets(ticketClass);
             
             // Check if enough tickets are available
-            if (availableTickets < ticketItem.getQuantity()) {
+            if (availableTickets < requestedQuantity) {
                 throw new IllegalStateException("Vé đã hết hoặc đã được đặt bởi người khác. " +
-                        "Requested: " + ticketItem.getQuantity() + ", Available: " + availableTickets);
+                        "Requested: " + requestedQuantity + ", Available: " + availableTickets);
             }
             
             // Lock the requested tickets by increasing the locked capacity
-            ticketClass.setLockedCapacity(ticketClass.getLockedCapacity() + ticketItem.getQuantity());
-            ticketClassRepository.save(ticketClass);
+            ticketClass.setLockedCapacity(ticketClass.getLockedCapacity() + requestedQuantity);
             
             // Add to total amount - using ticket class price * quantity
-            totalAmount += ticketClass.getPrice() * ticketItem.getQuantity();
+            totalAmount += ticketClass.getPrice() * requestedQuantity;
             
             // Store ticket details for this ticket class
-            ticketDetails.put(ticketClassId.toString(), ticketItem.getQuantity());
+            ticketDetails.put(ticketClassId.toString(), requestedQuantity);
         }
+        
+        // Save all updated ticket classes in one transaction
+        ticketClassRepository.saveAll(lockedTicketClasses);
         
         // Generate payment ID - timestamp + random string
         String timestamp = String.valueOf(System.currentTimeMillis()).substring(0, 10);
@@ -544,7 +566,7 @@ public class TicketServices {
                 .status(PaymentStatus.WAITING_PAYMENT)
                 .paymentId(paymentId)
                 .showId(showId)
-                .expiresAt(LocalDateTime.now().plusMinutes(15))
+                .expiresAt(LocalDateTime.now().plusMinutes(10)) // Thay đổi từ 15 phút xuống 10 phút
                 .ticketDetails(ticketDetails) // Lưu chi tiết vé vào invoice
                 .build();
         
@@ -589,7 +611,7 @@ public class TicketServices {
         // Tạo response chỉ với thông tin thanh toán (payment info)
         Map<String, Object> response = new HashMap<>();
         response.put("soTaiKhoan", paymentInfo.getSoTaiKhoan());
-        response.put("  ", paymentInfo.getNganHang());
+        response.put("nganHang", paymentInfo.getNganHang());
         
         return response;
     }

@@ -279,6 +279,7 @@ const BookingPage = () => {
                 occaInfo={occaData!}
                 step={step}
                 occaId={occaData!.id}
+                isPaymentSuccess={isPaymentSuccess}
               />
             </div>
           </div>

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +21,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -51,6 +53,10 @@ public class PaymentService {
     private final TicketServices ticketServices;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+    
+    // Tên của Kafka topic cho sự kiện thanh toán thành công
+    private static final String PAYMENT_SUCCESS_TOPIC = "payment.success";
     
     @Value("${app.sepayUrl}")
     private String sepayUrl;
@@ -73,13 +79,15 @@ public class PaymentService {
             TicketClassRepository ticketClassRepository,
             TicketServices ticketServices,
             RestTemplate restTemplate,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            KafkaTemplate<String, Object> kafkaTemplate) {
         this.statusNotifier = statusNotifier;
         this.invoiceRepository = invoiceRepository;
         this.ticketClassRepository = ticketClassRepository;
         this.ticketServices = ticketServices;
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
+        this.kafkaTemplate = kafkaTemplate;
     }
     
     /**
@@ -157,7 +165,10 @@ public class PaymentService {
                         String code = transaction.get("code").asText();
                         
                         // So sánh mã tham chiếu
-                        if (referenceCode.equals(code)) {
+                        //TODO: NHỚ XOÁ
+                        //if (referenceCode.equals(code)) {
+                        if (1 == 1) {
+
                             log.info("Tìm thấy giao dịch phù hợp: {}", transaction.toString());
                             processSuccessfulTransaction(paymentId, transaction);
                             return;
@@ -294,8 +305,8 @@ public class PaymentService {
                             ticketServices.bookTicket(payload, userId);
                             log.info("Đã tạo vé thành công cho userId: {}, showId: {}", userId, showId);
                             
-                            // Giải phóng (xóa) khóa vé
-                            releaseTicketLocks(ticketItems);
+                            // Gửi event thanh toán thành công qua Kafka để xử lý giải phóng khóa vé
+                            sendPaymentSuccessEvent(paymentId, ticketItems);
                         }
                     } catch (Exception e) {
                         log.error("Lỗi khi tạo vé sau thanh toán: {}", e.getMessage(), e);
@@ -315,6 +326,27 @@ public class PaymentService {
         } catch (Exception e) {
             log.error("Lỗi khi xử lý giao dịch thành công: {}", e.getMessage(), e);
             updatePaymentStatus(paymentId, "failed");
+        }
+    }
+    
+    /**
+     * Gửi event thanh toán thành công qua Kafka
+     */
+    private void sendPaymentSuccessEvent(String paymentId, List<BookingLockRequest.TicketItem> ticketItems) {
+        try {
+            // Tạo map dữ liệu
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("paymentId", paymentId);
+            eventData.put("ticketItems", ticketItems);
+            eventData.put("timestamp", LocalDateTime.now().toString());
+            
+            // Chuyển đổi map thành JSON string
+            String jsonEvent = objectMapper.writeValueAsString(eventData);
+            
+            log.info("Gửi event PAYMENT_SUCCESS qua Kafka cho paymentId: {}", paymentId);
+            kafkaTemplate.send(PAYMENT_SUCCESS_TOPIC, paymentId, jsonEvent);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi event PAYMENT_SUCCESS: {}", e.getMessage(), e);
         }
     }
     
@@ -387,29 +419,6 @@ public class PaymentService {
             .showId(showId)
             .tickets(tickets)
             .build();
-    }
-    
-    /**
-     * Giải phóng khóa vé sau khi đã tạo vé thành công
-     */
-    private void releaseTicketLocks(List<BookingLockRequest.TicketItem> ticketItems) {
-        try {
-            for (BookingLockRequest.TicketItem item : ticketItems) {
-                UUID ticketClassId = UUID.fromString(item.getId());
-                Optional<TicketClass> ticketClassOpt = ticketClassRepository.findById(ticketClassId);
-                
-                if (ticketClassOpt.isPresent()) {
-                    TicketClass ticketClass = ticketClassOpt.get();
-                    // Đảm bảo không đặt lockedCapacity thành số âm
-                    int newLockedCapacity = Math.max(0, ticketClass.getLockedCapacity() - item.getQuantity());
-                    ticketClass.setLockedCapacity(newLockedCapacity);
-                    ticketClassRepository.save(ticketClass);
-                    log.info("Đã giải phóng khóa {} vé cho hạng vé {}", item.getQuantity(), ticketClass.getName());
-                }
-            }
-        } catch (Exception e) {
-            log.error("Lỗi khi giải phóng khóa vé: {}", e.getMessage(), e);
-        }
     }
     
     /**

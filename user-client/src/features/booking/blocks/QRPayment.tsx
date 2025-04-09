@@ -63,12 +63,10 @@ export const QRPayment = ({
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-
-    // Tự động chuyển hướng về trang chi tiết sau 3 giây
-    setTimeout(() => {
-      navigate(`/occas/${occaId}`);
-    }, 3000);
-  }, [navigate, occaId]);
+    
+    // Không cần chuyển hướng về trang chi tiết ở đây nữa
+    // vì BookingSummary sẽ xử lý điều đó khi hết thời gian khóa vé
+  }, []);
 
   // Bắt đầu đếm ngược khi có thông tin thanh toán
   useEffect(() => {
