@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -69,25 +69,54 @@ export function OccaReviewDialog({
       minimumFractionDigits: 0
     }).format(amount);
   };
-
   const isPending = occa?.approvalStatus === "pending";
-
-  // Group tickets by showId
-  const groupTicketsByShow = () => {
+  
+  // Store the ticket-show assignments in a stable reference
+  const [ticketAssignments] = useState(new Map());
+  
+  // Group tickets by showId - using a stable reference to avoid flickering
+  const showsWithTickets = useMemo(() => {
     if (!details) return [];
     
-    const result = details.shows.map(show => {
-      const showTickets = details.tickets.filter(ticket => ticket.id.startsWith(`ticket-${show.id}`) || Math.random() > 0.5);
-      return {
-        ...show,
-        tickets: showTickets
-      };
-    });
+    // Only compute the assignments once when details change
+    if (!ticketAssignments.has(details)) {
+      const showTicketMap = new Map();
+      
+      // Pre-populate with empty arrays for all shows
+      details.shows.forEach(show => {
+        showTicketMap.set(show.id, []);
+      });
+      
+      // Assign tickets to their shows
+      details.tickets.forEach(ticket => {
+        let assigned = false;
+        
+        details.shows.forEach(show => {
+          // Try to match ticket to show with deterministic criteria
+          if (ticket.id.includes(show.id)) {
+            showTicketMap.get(show.id).push(ticket);
+            assigned = true;
+          }
+        });
+        
+        // If ticket wasn't assigned to any show, add it to all shows
+        if (!assigned) {
+          details.shows.forEach(show => {
+            showTicketMap.get(show.id).push(ticket);
+          });
+        }
+      });
+      
+      ticketAssignments.set(details, showTicketMap);
+    }
     
-    return result;
-  };
-
-  const showsWithTickets = groupTicketsByShow();
+    // Use the stored assignments to create the result
+    const showMap = ticketAssignments.get(details);
+    return details.shows.map(show => ({
+      ...show,
+      tickets: showMap.get(show.id) || []
+    }));
+  }, [details, ticketAssignments]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -220,10 +249,9 @@ export function OccaReviewDialog({
                                       </Badge>
                                     </div>
                                   </div>
-                                </AccordionTrigger>
-                                <AccordionContent>
+                                </AccordionTrigger>                                <AccordionContent>
                                   <div className="pl-10 pt-2 pb-1 space-y-3">
-                                    {show.tickets.map(ticket => (
+                                    {show.tickets.map((ticket: {id: string, type: string, price: number, quantity: number}) => (
                                       <div 
                                         key={ticket.id}
                                         className="bg-muted/50 p-3 rounded-md flex justify-between items-center"
