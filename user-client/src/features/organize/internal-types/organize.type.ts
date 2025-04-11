@@ -8,11 +8,9 @@ export interface OrganizerOccaUnit {
 }
 
 export interface BasicInfoFormData {
-  title: string;
-  artist: string;
+  title: string;  artist: string;
   location: string;
   address: string;
-  duration: number;
   description: string;
   bannerUrl: string;
   bannerFile?: File;

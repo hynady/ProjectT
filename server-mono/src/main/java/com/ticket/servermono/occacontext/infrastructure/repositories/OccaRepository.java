@@ -26,6 +26,13 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
                 ApprovalStatus status, String title, Pageable pageable);
                 
         Page<Occa> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+        
+        @Query("SELECT o FROM Occa o WHERE " +
+               "(:status IS NULL OR o.approvalStatus = :status) AND " +
+               "(:search IS NULL OR LOWER(o.title) LIKE CONCAT('%', LOWER(:search), '%'))")
+        Page<Occa> findForApprovalManagement(@Param("status") ApprovalStatus status, 
+                                            @Param("search") String search, 
+                                            Pageable pageable);
 
         @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaProjection(" +
                         "o.id, o.title, o.image, " +

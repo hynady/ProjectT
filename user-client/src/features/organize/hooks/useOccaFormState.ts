@@ -43,7 +43,6 @@ const defaultOccaData: OccaFormData = {
     artist: "",
     location: "",
     address: "",
-    duration: 120,
     description: "",
     bannerUrl: "",
   },
@@ -84,25 +83,46 @@ export const useOccaFormState = ({
     }
 
     // Deep compare function for nested objects
-    function hasDeepChanges<T>(original: T, current: T): boolean {
+    function hasDeepChanges<T>(original: T, current: T, path: string = 'root'): { changed: boolean; changedPaths: string[] } {     
+      const changedPaths: string[] = [];
+      
       // Handle direct equality
-      if (Object.is(original, current)) return false;
+      if (Object.is(original, current)) return { changed: false, changedPaths };
       
       // Handle null/undefined cases
-      if (original == null || current == null) return true;
+      if (original == null || current == null) {
+        console.log(`Change detected at ${path}: ${original} !== ${current}`);
+        changedPaths.push(path);
+        return { changed: true, changedPaths };
+      }
       
       // Handle dates
       if (original instanceof Date && current instanceof Date) {
-        return original.getTime() !== current.getTime();
+        const dateChanged = original.getTime() !== current.getTime();
+        if (dateChanged) {
+          console.log(`Date change detected at ${path}: ${original} !== ${current}`);
+          changedPaths.push(path);
+        }
+        return { changed: dateChanged, changedPaths };
       }
       
       // Handle non-objects (after Date check)
-      if (typeof original !== 'object' || typeof current !== 'object') 
-        return original !== current;
+      if (typeof original !== 'object' || typeof current !== 'object') {
+        const primitiveChanged = original !== current;
+        if (primitiveChanged) {
+          console.log(`Primitive change detected at ${path}: ${original} !== ${current}`);
+          changedPaths.push(path);
+        }
+        return { changed: primitiveChanged, changedPaths };
+      }
       
       // Handle arrays with proper type checking
       if (Array.isArray(original) && Array.isArray(current)) {
-        if (original.length !== current.length) return true;
+        if (original.length !== current.length) {
+          console.log(`Array length change detected at ${path}: ${original.length} !== ${current.length}`);
+          changedPaths.push(`${path}.length`);
+          return { changed: true, changedPaths };
+        }
         
         // Special handling for arrays of objects with IDs
         if (original.length > 0 && typeof original[0] === 'object' && original[0] !== null && 'id' in original[0]) {
@@ -113,19 +133,40 @@ export const useOccaFormState = ({
             current.map(item => [(item as { id: string }).id, item])
           );
           
-          if (originalMap.size !== currentMap.size) return true;
+          if (originalMap.size !== currentMap.size) {
+            console.log(`Array map size change detected at ${path}: ${originalMap.size} !== ${currentMap.size}`);
+            changedPaths.push(`${path}.size`);
+            return { changed: true, changedPaths };
+          }
           
           for (const [id, originalItem] of originalMap) {
             const currentItem = currentMap.get(id);
-            if (!currentItem || hasDeepChanges(originalItem, currentItem)) {
-              return true;
+            if (!currentItem) {
+              console.log(`Item with id ${id} missing in current at ${path}`);
+              changedPaths.push(`${path}.${id}`);
+              return { changed: true, changedPaths };
+            }
+            
+            const itemResult = hasDeepChanges(originalItem, currentItem, `${path}.${id}`);
+            if (itemResult.changed) {
+              changedPaths.push(...itemResult.changedPaths);
+              return { changed: true, changedPaths };
             }
           }
-          return false;
+          
+          return { changed: false, changedPaths };
         }
         
         // Regular array comparison
-        return original.some((item, index) => hasDeepChanges(item, current[index]));
+        for (let i = 0; i < original.length; i++) {
+          const itemResult = hasDeepChanges(original[i], current[i], `${path}[${i}]`);
+          if (itemResult.changed) {
+            changedPaths.push(...itemResult.changedPaths);
+            return { changed: true, changedPaths };
+          }
+        }
+        
+        return { changed: false, changedPaths };
       }
 
       // Handle objects
@@ -137,21 +178,39 @@ export const useOccaFormState = ({
       
       // Special handling for Files
       if (currentKeys.includes('bannerFile') && currentObj.bannerFile instanceof File) {
-        return true;
+        console.log(`File object detected at ${path}.bannerFile`);
+        changedPaths.push(`${path}.bannerFile`);
+        return { changed: true, changedPaths };
       }
       
-      if (originalKeys.length !== currentKeys.length) return true;
+      if (originalKeys.length !== currentKeys.length) {
+        console.log(`Object keys length change detected at ${path}: ${originalKeys.length} !== ${currentKeys.length}`);
+        console.log(`Original keys: ${originalKeys.join(', ')}`);
+        console.log(`Current keys: ${currentKeys.join(', ')}`);
+        changedPaths.push(`${path}.keys`);
+        return { changed: true, changedPaths };
+      }
+        for (const key of originalKeys) {
+        // Skip file objects and duration field in comparison
+        if (key === 'bannerFile' || key === 'file' || key === 'duration') continue;
+        
+        const keyResult = hasDeepChanges(originalObj[key], currentObj[key], `${path}.${key}`);
+        if (keyResult.changed) {
+          changedPaths.push(...keyResult.changedPaths);
+          return { changed: true, changedPaths };
+        }
+      }
       
-      return originalKeys.some(key => {
-        // Skip file objects in comparison
-        if (key === 'bannerFile' || key === 'file') return false;
-        return hasDeepChanges(originalObj[key], currentObj[key]);
-      });
+      return { changed: false, changedPaths };
     }
     
     // Compare current data with original data
-    const changed = hasDeepChanges(originalData, occaData);
-    setHasChanges(changed);
+    const result = hasDeepChanges(originalData, occaData);
+    setHasChanges(result.changed);
+    
+    if (result.changed) {
+      console.log("Changes detected in the following paths:", result.changedPaths);
+    }
   }, [occaData, originalData, isEditing]);
 
   // Validate form data

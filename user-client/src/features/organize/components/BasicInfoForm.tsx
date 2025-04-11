@@ -38,13 +38,7 @@ const basicInfoSchema = z.object({
   }),
   address: z.string().min(5, {
     message: "Địa chỉ phải có ít nhất 5 ký tự",
-  }),
-  duration: z.coerce.number().min(15, {
-    message: "Thời lượng phải ít nhất 15 phút",
-  }).max(600, {
-    message: "Thời lượng không quá 600 phút (10 giờ)"
-  }),
-  description: z.string().min(10, {
+  }),  description: z.string().min(10, {
     message: "Mô tả phải có ít nhất 10 ký tự",
   }).transform(val => {
     try {
@@ -90,7 +84,6 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
       artist: data?.artist || "",
       location: data?.location || "",
       address: data?.address || "",
-      duration: data?.duration || 120,
       description: data?.description || JSON.stringify([
         {
           type: 'paragraph',
@@ -111,7 +104,6 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
         artist: data.artist || "",
         location: data.location || "",
         address: data.address || "",
-        duration: data.duration || 120,
         description: data.description || JSON.stringify([
           {
             type: 'paragraph',
@@ -158,7 +150,6 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
       artist: values.artist || "",
       location: values.location || "",
       address: values.address || "",
-      duration: values.duration || 120,
       description: values.description || "",
       categoryId: values.categoryId || "",
       bannerUrl: bannerPreview || "",
@@ -227,7 +218,6 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
       artist: values.artist,
       location: values.location,
       address: values.address,
-      duration: values.duration,
       description: values.description,
       categoryId: values.categoryId,
       bannerUrl: bannerPreview || "",
@@ -329,28 +319,6 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="duration"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Thời lượng (phút)</FormLabel>
-              <FormControl>
-                <Input 
-                  type="number" 
-                  placeholder="120" 
-                  {...field} 
-                  onBlur={() => {
-                    field.onBlur();
-                    handleFieldBlur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <FormField
           control={form.control}

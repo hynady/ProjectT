@@ -1,7 +1,6 @@
 import { BaseService } from '@/commons/base.service';
 import { 
   AdminOccaUnit, 
-  OccaApprovalPayload,
   Page,
   OccaFilterParams,
   OccaStatistics,
@@ -33,10 +32,19 @@ class AdminService extends BaseService {
   }
 
   getOccas(params: OccaFilterParams): Promise<Page<AdminOccaUnit>> {
+    const searchParams = new URLSearchParams();
+    
+        // Thêm các tham số vào searchParams
+        if (params.page !== undefined) searchParams.append('page', params.page.toString());
+        if (params.size !== undefined) searchParams.append('size', params.size.toString());
+        if (params.search) searchParams.append('search', params.search);
+        if (params.status) searchParams.append('status', params.status);
+        if (params.sort) searchParams.append('sort', params.sort);
+        if (params.direction) searchParams.append('direction', params.direction);
+    
     return this.request({
       method: 'GET',
-      url: '/admin/occas',
-      data: params,
+      url: `/approval/occas?${searchParams.toString()}`,
       mockResponse: () => this.getMockOccas(params)
     });
   }
@@ -44,26 +52,23 @@ class AdminService extends BaseService {
   getOccaDetail(occaId: string): Promise<AdminOccaDetail> {
     return this.request({
       method: 'GET',
-      url: `/admin/occas/${occaId}`,
+      url: `/approval/occas/${occaId}/detail`,
       mockResponse: () => this.getMockOccaDetail(occaId)
     });
   }
-
-  approveOcca(occaId: string, data: OccaApprovalPayload): Promise<void> {
+  updateOccaStatus(occaId: string, data: { status: string; rejectionReason?: string }): Promise<void> {
     return this.request({
-      method: 'POST',
-      url: `/admin/occas/${occaId}/approve`,
+      method: 'PUT',
+      url: `/approval/occas/${occaId}/status`,
       data: data,
-      mockResponse: () => this.getMockApproveOcca()
-    });
-  }
-
-  rejectOcca(occaId: string, data: OccaApprovalPayload): Promise<void> {
-    return this.request({
-      method: 'POST',
-      url: `/admin/occas/${occaId}/reject`,
-      data: data,
-      mockResponse: () => this.getMockRejectOcca()
+      mockResponse: () => {
+        if (data.status === 'approved') {
+          return this.getMockApproveOcca();
+        } else if (data.status === 'rejected') {
+          return this.getMockRejectOcca();
+        }
+        return Promise.resolve();
+      }
     });
   }
 

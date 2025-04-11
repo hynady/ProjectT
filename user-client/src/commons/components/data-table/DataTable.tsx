@@ -2,7 +2,8 @@ import {
   AlertCircle,
   ArrowUpDown,
   Filter,
-  Calendar
+  Calendar,
+  RefreshCw
 } from "lucide-react";
 
 // Components
@@ -73,6 +74,7 @@ interface DataTableProps<T> {
   rowActions?: (item: T) => React.ReactNode;
   isLast?: boolean;
   isFirst?: boolean;
+  refreshData?: () => void;
 }
 
 export function DataTable<T extends { id: string | number }>({
@@ -96,7 +98,8 @@ export function DataTable<T extends { id: string | number }>({
   onStatusChange,
   rowActions,
   isLast = false,
-  isFirst = true
+  isFirst = true,
+  refreshData
 }: DataTableProps<T>) {
 
   const handleSort = (column: string) => {
@@ -147,34 +150,47 @@ export function DataTable<T extends { id: string | number }>({
   return (
     <div className="flex flex-col h-full">
       {statusOptions && (
-        <div className="px-4 py-3 border-b">
-          <div className="flex items-center justify-between">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1 h-8">
-                  <Filter className="h-4 w-4" />
-                  <span>
-                    {statusOptions.find(option => option.value === statusFilter)?.label || 'Tất cả'}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                {statusOptions.map(option => (
-                  <DropdownMenuCheckboxItem 
-                    key={option.value}
-                    checked={statusFilter === option.value}
-                    onCheckedChange={() => onStatusChange && onStatusChange(option.value)}
-                  >
-                    {option.badge ? (
-                      <div className="flex items-center gap-2">
-                        <Badge variant={option.badge} className="w-2 h-2 rounded-full p-0" />
-                        <span>{option.label}</span>
-                      </div>
-                    ) : option.label}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+        <div className="px-4 py-3 border-b">          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1 h-8">
+                    <Filter className="h-4 w-4" />
+                    <span>
+                      {statusOptions.find(option => option.value === statusFilter)?.label || 'Tất cả'}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  {statusOptions.map(option => (
+                    <DropdownMenuCheckboxItem 
+                      key={option.value}
+                      checked={statusFilter === option.value}
+                      onCheckedChange={() => onStatusChange && onStatusChange(option.value)}
+                    >
+                      {option.badge ? (
+                        <div className="flex items-center gap-2">
+                          <Badge variant={option.badge} className="w-2 h-2 rounded-full p-0" />
+                          <span>{option.label}</span>
+                        </div>
+                      ) : option.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Refresh button */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 w-8 p-0" 
+                onClick={() => refreshData && refreshData()}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                <span className="sr-only">Làm mới</span>
+              </Button>
+            </div>
             
             <div className="text-sm text-muted-foreground">
               {isLoading ? (

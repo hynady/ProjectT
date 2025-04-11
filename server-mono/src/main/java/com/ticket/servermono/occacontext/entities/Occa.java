@@ -54,10 +54,15 @@ public class Occa extends BaseSQLEntity {
     
     @Column(name = "status")
     private String status;
-    
-    @Enumerated(EnumType.STRING)
+      @Enumerated(EnumType.STRING)
     @Column(name = "approval_status", nullable = false)
     private ApprovalStatus approvalStatus;
+    
+    @Column(name = "approval_status_update_at")
+    private LocalDateTime approvalStatusUpdateAt;
+    
+    @Column(name = "rejection_reason", length = 1000)
+    private String rejectionReason;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

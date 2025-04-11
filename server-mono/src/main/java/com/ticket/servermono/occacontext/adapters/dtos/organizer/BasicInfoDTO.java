@@ -16,7 +16,7 @@ public class BasicInfoDTO {
     private String artist;
     private String location;
     private String address;
-    private Integer duration;
+//    private Integer duration;
     private String description;
     private String bannerUrl;
     private UUID categoryId;

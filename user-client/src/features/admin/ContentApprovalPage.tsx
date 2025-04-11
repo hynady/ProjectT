@@ -92,14 +92,12 @@ const ContentApprovalPage = () => {
     setIsReviewDialogOpen(false);
     setIsRejectDialogOpen(true);
   };
-
   const handleApproveSubmit = async () => {
     if (!selectedOcca) return;
     
     try {
       setIsSubmitting(true);
-      await adminService.approveOcca(selectedOcca.id, {
-        notes: approvalNote,
+      await adminService.updateOccaStatus(selectedOcca.id, {
         status: 'approved'
       });
       
@@ -136,9 +134,9 @@ const ContentApprovalPage = () => {
     
     try {
       setIsSubmitting(true);
-      await adminService.rejectOcca(selectedOcca.id, {
-        notes: rejectionReason,
-        status: 'rejected'
+      await adminService.updateOccaStatus(selectedOcca.id, {
+        status: 'rejected',
+        rejectionReason: rejectionReason
       });
       
       toast({
@@ -293,9 +291,9 @@ const ContentApprovalPage = () => {
             sortDirection={sortDirection as 'asc' | 'desc'}
             statusOptions={statusOptions}
             statusFilter={statusFilter}
-            searchQuery={searchTerm}
-            onPageChange={handlePageChange}
+            searchQuery={searchTerm}            onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
+            refreshData={refreshData}
             onSortChange={handleSortChange}
             onStatusChange={handleStatusChange}
             rowActions={(occa) => (

@@ -349,7 +349,6 @@ class OrganizeService extends BaseService {
               artist: "Various Artists", // Mock data
               location: basicInfo.location,
               address: "123 Example Street, City", // Mock address
-              duration: 120, // Default duration
               description: JSON.stringify([
                 {
                   type: 'paragraph',

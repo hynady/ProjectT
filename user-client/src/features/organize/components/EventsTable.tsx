@@ -226,8 +226,7 @@ export const EventsTable = ({ searchTerm = "" }: EventsTableProps) => {
         totalPages={totalPages}
         isLast={isLast}
         isFirst={isFirst}
-        sortField={sortField}
-        sortDirection={sortDirection as 'asc' | 'desc'}
+        sortField={sortField}        sortDirection={sortDirection as 'asc' | 'desc'}
         statusOptions={statusOptions}
         statusFilter={statusFilter}
         searchQuery={searchTerm}
@@ -236,6 +235,7 @@ export const EventsTable = ({ searchTerm = "" }: EventsTableProps) => {
         onPageSizeChange={handlePageSizeChange}
         onSortChange={handleSortChange}
         onStatusChange={handleStatusChange}
+        refreshData={refreshData}
         rowActions={(occa) => (
           <ActionMenu
             actions={[
