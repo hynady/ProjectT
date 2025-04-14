@@ -6,7 +6,9 @@ import {
   OccaStatistics,
   AdminUserInfo,
   AdminUserFilterParams,
-  AdminOccaDetail
+  AdminOccaDetail,
+  AdminUserDetail,
+  UserStatus
 } from '../internal-types/admin.type';
 import { 
   mockOccas, 
@@ -81,11 +83,36 @@ class AdminService extends BaseService {
   }
 
   getUsersList(params: AdminUserFilterParams): Promise<Page<AdminUserInfo>> {
+    const searchParams = new URLSearchParams();
+
+    if (params.page !== undefined) searchParams.append('page', params.page.toString());
+    if (params.size !== undefined) searchParams.append('size', params.size.toString());
+    if (params.search) searchParams.append('search', params.search);
+    if (params.status) searchParams.append('status', params.status);
+    if (params.sort) searchParams.append('sort', params.sort);
+    if (params.direction) searchParams.append('direction', params.direction);
+    
     return this.request({
       method: 'GET',
-      url: '/admin/users',
-      data: params,
+      url: `/user/users?${searchParams.toString()}`,
       mockResponse: () => this.getMockUsersList(params)
+    });
+  }
+
+  getUserDetails(userId: string): Promise<AdminUserDetail> {
+    return this.request({
+      method: 'GET',
+      url: `/user/users/${userId}/detail`,
+      mockResponse: () => this.getMockUserDetail(userId)
+    });
+  }
+
+  updateUserStatus(userId: string, data: { status: 'active' | 'inactive' }): Promise<void> {
+    return this.request({
+      method: 'PUT',
+      url: `/user/users/${userId}/status`,
+      data: data,
+      mockResponse: () => this.getMockUpdateUserStatus(userId, data.status)
     });
   }
 
@@ -288,6 +315,83 @@ class AdminService extends BaseService {
           first: params.page === 0,
           empty: paginatedUsers.length === 0
         });
+      }, 800);
+    });
+  }
+
+  private getMockUserDetail(userId: string): Promise<AdminUserDetail> {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        // Find user in mock data
+        const user = mockUsers.find(u => u.id === userId);
+        
+        if (!user) {
+          reject(new Error("User not found"));
+          return;
+        }
+
+        // Create mock user profiles
+        const mockProfiles = [
+          {
+            id: `profile_${userId}_1`,
+            name: user.name,
+            phoneNumber: "0901234567",
+            email: user.email,
+            isDefault: true
+          },
+          {
+            id: `profile_${userId}_2`,
+            name: `${user.name} - Work`,
+            phoneNumber: "0987654321",
+            email: `work.${user.email}`,
+            isDefault: false
+          }
+        ];
+
+        // Define type for user stats
+        type UserStats = {
+          eventsAttended: number;
+          ticketsPurchased: number;
+          totalSpent: number;
+          eventsOrganized?: number; // Make eventsOrganized optional
+        };
+
+        // Create mock user stats
+        const mockStats: UserStats = {
+          eventsAttended: Math.floor(Math.random() * 10),
+          ticketsPurchased: Math.floor(Math.random() * 15),
+          totalSpent: Math.floor(Math.random() * 5000000)
+        };
+
+        // Add organizer stats if user is an organizer
+        if (user.role === 'organizer') {
+          mockStats.eventsOrganized = Math.floor(Math.random() * 8);
+        }
+
+        resolve({
+          ...user,
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`,
+          profiles: mockProfiles,
+          stats: mockStats
+        });
+      }, 800);
+    });
+  }
+
+  private getMockUpdateUserStatus(userId: string, status: UserStatus): Promise<void> {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const userIndex = mockUsers.findIndex(u => u.id === userId);
+        
+        if (userIndex === -1) {
+          reject(new Error("User not found"));
+          return;
+        }
+        
+        // Update user status in mock data
+        mockUsers[userIndex].status = status;
+        
+        resolve();
       }, 800);
     });
   }

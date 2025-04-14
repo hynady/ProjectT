@@ -9,6 +9,7 @@ import org.hibernate.annotations.SQLRestriction;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.ticket.servermono.authcontext.domain.enums.UserStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Entity
@@ -22,7 +23,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SQLRestriction("is_deleted = false")
 public class EndUser extends BaseSQLEntity {
 
     @Column(unique = true, nullable = false)
@@ -36,12 +36,11 @@ public class EndUser extends BaseSQLEntity {
     private LocalDate birthday;
 
     @Column(nullable = false)
-    private String password;
+    private String password;    private String roles;
 
-    private String roles;
-
-    @Column(name = "is_deleted")
-    private boolean isDeleted;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "activated_status")
+    private UserStatus activatedStatus;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -51,7 +50,7 @@ public class EndUser extends BaseSQLEntity {
         this.email = email;
         this.password = encodePassword(password);
         this.roles = "ROLE_USER";
-        this.isDeleted = false;
+        this.activatedStatus = UserStatus.ACTIVE;
     }
 
     private String encodePassword(String rawPassword) {

@@ -1,6 +1,7 @@
 package com.ticket.servermono.authcontext.usecases;
 
 import com.ticket.servermono.authcontext.adapters.dtos.*;
+import com.ticket.servermono.authcontext.domain.enums.UserStatus;
 import com.ticket.servermono.authcontext.entities.EndUser;
 import com.ticket.servermono.authcontext.entities.Profile;
 import com.ticket.servermono.authcontext.infrastructure.repositories.EndUserRepository;
@@ -200,17 +201,16 @@ public class ProfileServices {
         // Find the user
         EndUser user = endUserRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
-        
-        // Verify password
+          // Verify password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Mật khẩu không chính xác");
         }
         
-        // Soft delete the user by setting isDeleted flag to true
-        user.setDeleted(true);
+        // Deactivate the user account by setting activatedStatus to INACTIVE
+        user.setActivatedStatus(UserStatus.INACTIVE);
         endUserRepository.save(user);
         
-        log.info("User account with ID {} has been soft deleted", userId);
+        log.info("User account with ID {} has been deactivated", userId);
         
         return GenericResponse.builder()
                 .success(true)

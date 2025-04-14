@@ -103,6 +103,15 @@ export const mockUsers: AdminUserInfo[] = [
         status: "active",
         createdAt: "2023-07-20T10:30:00Z",
         lastActive: "2023-12-05T11:00:00Z"
+    },
+    {
+        id: "user-6",
+        name: "Le Thi F",
+        email: "lethif@example.com",
+        role: "user",
+        status: "inactive",
+        createdAt: "2023-08-12T09:20:00Z",
+        lastActive: "2023-09-01T14:30:00Z"
     }
 ];
 

@@ -1,6 +1,6 @@
 export type OccaApprovalStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 export type UserRole = 'user' | 'organizer' | 'admin';
-export type UserStatus = 'active' | 'inactive' | 'suspended';
+export type UserStatus = 'active' | 'inactive';
 export type ActivityType = 'occa_submitted' | 'occa_approved' | 'occa_rejected' | 'user_registered' | 'user_login';
 
 export interface Page<T> {
@@ -130,4 +130,30 @@ export interface AdminUserInfo {
   status: UserStatus;
   createdAt: string;
   lastActive: string;
+}
+
+export interface UserProfileCard {
+  id: string;
+  name: string;
+  phoneNumber: string;
+  email: string;
+  isDefault: boolean;
+}
+
+export interface AdminUserDetail {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  avatar?: string;
+  createdAt: string;
+  lastActive: string;
+  stats: {
+    eventsAttended: number;
+    eventsOrganized?: number;
+    ticketsPurchased: number;
+    totalSpent: number;
+  };
+  profiles: UserProfileCard[];
 }

@@ -6,12 +6,16 @@ import { useDataTable } from "@/commons/hooks/use-data-table";
 import { DataTable, Column, StatusOption } from "@/commons/components/data-table";
 import { Badge } from "@/commons/components/badge";
 import { Input } from "@/commons/components/input";
-import { Search, UserIcon, Mail, Calendar } from "lucide-react";
+import { Search, UserIcon, Calendar, Eye, PowerIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ActionMenu } from "@/commons/components/data-table/ActionMenu";
+import { UserDetailsDialog } from "./components/UserDetailsDialog";
+import { toast } from "@/commons/hooks/use-toast";
 
 const UsersManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
   const fetchData = useCallback((params: AdminUserFilterParams) => {
     return adminService.getUsersList(params);
@@ -35,6 +39,7 @@ const UsersManagementPage = () => {
     handleSortChange,
     handleStatusChange,
     handleSearchChange,
+    refreshData,
   } = useDataTable<AdminUserInfo, AdminUserFilterParams>({
     defaultSortField: "name",
     defaultSortDirection: "asc",
@@ -53,11 +58,38 @@ const UsersManagementPage = () => {
     return format(new Date(dateString), 'dd/MM/yyyy HH:mm');
   };
 
+  const handleViewUserDetails = (userId: string) => {
+    setSelectedUserId(userId);
+    setShowDetailsDialog(true);
+  };
+
+  const handleToggleUserStatus = async (userId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      
+      await adminService.updateUserStatus(userId, { status: newStatus as 'active' | 'inactive' });
+      
+      toast({
+        title: "Status updated",
+        description: `User status changed to ${newStatus}`,
+        variant: "success"
+      });
+      
+      refreshData();
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update user status. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const statusOptions: StatusOption[] = [
     { value: 'all', label: 'All Users' },
     { value: 'active', label: 'Active', badge: 'success' },
-    { value: 'inactive', label: 'Inactive', badge: 'secondary' },
-    { value: 'suspended', label: 'Suspended', badge: 'destructive' }
+    { value: 'inactive', label: 'Inactive', badge: 'secondary' }
   ];
 
   const columns: Column<AdminUserInfo>[] = useMemo(() => [
@@ -83,7 +115,6 @@ const UsersManagementPage = () => {
       sortable: true,
       cell: (user) => (
         <div className="flex items-center space-x-2">
-          <Mail className="w-4 h-4 text-muted-foreground" />
           <span className="truncate max-w-[200px]">{user.email}</span>
         </div>
       )
@@ -111,18 +142,8 @@ const UsersManagementPage = () => {
       id: "status",
       header: "Status",
       cell: (user) => (
-        <Badge variant={
-          user.status === "active" 
-            ? "success" 
-            : user.status === "inactive" 
-              ? "secondary" 
-              : "destructive"
-        }>
-          {user.status === "active" 
-            ? "Active" 
-            : user.status === "inactive" 
-              ? "Inactive" 
-              : "Suspended"}
+        <Badge variant={user.status === "active" ? "success" : "secondary"}>
+          {user.status === "active" ? "Active" : "Inactive"}
         </Badge>
       )
     },
@@ -137,6 +158,17 @@ const UsersManagementPage = () => {
         </div>
       )
     },
+    {
+      id: "lastActive",
+      header: "Last Active",
+      sortable: true,
+      cell: (user) => (
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Calendar className="w-3.5 h-3.5 mr-1.5" />
+          <span>{formatDate(user.lastActive)}</span>
+        </div>
+      )
+    }
   ], []);
   
   return (
@@ -181,18 +213,19 @@ const UsersManagementPage = () => {
             onPageSizeChange={handlePageSizeChange}
             onSortChange={handleSortChange}
             onStatusChange={handleStatusChange}
+            refreshData={refreshData}
             rowActions={(user) => (
               <ActionMenu
                 actions={[
                   {
                     label: "View Details",
-                    icon: <UserIcon className="h-4 w-4" />,
-                    onClick: () => console.log("View user details:", user.id)
+                    icon: <Eye className="h-4 w-4" />,
+                    onClick: () => handleViewUserDetails(user.id)
                   },
                   {
-                    label: user.status === "active" ? "Suspend User" : "Activate User",
-                    icon: <UserIcon className="h-4 w-4" />,
-                    onClick: () => console.log("Toggle user status:", user.id),
+                    label: user.status === "active" ? "Disable User" : "Enable User",
+                    icon: <PowerIcon className="h-4 w-4" />,
+                    onClick: () => handleToggleUserStatus(user.id, user.status),
                     variant: user.status === "active" ? "destructive" : "default"
                   }
                 ]}
@@ -201,6 +234,16 @@ const UsersManagementPage = () => {
           />
         </div>
       </div>
+
+      {/* User Details Dialog */}
+      {selectedUserId && (
+        <UserDetailsDialog
+          open={showDetailsDialog}
+          onOpenChange={setShowDetailsDialog}
+          userId={selectedUserId}
+          onStatusUpdate={refreshData}
+        />
+      )}
     </AdminDashboardLayout>
   );
 };
