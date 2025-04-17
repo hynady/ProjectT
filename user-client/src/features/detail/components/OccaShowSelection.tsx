@@ -59,7 +59,6 @@ export const OccaShowSelection = ({shows, organizer, occaInfo, isPreview = false
         title: occaInfo.title,
         location: occaInfo.location, 
         address: occaInfo.address,
-        duration: occaInfo.duration,
         shows: shows
       },
       selectedShow: {
@@ -92,7 +91,13 @@ export const OccaShowSelection = ({shows, organizer, occaInfo, isPreview = false
             {shows.map((show, index) => (
               <AccordionItem key={index} value={`show-${index}`}>
                 <AccordionTrigger>
-                  {show.date} - {show.time}
+                  {new Date(show.date).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                  }).replace(/\//g, '/')} - {show.time.includes(':') 
+                    ? show.time.substring(0, show.time.lastIndexOf(':')) 
+                    : show.time}
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-4">

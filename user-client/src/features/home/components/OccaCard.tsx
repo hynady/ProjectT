@@ -21,7 +21,11 @@ interface OccaCardProps {
   isPreview?: boolean; // Add this prop
 }
 
-export const OccaCard: React.FC<OccaCardProps> = ({ occa, loading, isPreview = false }) => {
+export const OccaCard: React.FC<OccaCardProps> = ({
+  occa,
+  loading,
+  isPreview = false,
+}) => {
   const navigate = useNavigate();
 
   if (loading) {
@@ -80,11 +84,24 @@ export const OccaCard: React.FC<OccaCardProps> = ({ occa, loading, isPreview = f
         <div className="flex-1 flex flex-col justify-center space-y-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{occa.date}</span>
+            <span className="truncate">
+              {new Date(occa.date)
+                .toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })
+                .replace(/\//g, "/")}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{occa.time}</span>
+            <span className="truncate">
+              {" "}
+              {occa.time.includes(":")
+                ? occa.time.substring(0, occa.time.lastIndexOf(":"))
+                : occa.time}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 flex-shrink-0" />
@@ -94,7 +111,15 @@ export const OccaCard: React.FC<OccaCardProps> = ({ occa, loading, isPreview = f
 
         <div className="font-bold text-xl text-primary pt-3 pb-3 text-right">
           <Separator orientation="horizontal" className="my-2" />
-          <span className="text-xl font-mono">Từ</span> {occa.price === null ? "Không xác định" : (isNaN(occa.price) ? "NaN" : occa.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }))}
+          <span className="text-xl font-mono">Từ</span>{" "}
+          {occa.price === null
+            ? "Không xác định"
+            : isNaN(occa.price)
+            ? "NaN"
+            : occa.price.toLocaleString("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              })}
         </div>
       </CardContent>
 
@@ -104,14 +129,14 @@ export const OccaCard: React.FC<OccaCardProps> = ({ occa, loading, isPreview = f
             Xem trước
           </Button>
         ) : (
-        <Button
-          className="w-full group-hover:bg-primary/90"
-          variant="default"
-          onClick={handleBuyTicket}
-        >
-          <span>Mua vé ngay</span>
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
+          <Button
+            className="w-full group-hover:bg-primary/90"
+            variant="default"
+            onClick={handleBuyTicket}
+          >
+            <span>Mua vé ngay</span>
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
         )}
       </CardFooter>
     </Card>

@@ -97,7 +97,6 @@ export default function OccaDetail() {
                     title: hero.data?.title ?? '',
                     location: location.data?.location ?? '',
                     address: location.data?.address ?? '',
-                    duration: hero.data?.duration ?? '',
                     shows: shows.data
                   }
                 }

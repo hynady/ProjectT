@@ -106,7 +106,6 @@ const PreviewOccaDetail = () => {
               bannerUrl: previewData.bannerUrl || "https://placehold.co/1200x630/8b5cf6/f5f3ff?text=Sự+kiện+mới",
               date: previewData.shows?.length > 0 ? previewData.shows[0].date : new Date().toISOString().split('T')[0],
               time: previewData.shows?.length > 0 ? previewData.shows[0].time : "19:00",
-              duration: (previewData.duration || 120).toString(),
               location: previewData.location || "Địa điểm",
               status: "active", // Add status for preview
             },

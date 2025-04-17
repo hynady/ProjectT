@@ -45,7 +45,6 @@ export interface BookingInfo {
     title: string; 
     location: string;
     address: string;
-    duration: string;
     shows: OccaShowUnit[];
   };
   selectedShow?: {

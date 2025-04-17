@@ -28,7 +28,6 @@ export interface PreviewData {
   artist: string;
   location: string;
   address: string;
-  duration: number;
   description: string;
   bannerUrl: string;
   shows: PreviewShow[];
@@ -53,7 +52,6 @@ export interface PreviewHeroData {
   bannerUrl: string;
   date: string;
   time: string;
-  duration: string;
   location: string;
   status: string;
 }

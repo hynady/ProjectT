@@ -114,7 +114,6 @@ export const PreviewModal = ({ occaData, children, onNavigateToTab }: PreviewMod
         artist: occaData!.basicInfo.artist || "Nghệ sĩ",
         location: occaData!.basicInfo.location || "Địa điểm",
         address: occaData!.basicInfo.address || "Địa chỉ sẽ được cập nhật sau",
-        duration: occaData!.basicInfo.duration || 120,
         description: occaData!.basicInfo.description || "Mô tả về sự kiện sẽ được cập nhật sau.",
         bannerUrl: occaData!.basicInfo.bannerUrl || "https://placehold.co/1200x630/8b5cf6/f5f3ff?text=Sự+kiện+mới",
         shows,

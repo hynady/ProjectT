@@ -9,7 +9,6 @@ export interface OccaHeroSectionUnit {
   artist: string;
   date: string;
   time: string;
-  duration: string;
   location: string;
 }
 
@@ -50,12 +49,18 @@ export const OccaHeroSection = ({ occa }: OccaHeroSectionProps) => {
               <div className="hidden sm:flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-4 md:gap-6 text-muted-foreground pt-2">
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary"/>
-                  <span className="text-xs sm:text-sm md:text-base">{occa.date}</span>
+                  {new Date(occa.date).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                  }).replace(/\//g, '/')}
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary"/>
                   <span className="text-xs sm:text-sm md:text-base">
-                    {occa.time} ({occa.duration} phút)
+                    {occa.time.includes(':') 
+                      ? occa.time.substring(0, occa.time.lastIndexOf(':')) 
+                      : occa.time}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2">
