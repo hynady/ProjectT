@@ -25,11 +25,13 @@ import CreateOccaPage from "@/features/organize/CreateOccaPage.tsx";
 import PreviewOccaDetail from "@/features/organize/components/preview/PreviewOccaDetail";
 import EditOccaPage from "@/features/organize/EditOccaPage";
 import AdminRoutes from "@/features/admin/AdminRoutes";
+import { TrackingProvider } from "@/features/tracking/contexts/TrackingContext";
 
 function AppRouter() {
   return (
     <ScrollToTop>
-      <Routes>
+      <TrackingProvider>
+        <Routes>
         {/* Nav Routes */}
         <Route element={<NavLayout />}>
           <Route element={<SearchResultLayout />}>
@@ -113,6 +115,7 @@ function AppRouter() {
         {/* 404 Not Found Route */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </TrackingProvider>
     </ScrollToTop>
   );
 }

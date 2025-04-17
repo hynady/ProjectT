@@ -13,6 +13,7 @@ import {SearchResults} from "@/features/search/components/SearchResults.tsx";
 import { searchService } from "../services/search.service.ts";
 import {OccaSearchItemBaseUnit, SearchResultUnit} from "@/features/search/internal-types/search.type.ts";
 import { useDelayedLoading } from "@/features/search/hooks/useDelayedLoading.tsx";
+import { useTracking } from "@/features/tracking/index.ts";
 
 export function SearchBar() {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export function SearchBar() {
   // Custom hooks
   const {apiResults, isLoading: searchLoading} = useSearch(query);
   const isDelayedLoading = useDelayedLoading(searchLoading);
+  const { trackEventClick } = useTracking();
 
   const {
     recentSearches,
@@ -51,7 +53,7 @@ export function SearchBar() {
 
         setTrendingOccas(trendingData || trendingData);
         setRecommendOccas(recommendData || recommendData);
-      } catch (error) {
+      } catch {
         // console.error('Lỗi khi tải dữ liệu sự kiện:', error);
       } finally {
         setIsFetchingOccas(false);
@@ -80,6 +82,7 @@ export function SearchBar() {
   const handleNavigation = useCallback((occa?: OccaSearchItemBaseUnit) => {
     if (occa) {
       addRecentOcca(occa);
+      trackEventClick(occa.id, "searchBar");
       navigate(`/occas/${occa.id}`);
     } else {
       navigate(`/search?keyword=${encodeURIComponent(query)}&sortBy=title&sortOrder=desc`);
@@ -162,6 +165,7 @@ export function SearchBar() {
                 <RecentOccas
                   occas={recentOccas}
                   onOccaClick={(id) => {
+                    trackEventClick(id, "searchBar");
                     navigate(`/occas/${id}`);
                     close();
                   }}

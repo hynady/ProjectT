@@ -9,6 +9,7 @@ import { Badge } from "@/commons/components/badge.tsx";
 import { CategorySkeleton } from "@/features/home/skeletons/CategorySkeleton.tsx";
 import { useNavigate } from "react-router-dom";
 import { CategorySectionUnit } from "@/features/home/internal-types/home";
+import { useTracking } from "@/features/tracking";
 
 interface CategorySectionProps {
   categories: CategorySectionUnit[] | null;
@@ -22,6 +23,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
   error,
 }) => {
   const navigate = useNavigate();
+  const { trackCategoryClick } = useTracking();
 
   if (isLoading) {
     return (
@@ -64,6 +66,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
   ];
 
   const handleCategoryClick = (categoryId: string) => {
+    trackCategoryClick(categoryId);
     navigate(`/search?categoryId=${categoryId}`);
   };
 

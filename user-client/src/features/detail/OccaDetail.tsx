@@ -42,7 +42,6 @@ export default function OccaDetail() {
   const { hero, shows, gallery, location, overview } = isPreview && previewContext?.previewData
     ? previewContext.previewData
     : detailData;
-
   useEffect(() => {
     // Không cần redirect nếu đang ở chế độ preview
     if (!isPreview && !id) {

@@ -3,6 +3,7 @@ import {Card, CardContent, CardHeader} from "@/commons/components/card.tsx";
 import {useNavigate} from "react-router-dom";
 import { VenueCardUnit } from '@/features/home/internal-types/home';
 import { Skeleton } from '@/commons/components/skeleton';
+import { useTracking } from '@/features/tracking';
 
 const gradientClasses = [
   'from-rose-500',
@@ -24,6 +25,7 @@ interface VenueCardProps {
 
 export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
   const navigate = useNavigate();
+  const {trackCategoryClick} = useTracking();
 
   if (loading) {
     return (
@@ -50,6 +52,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
   const randomGradient = gradientClasses[Math.floor(Math.random() * gradientClasses.length)];
 
   const handleCardClick = () => {
+    trackCategoryClick(venue.id);
     navigate(`/search?venueId=${venue.id}`);
   }
 

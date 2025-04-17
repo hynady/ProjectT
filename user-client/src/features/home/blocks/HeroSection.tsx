@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { HeroSkeleton } from "@/features/home/skeletons/HeroSkeleton.tsx";
 import { Card } from "@/commons/components/card.tsx";
 import { HeroSectionUnit } from "@/features/home/internal-types/home";
+import { useTracking } from "@/features/tracking";
 
 interface HeroSectionProps {
   occas: HeroSectionUnit[] | null;
@@ -27,6 +28,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   error,
 }) => {
   const navigate = useNavigate();
+  const { trackEventClick } = useTracking();
 
   if (isLoading) {
     return <HeroSkeleton />;
@@ -74,7 +76,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <CarouselItem
               key={occa.id}
               className="pl-4 md:basis-full lg:basis-1/2 min-w-0"
-              onClick={() => navigate(`/occas/${occa.id}`)}
+              onClick={() => {    
+                trackEventClick(occa.id, 'HeroSection');
+                navigate(`/occas/${occa.id}`);
+              }}
             >
               <div className="relative aspect-[4/3] overflow-hidden rounded-lg cursor-pointer border group">
                 <img

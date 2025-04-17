@@ -2,9 +2,7 @@ import React from 'react';
 import {OccaSearchItem} from "@/features/search/components/OccaSearchItem.tsx";
 import {OccaSearchItemBaseUnit} from "@/features/search/internal-types/search.type.ts";
 
-export interface SuggestOccaUnit extends OccaSearchItemBaseUnit {
-
-}
+export type SuggestOccaUnit = OccaSearchItemBaseUnit
 
 interface SuggestOccaListProps {
   title: string;

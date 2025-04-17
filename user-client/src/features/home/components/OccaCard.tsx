@@ -14,19 +14,23 @@ import { useNavigate } from "react-router-dom";
 import { OccaCardUnit } from "@/features/home/internal-types/home";
 import { Separator } from "@/commons/components/separator";
 import { TicketStamp } from "@/features/home/components/TicketStamp";
+import { useTracking } from "@/features/tracking";
 
 interface OccaCardProps {
   occa: OccaCardUnit;
   loading: boolean;
   isPreview?: boolean; // Add this prop
-}
+  handleCardClick?: (occaId: string) => void;
+} 
 
 export const OccaCard: React.FC<OccaCardProps> = ({
   occa,
   loading,
   isPreview = false,
+  handleCardClick,
 }) => {
   const navigate = useNavigate();
+  const { trackEventClick } = useTracking();
 
   if (loading) {
     return (
@@ -41,22 +45,24 @@ export const OccaCard: React.FC<OccaCardProps> = ({
           <Skeleton className="h-4 w-full" />
         </CardContent>
       </Card>
-    );
-  }
+    );  }
 
-  const handleCardClick = () => {
+  const defaultHandleCardClick = () => {
     navigate(`/occas/${occa.id}`);
   };
 
   const handleBuyTicket = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent event bubbling to parent card
+    // Theo dõi khi người dùng nhấp vào nút mua vé
+    trackEventClick(occa.id, 'buy_ticket_button');
+    console.log("Buy ticket clicked for:", occa.id);
     navigate(`/occas/${occa.id}/booking`);
   };
 
   return (
     <Card
       className="relative group cursor-pointer w-full hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col h-full"
-      onClick={handleCardClick}
+      onClick={handleCardClick ? () => handleCardClick(occa.id) : defaultHandleCardClick}
     >
       {/* Watermark */}
       <TicketStamp />
