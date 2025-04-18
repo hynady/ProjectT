@@ -5,7 +5,7 @@ option java_multiple_files = true;
 
 service OccaSearchService {
     rpc GetTrendingOccas (Empty) returns (OccaSearchResponse);
-    rpc GetRecommendedOccas (Empty) returns (OccaSearchResponse);
+    rpc GetRecommendedOccas (UserIdRequest) returns (OccaSearchResponse);
     rpc searchOccasForSearchBar(SearchRequest) returns (OccaSearchResponse);
     rpc SearchOccas(SearchOccasRequest) returns (SearchOccasResponse);
 }
@@ -13,6 +13,10 @@ service OccaSearchService {
 // For search bar results
 
 message Empty {}
+
+message UserIdRequest {
+    string user_id = 1;
+}
 
 message SearchRequest {
     string query = 1;

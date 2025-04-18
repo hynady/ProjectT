@@ -3,6 +3,7 @@ package com.ticket.servermono.occacontext.usecases;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -38,21 +39,52 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class OccaServices {
-
     private final OccaRepository occaRepository;
     private final OccaDetailInfoRepository occaDetailInfoRepository;
     private final ShowServices showServices;
     private final ShowRepository showRepository;
+    private final TrendingService trendingService;
+    private final PersonalRecommendationService personalRecommendationService;
 
     public List<OccaResponse> getHeroOccaResponses(String userId) {
         return Optional.ofNullable(userId)
                 .filter(id -> !id.isEmpty())
                 .map(id -> {
-                    // Handle case when userId is present
-                    // TODO: Add logic to fetch hero occa optimized for user
-                    return List.<OccaResponse>of();
+                    try {
+                        UUID userUuid = UUID.fromString(userId);
+
+                        // Kết hợp occa trending và occa được đề xuất cá nhân
+                        List<OccaProjection> trendingProjections = trendingService.getTrendingOccas(3);
+                        log.info("Trending projections: {}", trendingProjections);
+                        List<OccaProjection> recommendedProjections = personalRecommendationService
+                                .suggestOccasByUserPreferences(userUuid, 3);
+                        log.info("Recommended projections: {}", recommendedProjections);
+                        // Kết hợp hai danh sách và loại bỏ trùng lặp
+                        List<OccaProjection> combinedProjections = new ArrayList<>(trendingProjections);
+
+                        for (OccaProjection recommended : recommendedProjections) {
+                            // Chỉ thêm vào nếu chưa có trong danh sách kết hợp
+                            if (combinedProjections.stream()
+                                    .noneMatch(p -> p.getId().equals(recommended.getId()))) {
+                                combinedProjections.add(recommended);
+                            }
+                        }
+
+                        // Giới hạn số lượng tối đa là 6
+                        List<OccaProjection> limitedProjections = combinedProjections.stream()
+                                .limit(6)
+                                .collect(Collectors.toList());
+
+                        return convertToOccaResponses(limitedProjections);
+                    } catch (Exception e) {
+                        log.error("Error getting hero occas for user: {}", userId, e);
+                        // Fallback to default if there's an error
+                        List<OccaProjection> projections = occaRepository.findFirst6HeroOccas(PageRequest.of(0, 6));
+                        return convertToOccaResponses(projections);
+                    }
                 })
                 .orElseGet(() -> {
+                    log.error("User ID is null or empty, falling back to default hero occas");
                     List<OccaProjection> projections = occaRepository.findFirst6HeroOccas(PageRequest.of(0, 6));
                     return convertToOccaResponses(projections);
                 });
@@ -72,12 +104,26 @@ public class OccaServices {
 
     @Transactional(readOnly = true)
     public List<OccaResponse> getTrendingOccaResponses() {
-        List<OccaProjection> projections = occaRepository.findFirst3TrendingOccas(PageRequest.of(0, 3));
+        List<OccaProjection> projections = trendingService.getTrendingOccas(3);
         return convertToOccaResponses(projections);
     }
 
     @Transactional(readOnly = true)
-    public List<OccaResponse> getRecommendedOccaResponses() {
+    public List<OccaResponse> getRecommendedOccaResponses(String userId) {
+        if (userId != null && !userId.isEmpty()) {
+            try {
+                UUID userUuid = UUID.fromString(userId);
+                // Sử dụng PersonalRecommendationService để lấy các đề xuất cá nhân
+                List<OccaProjection> projections = personalRecommendationService.suggestOccasByUserPreferences(userUuid,
+                        3);
+                return convertToOccaResponses(projections);
+            } catch (Exception e) {
+                log.error("Error getting recommended occas for user: {}", userId, e);
+                // Fallback to default if there's an error
+            }
+        }
+
+        // Fallback for anonymous users or on error
         List<OccaProjection> projections = occaRepository.findFirst3RecommendedOccas(PageRequest.of(0, 3));
         return convertToOccaResponses(projections);
     }

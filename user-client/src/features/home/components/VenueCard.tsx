@@ -25,7 +25,7 @@ interface VenueCardProps {
 
 export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
   const navigate = useNavigate();
-  const {trackCategoryClick} = useTracking();
+  const {trackLocationClick} = useTracking();
 
   if (loading) {
     return (
@@ -52,7 +52,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
   const randomGradient = gradientClasses[Math.floor(Math.random() * gradientClasses.length)];
 
   const handleCardClick = () => {
-    trackCategoryClick(venue.id);
+    trackLocationClick(venue.id);
     navigate(`/search?venueId=${venue.id}`);
   }
 

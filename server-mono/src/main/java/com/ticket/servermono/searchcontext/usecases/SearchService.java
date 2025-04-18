@@ -14,6 +14,7 @@ import occa.OccaSearchResponse;
 import occa.OccaSearchServiceGrpc;
 import occa.SearchOccasRequest;
 import occa.SearchRequest;
+import occa.UserIdRequest;
 
 import org.springframework.stereotype.Service;
 
@@ -38,14 +39,15 @@ public class SearchService {
             log.error("Error calling gRPC service: getTrendingOccas", e);
             throw new RuntimeException("Failed to get trending occasions", e);
         }
-    }
-
-    public List<SearchBarTemplateResponse> getRecommendedOccas() {
+    }    public List<SearchBarTemplateResponse> getRecommendedOccas(String userId) {
         try {
-            OccaSearchResponse response = occaStub.getRecommendedOccas(Empty.getDefaultInstance());
+            UserIdRequest request = UserIdRequest.newBuilder()
+                .setUserId(userId != null ? userId : "")
+                .build();
+            OccaSearchResponse response = occaStub.getRecommendedOccas(request);
             return mapToSearchBarResponses(response);
         } catch (StatusRuntimeException e) {
-            log.error("Error calling gRPC service: getRecommendedOccas", e);
+            log.error("Error calling gRPC service: getRecommendedOccas for userId: {}", userId, e);
             throw new RuntimeException("Failed to get recommended occasions", e);
         }
     }

@@ -1,8 +1,11 @@
 package com.ticket.servermono.occacontext.adapters.controllers;
 
+import java.security.Principal;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,7 +28,18 @@ public class OccaController {
 
     // Get hero occasions for home page
     @GetMapping("/hero-occas")
-    public ResponseEntity<?> getHeroOccas(@RequestParam(required = false) String userId) {
+    public ResponseEntity<?> getHeroOccas(@Nullable Principal principal) {
+    
+        String userId;
+        if (principal == null) {
+            // temporary fix for anonymous users
+            userId = UUID.randomUUID().toString();
+        }
+        else {
+            // Extract userId from Principal if available
+            userId = principal.getName();
+        }
+
         try {
             List<OccaResponse> heroOccas = occaServices.getHeroOccaResponses(userId);
             return ResponseEntity.ok(heroOccas);

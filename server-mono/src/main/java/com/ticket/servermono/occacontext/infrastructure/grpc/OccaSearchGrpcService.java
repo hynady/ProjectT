@@ -13,6 +13,7 @@ import occa.OccaSearchServiceGrpc;
 import occa.SearchOccasRequest;
 import occa.SearchOccasResponse;
 import occa.SearchRequest;
+import occa.UserIdRequest;
 
 import java.util.stream.Collectors;
 
@@ -45,12 +46,12 @@ public class OccaSearchGrpcService extends OccaSearchServiceGrpc.OccaSearchServi
             log.error("Error getting trending occas", e);
             responseObserver.onError(e);
         }
-    }
-
-    @Override
-    public void getRecommendedOccas(Empty request, StreamObserver<OccaSearchResponse> responseObserver) {
+    }    @Override
+    public void getRecommendedOccas(UserIdRequest request, StreamObserver<OccaSearchResponse> responseObserver) {
         try {
-            var recommendedOccas = occaServices.getRecommendedOccaResponses();
+            // Lấy userId từ request, có thể null hoặc rỗng nếu là người dùng ẩn danh
+            String userId = request.getUserId().isEmpty() ? null : request.getUserId();
+            var recommendedOccas = occaServices.getRecommendedOccaResponses(userId);
             
             var response = OccaSearchResponse.newBuilder()
                 .addAllResults(recommendedOccas.stream()
@@ -66,7 +67,7 @@ public class OccaSearchGrpcService extends OccaSearchServiceGrpc.OccaSearchServi
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         } catch (Exception e) {
-            log.error("Error getting recommended occas", e);
+            log.error("Error getting recommended occas for userId: {}", request.getUserId(), e);
             responseObserver.onError(e);
         }
     }

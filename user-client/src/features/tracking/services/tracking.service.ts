@@ -238,7 +238,7 @@ class TrackingService extends BaseService {
   private sendStatsToServer(stats: UserInterestStats): void {
     this.request({
       method: 'POST',
-      url: '/user/tracking/stats',
+      url: '/tracking',
       data: stats,
       mockResponse: () => new Promise<void>((resolve) => {
         console.log('Mock sending user statistics to server:', stats);

@@ -54,12 +54,12 @@ public class SearchController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(500).body(e.getMessage());
         }
-    }
-
-    @GetMapping("recommended")
-    public ResponseEntity<?> getRecommended() {
+    }    @GetMapping("recommended")
+    public ResponseEntity<?> getRecommended(java.security.Principal principal) {
         try {
-            List<SearchBarTemplateResponse> recommendedOccas = searchService.getRecommendedOccas();
+            // Trích xuất userId từ Principal nếu có
+            String userId = principal != null ? principal.getName() : null;
+            List<SearchBarTemplateResponse> recommendedOccas = searchService.getRecommendedOccas(userId);
             return ResponseEntity.ok(recommendedOccas);
         } catch (RuntimeException e) {
             return ResponseEntity.status(500).body(e.getMessage());
