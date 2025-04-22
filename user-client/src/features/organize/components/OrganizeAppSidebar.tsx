@@ -6,6 +6,7 @@ import {
   Users,
   Settings,
   ArrowLeft,
+  BarChart2,
 } from "lucide-react";
 import { Button } from "@/commons/components/button";
 import {
@@ -36,6 +37,12 @@ const navigationItems = [
     name: "Vé đã bán",
     href: "/organize/tickets",
     icon: TicketIcon,
+    exact: false,
+  },
+  {
+    name: "Thống kê",
+    href: "/organize/analytics",
+    icon: BarChart2,
     exact: false,
   },
   {

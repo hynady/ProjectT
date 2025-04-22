@@ -20,6 +20,9 @@ export interface UserInterestStats {
   topCategories?: Array<{categoryId: string, count: number}>;
 }
 
+// Analytics interfaces have been moved to the analytics.service.ts file
+// in the organize feature
+
 class TrackingService extends BaseService {
   private static instance: TrackingService;
   private interactions: UserInteractionData[] = [];
@@ -231,6 +234,8 @@ class TrackingService extends BaseService {
 
     return false;
   }
+  // The getOccaAnalytics method has been moved to analytics.service.ts
+  // in the organize feature
 
   /**
    * Send statistics to server

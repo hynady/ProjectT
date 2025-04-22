@@ -26,6 +26,7 @@ import PreviewOccaDetail from "@/features/organize/components/preview/PreviewOcc
 import EditOccaPage from "@/features/organize/EditOccaPage";
 import AdminRoutes from "@/features/admin/AdminRoutes";
 import { TrackingProvider } from "@/features/tracking/contexts/TrackingContext";
+import OrganizeAnalyticsPageNew from "@/features/organize/pages/OrganizeAnalyticsPageNew";
 
 function AppRouter() {
   return (
@@ -65,14 +66,13 @@ function AppRouter() {
             <Route path="profile" element={<SettingsProfilePage />} />
             <Route path="account" element={<SettingsAccountPage />} />
           </Route>
-        </Route>
-
-        {/* Organize Routes - Protected - WITHOUT NavLayout */}
+        </Route>        {/* Organize Routes - Protected - WITHOUT NavLayout */}
         <Route path="/organize">
           <Route index element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
           <Route path="create" element={<ProtectedRoute><CreateOccaPage /></ProtectedRoute>} />
           <Route path="edit/:id" element={<ProtectedRoute><EditOccaPage /></ProtectedRoute>} />
           <Route path="events" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
+          <Route path="analytics" element={<ProtectedRoute><OrganizeAnalyticsPageNew /></ProtectedRoute>} />
           <Route path="tickets" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
           <Route path="customers" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
           <Route path="settings" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />

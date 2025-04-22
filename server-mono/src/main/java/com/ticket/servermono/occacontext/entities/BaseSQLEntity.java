@@ -32,24 +32,22 @@ public abstract class BaseSQLEntity {
 
     @Version
     @Column(name = "version")
-    private Long version;
-
-    @Column(name = "created_by", updatable = false)
-    private String createdBy;
+    private Long version;    @Column(name = "created_by", updatable = false)
+    private UUID createdBy;
 
     @Column(name = "updated_by")
-    private String updatedBy;
+    private UUID updatedBy;
 
     @PrePersist
     protected void onCreate() {
-        //TODO: Thêm logic lấy user create mới
-        createdBy = "hynady";
+        // Lấy userId từ security context hoặc sử dụng ID mặc định nếu không có người dùng đăng nhập
+        createdBy = com.ticket.servermono.common.utils.SecurityUtils.getCurrentUserId();
         updatedBy = createdBy;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        //TODO: Thêm logic lấy user create mới
-        updatedBy = "hynady";
+        // Lấy userId từ security context hoặc sử dụng ID mặc định nếu không có người dùng đăng nhập
+        updatedBy = com.ticket.servermono.common.utils.SecurityUtils.getCurrentUserId();
     }
 }

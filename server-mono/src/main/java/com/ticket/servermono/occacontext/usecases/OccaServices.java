@@ -55,10 +55,8 @@ public class OccaServices {
 
                         // Kết hợp occa trending và occa được đề xuất cá nhân
                         List<OccaProjection> trendingProjections = trendingService.getTrendingOccas(3);
-                        log.info("Trending projections: {}", trendingProjections);
                         List<OccaProjection> recommendedProjections = personalRecommendationService
                                 .suggestOccasByUserPreferences(userUuid, 3);
-                        log.info("Recommended projections: {}", recommendedProjections);
                         // Kết hợp hai danh sách và loại bỏ trùng lặp
                         List<OccaProjection> combinedProjections = new ArrayList<>(trendingProjections);
 

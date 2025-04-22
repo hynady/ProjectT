@@ -97,10 +97,8 @@ public class PersonalRecommendationService {
                         occa.getMinPrice()
                 ))
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Gợi ý các sự kiện dựa trên danh mục và địa điểm mà người dùng quan tâm
+    }    /**
+     * Gợi ý các sự kiện dựa trên danh mục, địa điểm và sự kiện mà người dùng quan tâm
      * 
      * @param userId ID của người dùng
      * @param n Số lượng sự kiện tối đa cần trả về
@@ -108,43 +106,108 @@ public class PersonalRecommendationService {
      */
     @Transactional(readOnly = true)
     public List<OccaProjection> suggestOccasByUserPreferences(UUID userId, int n) {
-        // Lấy top danh mục và địa điểm
+        // Lấy top danh mục, địa điểm và sự kiện
         List<UUID> topCategoryIds = getTopCategories(userId, 3);
         List<UUID> topVenueIds = getTopVenues(userId, 3);
+        List<UUID> topOccaIds = getTopUserOccas(userId, 5).stream()
+                .map(OccaProjection::getId)
+                .collect(Collectors.toList());
         
-        // Nếu người dùng không có dữ liệu tracking
-        if (topCategoryIds.isEmpty() && topVenueIds.isEmpty()) {
+        // Lấy sự kiện liên quan từ các occa mà người dùng đã quan tâm
+        Set<UUID> relatedOccaIds = new HashSet<>();
+        if (!topOccaIds.isEmpty()) {
+            List<Occa> userOccas = occaRepository.findAllById(topOccaIds);
+            // Thêm occa có cùng danh mục hoặc địa điểm với occa mà người dùng đã quan tâm
+            for (Occa occa : userOccas) {
+                if (occa.getCategory() != null) {
+                    List<Occa> similarCategory = occaRepository.findByCategoryId(occa.getCategory().getId());
+                    similarCategory.stream()
+                            .filter(o -> !topOccaIds.contains(o.getId()) && ApprovalStatus.APPROVED.equals(o.getApprovalStatus()))
+                            .forEach(o -> relatedOccaIds.add(o.getId()));
+                }
+                if (occa.getVenue() != null) {
+                    List<Occa> similarVenue = occaRepository.findByVenueId(occa.getVenue().getId());
+                    similarVenue.stream()
+                            .filter(o -> !topOccaIds.contains(o.getId()) && ApprovalStatus.APPROVED.equals(o.getApprovalStatus()))
+                            .forEach(o -> relatedOccaIds.add(o.getId()));
+                }
+                // Thêm occa có cùng nghệ sĩ nếu có
+                if (occa.getArtist() != null && !occa.getArtist().isEmpty()) {
+                    List<Occa> similarArtist = occaRepository.findByArtistContainingIgnoreCase(occa.getArtist());
+                    similarArtist.stream()
+                            .filter(o -> !topOccaIds.contains(o.getId()) && ApprovalStatus.APPROVED.equals(o.getApprovalStatus()))
+                            .forEach(o -> relatedOccaIds.add(o.getId()));
+                }
+            }
+        }
+        
+        // Nếu người dùng không có dữ liệu tracking và không có sự kiện liên quan
+        if (topCategoryIds.isEmpty() && topVenueIds.isEmpty() && relatedOccaIds.isEmpty()) {
             return new ArrayList<>();
         }
         
-        // Tìm tất cả các occa có status APPROVED và có category hoặc venue trong top của user
+        // Tìm tất cả các occa có status APPROVED và phù hợp với tiêu chí
         List<Occa> allOccas = occaRepository.findAll().stream()
                 .filter(occa -> ApprovalStatus.APPROVED.equals(occa.getApprovalStatus()))
                 .filter(occa -> {
+                    // Loại bỏ những sự kiện mà người dùng đã quan tâm
+                    if (topOccaIds.contains(occa.getId())) {
+                        return false;
+                    }
+                    
                     boolean matchesCategory = occa.getCategory() != null && 
                             topCategoryIds.contains(occa.getCategory().getId());
                     boolean matchesVenue = occa.getVenue() != null && 
                             topVenueIds.contains(occa.getVenue().getId());
-                    return matchesCategory || matchesVenue;
+                    boolean isRelated = relatedOccaIds.contains(occa.getId());
+                    
+                    return matchesCategory || matchesVenue || isRelated;
                 })
                 .collect(Collectors.toList());
         
-        // Sắp xếp ưu tiên occa có cả category và venue trong top của user
+        // Tạo hệ thống chấm điểm cho mỗi Occa dựa trên mức độ phù hợp
+        Map<UUID, Integer> occaScores = new HashMap<>();
+        
+        for (Occa occa : allOccas) {
+            int score = 0;
+            
+            // Điểm dành cho occa có category phù hợp
+            if (occa.getCategory() != null && topCategoryIds.contains(occa.getCategory().getId())) {
+                score += 3;
+            }
+            
+            // Điểm dành cho occa có venue phù hợp
+            if (occa.getVenue() != null && topVenueIds.contains(occa.getVenue().getId())) {
+                score += 2;
+            }
+            
+            // Điểm dành cho occa liên quan đến occa người dùng đã quan tâm
+            if (relatedOccaIds.contains(occa.getId())) {
+                score += 4;
+            }
+            
+            // Lưu điểm vào map
+            occaScores.put(occa.getId(), score);
+        }
+        
+        // Sắp xếp dựa trên điểm số
         allOccas.sort((a, b) -> {
-            boolean aMatchesCategory = a.getCategory() != null && 
-                    topCategoryIds.contains(a.getCategory().getId());
-            boolean aMatchesVenue = a.getVenue() != null && 
-                    topVenueIds.contains(a.getVenue().getId());
-                    
-            boolean bMatchesCategory = b.getCategory() != null && 
-                    topCategoryIds.contains(b.getCategory().getId());
-            boolean bMatchesVenue = b.getVenue() != null && 
-                    topVenueIds.contains(b.getVenue().getId());
+            int scoreA = occaScores.getOrDefault(a.getId(), 0);
+            int scoreB = occaScores.getOrDefault(b.getId(), 0);
             
-            int aMatches = (aMatchesCategory ? 1 : 0) + (aMatchesVenue ? 1 : 0);
-            int bMatches = (bMatchesCategory ? 1 : 0) + (bMatchesVenue ? 1 : 0);
+            // Nếu điểm bằng nhau, ưu tiên sự kiện mới hơn
+            if (scoreA == scoreB) {
+                if (a.getNextShowDateTime() != null && b.getNextShowDateTime() != null) {
+                    return a.getNextShowDateTime().compareTo(b.getNextShowDateTime());
+                } else if (a.getNextShowDateTime() != null) {
+                    return -1;
+                } else if (b.getNextShowDateTime() != null) {
+                    return 1;
+                }
+                return 0;
+            }
             
-            return Integer.compare(bMatches, aMatches); // Sắp xếp giảm dần
+            return Integer.compare(scoreB, scoreA); // Sắp xếp giảm dần theo điểm
         });
         
         // Lấy tối đa n phần tử

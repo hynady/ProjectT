@@ -33,7 +33,7 @@ public class OccaController {
         String userId;
         if (principal == null) {
             // temporary fix for anonymous users
-            userId = UUID.randomUUID().toString();
+            userId = null;
         }
         else {
             // Extract userId from Principal if available

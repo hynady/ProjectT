@@ -1,5 +1,10 @@
 package com.ticket.servermono.occacontext.adapters.controllers;
 
+import java.security.Principal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -14,8 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ticket.servermono.occacontext.adapters.dtos.organizer.AnalyticsOverviewResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaRequest;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaResponse;
+import com.ticket.servermono.occacontext.adapters.dtos.organizer.DailyVisitorsItem;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OrganizerOccaUnit;
 import com.ticket.servermono.occacontext.usecases.OrganizerServices;
@@ -139,6 +146,104 @@ public class OrganizerController {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             log.error("Error updating occa with ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
+        }
+    }
+      /**
+     * Lấy tổng quan phân tích dữ liệu sự kiện của người tổ chức
+     * 
+     * @param principal Thông tin người dùng đăng nhập
+     * @param from Thời điểm bắt đầu phân tích (ISO-8601 format)
+     * @param to Thời điểm kết thúc phân tích (ISO-8601 format)
+     * @return Dữ liệu phân tích tổng quan
+     */
+    @GetMapping("/analytics/overview")
+    public ResponseEntity<?> getOverviewAnalytics(
+            Principal principal,
+            @RequestParam(name = "from", required = true) String fromStr,
+            @RequestParam(name = "to", required = true) String toStr) {
+        try {
+            if (principal == null) {
+                log.error("No authenticated user found");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User must be authenticated");
+            }            // Parse thời gian ISO-8601 với timezone
+            Instant fromInstant = Instant.parse(fromStr);
+            Instant toInstant = Instant.parse(toStr);
+            
+            // Chuyển đổi sang LocalDateTime ở múi giờ của hệ thống
+            ZoneId systemZone = ZoneId.systemDefault();
+            LocalDateTime from = LocalDateTime.ofInstant(fromInstant, systemZone);
+            LocalDateTime to = LocalDateTime.ofInstant(toInstant, systemZone);
+            
+            // Validate khoảng thời gian
+            if (from.isAfter(to)) {
+                return ResponseEntity.badRequest().body("Start date must be before end date");
+            }
+
+            // Lấy userId từ principal
+            UUID userId = UUID.fromString(principal.getName());
+            log.info("Getting analytics overview for user ID: {} from {} to {}", userId, from, to);
+            
+            // Lấy dữ liệu phân tích
+            AnalyticsOverviewResponse response = organizerServices.getOverviewAnalytics(userId, from, to);
+            
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid user ID format or date format", e);
+            return ResponseEntity.badRequest()
+                    .body("Invalid format. User ID must be UUID and dates must be in ISO-8601 format");
+        } catch (Exception e) {
+            log.error("Error getting analytics overview: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
+        }
+    }
+    /**
+     * Lấy dữ liệu trendline số lượt truy cập theo ngày
+     * 
+     * @param principal Thông tin người dùng đăng nhập
+     * @param from Thời điểm bắt đầu phân tích (ISO-8601 format)
+     * @param to Thời điểm kết thúc phân tích (ISO-8601 format)
+     * @return Danh sách số lượt truy cập theo ngày
+     */
+    @GetMapping("/analytics/trends/range")
+    public ResponseEntity<?> getTrendlineAnalytics(
+            Principal principal,
+            @RequestParam(name = "from", required = true) String fromStr,
+            @RequestParam(name = "to", required = true) String toStr) {
+        try {
+            if (principal == null) {
+                log.error("No authenticated user found");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User must be authenticated");
+            }
+
+            // Parse thời gian ISO-8601 với timezone
+            Instant fromInstant = Instant.parse(fromStr);
+            Instant toInstant = Instant.parse(toStr);
+            
+            // Chuyển đổi sang LocalDateTime ở múi giờ UTC+7
+            ZoneId vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh");
+            LocalDateTime from = LocalDateTime.ofInstant(fromInstant, vietnamZone);
+            LocalDateTime to = LocalDateTime.ofInstant(toInstant, vietnamZone);
+            
+            // Validate khoảng thời gian
+            if (from.isAfter(to)) {
+                return ResponseEntity.badRequest().body("Start date must be before end date");
+            }
+
+            // Lấy userId từ principal
+            UUID userId = UUID.fromString(principal.getName());
+            log.info("Getting trendline analytics for user ID: {} from {} to {}", userId, from, to);
+            
+            // Lấy dữ liệu trendline
+            List<DailyVisitorsItem> response = organizerServices.getTrendlineAnalytics(userId, from, to);
+            
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid user ID format or date format", e);
+            return ResponseEntity.badRequest()
+                    .body("Invalid format. User ID must be UUID and dates must be in ISO-8601 format");
+        } catch (Exception e) {
+            log.error("Error getting trendline analytics: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
         }
     }

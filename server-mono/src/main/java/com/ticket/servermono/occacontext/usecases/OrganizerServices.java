@@ -3,6 +3,7 @@ package com.ticket.servermono.occacontext.usecases;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,9 +23,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ticket.servermono.occacontext.adapters.dtos.kafka.TicketClassCreateDTO;
+import com.ticket.servermono.occacontext.adapters.dtos.organizer.AnalyticsOverviewResponse;
+import com.ticket.servermono.occacontext.adapters.dtos.organizer.AnalyticsOverviewResponse.OccaReachItem;
+import com.ticket.servermono.occacontext.adapters.dtos.organizer.AnalyticsOverviewResponse.SourceDistributionItem;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.BasicInfoDTO;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaRequest;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaResponse;
+import com.ticket.servermono.occacontext.adapters.dtos.organizer.DailyVisitorsItem;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.GalleryDTO;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OrganizerOccaUnit;
@@ -35,9 +40,11 @@ import com.ticket.servermono.occacontext.domain.enums.SaleStatus;
 import com.ticket.servermono.occacontext.entities.Category;
 import com.ticket.servermono.occacontext.entities.Occa;
 import com.ticket.servermono.occacontext.entities.OccaDetailInfo;
+import com.ticket.servermono.occacontext.entities.PersonalTrackingStats;
 import com.ticket.servermono.occacontext.entities.Region;
 import com.ticket.servermono.occacontext.entities.Show;
 import com.ticket.servermono.occacontext.entities.Venue;
+import com.ticket.servermono.occacontext.entities.OccaTrackingStats;
 import com.ticket.servermono.occacontext.infrastructure.clients.TicketClassGrpcClient;
 import com.ticket.servermono.occacontext.infrastructure.repositories.CategoryRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaDetailInfoRepository;
@@ -45,6 +52,8 @@ import com.ticket.servermono.occacontext.infrastructure.repositories.OccaReposit
 import com.ticket.servermono.occacontext.infrastructure.repositories.RegionRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.ShowRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.VenueRepository;
+import com.ticket.servermono.occacontext.infrastructure.repositories.OccaTrackingStatsRepository;
+import com.ticket.servermono.occacontext.infrastructure.repositories.PersonalTrackingStatsRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -58,11 +67,11 @@ public class OrganizerServices {
     private final OccaRepository occaRepository;
     private final VenueRepository venueRepository;
     private final RegionRepository regionRepository;
-    private final CategoryRepository categoryRepository;
-    private final OccaDetailInfoRepository occaDetailInfoRepository;
+    private final CategoryRepository categoryRepository;    private final OccaDetailInfoRepository occaDetailInfoRepository;
     private final ShowRepository showRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final TicketClassGrpcClient ticketClassGrpcClient;
+    private final OccaTrackingStatsRepository occaTrackingStatsRepository;
 
     /**
      * Lấy danh sách sự kiện của người tổ chức với phân trang, sắp xếp và lọc
@@ -661,4 +670,147 @@ public class OrganizerServices {
        
        return status.name().toLowerCase();
    }
+    
+    /**
+     * Lấy tổng quan phân tích dữ liệu sự kiện của người tổ chức trong khoảng thời gian
+     * 
+     * @param userId ID của người tổ chức
+     * @param from Thời điểm bắt đầu phân tích
+     * @param to Thời điểm kết thúc phân tích
+     * @return AnalyticsOverviewResponse chứa dữ liệu phân tích
+     */    @Transactional(readOnly = true)
+    public AnalyticsOverviewResponse getOverviewAnalytics(UUID userId, LocalDateTime from, LocalDateTime to) {
+        // Lấy tất cả sự kiện của user trong khoảng thời gian
+        List<Occa> userOccas = occaRepository.findByCreatedBy(userId).stream()
+                .filter(occa -> {
+                    LocalDateTime createdAt = occa.getCreatedAt();
+                    return createdAt != null && 
+                           !createdAt.isBefore(from) && 
+                           !createdAt.isAfter(to);
+                })
+                .collect(Collectors.toList());
+        
+        // Lấy ID của các sự kiện
+        List<UUID> occaIds = userOccas.stream()
+                .map(Occa::getId)
+                .collect(Collectors.toList());
+        
+        // Lấy dữ liệu tracking của các sự kiện và lọc theo thời gian
+        List<OccaTrackingStats> trackingStats = occaTrackingStatsRepository.findAllById(occaIds).stream()
+                .filter(stats -> {
+                    LocalDateTime lastUpdated = stats.getLastUpdated();
+                    return lastUpdated != null && 
+                           !lastUpdated.isBefore(from) && 
+                           !lastUpdated.isAfter(to);
+                })
+                .collect(Collectors.toList());
+        
+        // Tính tổng lượt tiếp cận
+        int totalReach = trackingStats.stream()
+                .mapToInt(OccaTrackingStats::getTotalCount)
+                .sum();
+        
+        // Lấy top 5 sự kiện được quan tâm nhất
+        List<OccaReachItem> topOccas = trackingStats.stream()
+                .sorted((a, b) -> Integer.compare(b.getTotalCount(), a.getTotalCount()))
+                .limit(5)
+                .map(stat -> {
+                    Occa occa = userOccas.stream()
+                            .filter(o -> o.getId().equals(stat.getOccaId()))
+                            .findFirst()
+                            .orElse(null);
+                    
+                    return OccaReachItem.builder()
+                            .id(stat.getOccaId().toString())
+                            .title(occa != null ? occa.getTitle() : "Unknown Event")
+                            .reach(stat.getTotalCount())
+                            .build();
+                })
+                .collect(Collectors.toList());
+        
+        // Tính phân bố nguồn truy cập
+        Map<String, Integer> sourceMap = new HashMap<>();
+        trackingStats.forEach(stat -> {
+            if (stat.getSources() != null) {
+                stat.getSources().forEach((source, count) -> {
+                    sourceMap.put(source, sourceMap.getOrDefault(source, 0) + count);
+                });
+            }
+        });
+        
+        List<SourceDistributionItem> sourceDistribution = sourceMap.entrySet().stream()
+                .map(entry -> SourceDistributionItem.builder()
+                        .name(entry.getKey())
+                        .count(entry.getValue())
+                        .build())
+                .sorted((a, b) -> Integer.compare(b.getCount(), a.getCount()))
+                .collect(Collectors.toList());
+        
+        // Tạo period object
+        AnalyticsOverviewResponse.Period period = AnalyticsOverviewResponse.Period.builder()
+                .from(from)
+                .to(to)
+                .build();
+        
+        return AnalyticsOverviewResponse.builder()
+                .totalReach(totalReach)
+                .topOccas(topOccas)
+                .sourceDistribution(sourceDistribution)
+                .period(period)
+                .build();
+    }
+    
+    /**
+     * Lấy dữ liệu trendline số lượt truy cập theo ngày
+     * 
+     * @param userId ID của người tổ chức
+     * @param from Thời điểm bắt đầu phân tích
+     * @param to Thời điểm kết thúc phân tích
+     * @return Danh sách số lượt truy cập theo ngày
+     */
+    @Transactional(readOnly = true)
+    public List<DailyVisitorsItem> getTrendlineAnalytics(UUID userId, LocalDateTime from, LocalDateTime to) {
+        // Lấy tất cả sự kiện của user
+        List<UUID> occaIds = occaRepository.findByCreatedBy(userId).stream()
+                .map(Occa::getId)
+                .collect(Collectors.toList());
+        
+        // Lấy dữ liệu tracking của các sự kiện và lọc theo thời gian
+        List<OccaTrackingStats> trackingStats = occaTrackingStatsRepository.findAllById(occaIds).stream()
+                .filter(stats -> {
+                    LocalDateTime lastUpdated = stats.getLastUpdated();
+                    return lastUpdated != null && 
+                           !lastUpdated.isBefore(from) && 
+                           !lastUpdated.isAfter(to);
+                })
+                .collect(Collectors.toList());
+
+        // Tạo map để lưu trữ số lượng visitors theo ngày
+        Map<LocalDate, Integer> visitorsByDate = new HashMap<>();
+        
+        // Xử lý dữ liệu tracking theo ngày
+        trackingStats.forEach(stat -> {
+            LocalDate date = stat.getLastUpdated().toLocalDate();
+            visitorsByDate.merge(date, stat.getTotalCount(), Integer::sum);
+        });
+        
+        // Tạo danh sách các ngày từ from đến to
+        List<LocalDate> dateRange = new ArrayList<>();
+        LocalDate currentDate = from.toLocalDate();
+        LocalDate endDate = to.toLocalDate();
+        
+        while (!currentDate.isAfter(endDate)) {
+            dateRange.add(currentDate);
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        // Format dữ liệu theo yêu cầu
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM");
+        return dateRange.stream()
+                .map(date -> DailyVisitorsItem.builder()
+                        .date(date.format(formatter))
+                        .visitors(visitorsByDate.getOrDefault(date, 0))
+                        .build())
+                .collect(Collectors.toList());
+    }
 }
