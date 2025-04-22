@@ -126,7 +126,7 @@ const OccaAnalytics: React.FC<OccaAnalyticsProps> = ({ occaId }) => {
                       paddingAngle={2}
                       label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                     >
-                      {analyticsData.sources.map((entry, index) => (
+                      {analyticsData.sources.map((_entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
                           fill={COLORS[index % COLORS.length]}
