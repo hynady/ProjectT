@@ -31,18 +31,23 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
            "AND t.createdAt BETWEEN :startDate AND :endDate")
     Long calculateRevenueByShowIds(@Param("showIds") List<UUID> showIds, 
                                  @Param("startDate") LocalDateTime startDate, 
-                                 @Param("endDate") LocalDateTime endDate);      /**
-     * Calculate fill rate as percentage (0-100) of sold tickets vs total capacity for shows
-     * Note: showIds must be provided from the OccaContext since we can't directly reference it here
+                                 @Param("endDate") LocalDateTime endDate);
+                                    
+    /**
+     * Get the total number of sold tickets for a list of shows up to the end date
+     * This method ignores the start date
      */
-    @Query("SELECT CAST(COUNT(t) * 100.0 / " +
-           "(SELECT SUM(tc2.capacity) FROM TicketClass tc2 WHERE tc2.showId IN :showIds) AS INTEGER) " +
-           "FROM Ticket t " +
+    @Query("SELECT COUNT(t) FROM Ticket t " +
            "JOIN t.ticketClass tc " +
            "WHERE tc.showId IN :showIds " +
            "AND t.endUserId IS NOT NULL " +
-           "AND t.createdAt BETWEEN :startDate AND :endDate")
-    Integer calculateFillRateByShowIds(@Param("showIds") List<UUID> showIds,
-                                     @Param("startDate") LocalDateTime startDate,
-                                     @Param("endDate") LocalDateTime endDate);
+           "AND t.createdAt <= :endDate")
+    Long countTotalSoldTicketsUntilDate(@Param("showIds") List<UUID> showIds,
+                                        @Param("endDate") LocalDateTime endDate);
+                                        
+    /**
+     * Get the total capacity for a list of shows
+     */
+    @Query("SELECT SUM(tc.capacity) FROM TicketClass tc WHERE tc.showId IN :showIds")
+    Integer getTotalCapacityByShowIds(@Param("showIds") List<UUID> showIds);
 }

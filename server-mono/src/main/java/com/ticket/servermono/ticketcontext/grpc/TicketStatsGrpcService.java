@@ -57,8 +57,7 @@ public class TicketStatsGrpcService extends TicketStatsServiceImplBase {
             for (String occaIdStr : occaIds) {
                 try {
                     UUID occaId = UUID.fromString(occaIdStr);
-                    
-                    // Get show IDs for this occa using the gRPC client
+                      // Get show IDs for this occa using the gRPC client
                     List<UUID> showIds = showIdGrpcClient.getShowIdsByOccaId(occaId);
                     
                     if (showIds.isEmpty()) {
@@ -72,20 +71,39 @@ public class TicketStatsGrpcService extends TicketStatsServiceImplBase {
                         responseBuilder.addStats(stats);
                         continue;
                     }
-                    
-                    // Calculate revenue with date range
+                      // Calculate revenue with date range
                     Long revenue = ticketRepository.calculateRevenueByShowIds(showIds, startDate, endDate);
                     revenue = revenue != null ? revenue : 0L;
                     
-                    // Calculate fill rate with date range
-                    Integer fillRate = ticketRepository.calculateFillRateByShowIds(showIds, startDate, endDate);
-                    fillRate = fillRate != null ? fillRate : 0;
+                    // Calculate overall fill rate across all shows up to the end date (independent of start date)
+                    int overallFillRate = 0;
                     
-                    // Build the stats object
+                    try {
+                        // Get total capacity for all shows
+                        Integer totalCapacity = ticketRepository.getTotalCapacityByShowIds(showIds);
+                        
+                        if (totalCapacity == null || totalCapacity == 0) {
+                            log.warn("No capacity defined for shows of occa ID: {}, setting fill rate to 0", occaId);
+                        } else {
+                            // Get total sold tickets count up to end date
+                            Long totalSoldTickets = ticketRepository.countTotalSoldTicketsUntilDate(showIds, endDate);
+                            totalSoldTickets = totalSoldTickets != null ? totalSoldTickets : 0L;
+                            
+                            // Calculate overall fill rate
+                            overallFillRate = (int) (totalSoldTickets * 100.0 / totalCapacity);
+                            log.debug("Occa ID {}: Total Capacity={}, Total Sold={}, Overall Fill Rate={}%", 
+                                     occaId, totalCapacity, totalSoldTickets, overallFillRate);
+                        }
+                    } catch (Exception e) {
+                        log.error("Error calculating overall fill rate for occa {}: {}", occaId, e.getMessage());
+                    }
+                    
+                    log.info("Occa ID {}: Overall fill rate: {}%", occaId, overallFillRate);
+                      // Build the stats object
                     OccaTicketStats stats = OccaTicketStats.newBuilder()
                         .setOccaId(occaIdStr)
                         .setRevenue(revenue)
-                        .setFillRate(fillRate)
+                        .setFillRate(overallFillRate)
                         .build();
                     
                     responseBuilder.addStats(stats);

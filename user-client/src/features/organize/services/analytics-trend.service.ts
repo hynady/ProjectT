@@ -124,7 +124,7 @@ class AnalyticsTrendService extends BaseService {
 
     return this.request({
       method: 'GET',
-      url: `/organize/analytics/revenue/overview?from=${from.toISOString()}&to=${to.toISOString()}`,
+      url: `/tickets/analytics/revenue/overview?from=${from.toISOString()}&to=${to.toISOString()}`,
       mockResponse: () => new Promise<RevenueOverviewData>((resolve) => {
         const periodRange = { from, to };
 

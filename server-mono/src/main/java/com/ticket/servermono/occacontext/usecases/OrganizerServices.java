@@ -844,15 +844,17 @@ public class OrganizerServices {    private final OccaRepository occaRepository;
         
         // Lấy tất cả sự kiện của người tổ chức
         List<Occa> userOccas = occaRepository.findByCreatedBy(userId);
-        
-        // Lấy ID của tất cả sự kiện để lấy dữ liệu trước khi phân trang
+          // Lấy ID của tất cả sự kiện để lấy dữ liệu trước khi phân trang
         List<UUID> allOccaIds = userOccas.stream()
                 .map(Occa::getId)
                 .collect(Collectors.toList());
-        
-        // Lấy dữ liệu tracking stats cho tất cả ID
-        Map<UUID, OccaTrackingStats> trackingStatsMap = occaTrackingStatsRepository.findAllById(allOccaIds)
-                .stream()
+                
+        // Lấy dữ liệu tracking stats cho tất cả ID trong khoảng thời gian được chỉ định
+        List<OccaTrackingStats> filteredTrackingStats = occaTrackingStatsRepository.findByOccaIdInAndLastUpdatedBetween(
+                allOccaIds, startDate, endDate);
+                
+        // Chuyển thành map để dễ dàng truy xuất
+        Map<UUID, OccaTrackingStats> trackingStatsMap = filteredTrackingStats.stream()
                 .collect(Collectors.toMap(
                     OccaTrackingStats::getOccaId,
                     stats -> stats,
@@ -864,8 +866,7 @@ public class OrganizerServices {    private final OccaRepository occaRepository;
         
         // Tạo danh sách đầy đủ (chưa phân trang) để có thể sắp xếp
         List<OccaAnalyticsItem> allAnalyticsItems = userOccas.stream()
-                .map(occa -> {
-                    String occaIdStr = occa.getId().toString();
+                .map(occa -> {                    String occaIdStr = occa.getId().toString();
                     OccaTrackingStats trackingStats = trackingStatsMap.get(occa.getId());
                     OccaTicketStats ticketStats = ticketStatsMap.get(occaIdStr);
                     

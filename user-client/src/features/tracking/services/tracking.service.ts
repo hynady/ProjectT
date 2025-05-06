@@ -168,12 +168,12 @@ class TrackingService extends BaseService {
       }
     });
     
-    // Chọn top 5 occas theo tổng số lượng nhưng giữ nguyên cấu trúc dữ liệu gốc
+    // Chọn top 3 occas theo tổng số lượng nhưng giữ nguyên cấu trúc dữ liệu gốc
     const topOccas = Object.values(occaCounts)
       // Sắp xếp theo tổng số lượng
       .sort((a, b) => b.totalCount - a.totalCount)
       // Lấy top 5 occas
-      .slice(0, 5);
+      .slice(0, 3);
     
     const topLocations = Object.entries(locationCounts)
       .map(([locationId, count]) => ({ locationId, count }))

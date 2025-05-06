@@ -42,33 +42,37 @@ const RevenueDistributionChart: React.FC<RevenueDistributionChartProps> = ({
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                innerRadius={45}
-                outerRadius={80}
-                paddingAngle={2}
-                dataKey="amount"
-              >
-                {data.map((_source, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value: number) => [formatCurrency(value), 'Doanh thu']}
-                contentStyle={{ 
-                  borderRadius: '8px', 
-                  border: '1px solid #e2e8f0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                  padding: '8px' 
-                }}
-              />
+                <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    innerRadius={45}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="amount"
+                    nameKey="name"
+                >
+                    {data.map((_source, index) => (
+                        <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                    ))}
+                </Pie>
+                <Tooltip 
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    formatter={(value: number, _name: string, props: any) => {
+                        return [formatCurrency(value), props.payload.name];
+                    }}
+                    contentStyle={{ 
+                        borderRadius: '8px', 
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                        padding: '8px' 
+                    }}
+                />
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="space-y-2 mt-4">
+        <div className="space-y-2 mt-4 overflow-y-auto max-h-[150px]">
           {data.map((source, index) => (
             <div key={source.name} className="flex items-center justify-between">
               <div className="flex items-center">

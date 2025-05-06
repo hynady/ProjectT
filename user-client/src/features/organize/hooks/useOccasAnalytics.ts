@@ -10,7 +10,6 @@ interface OccasAnalyticsResult {
 }
 
 interface UseOccasAnalyticsOptions {
-  page?: number;
   pageSize?: number;
   sortField?: keyof OccaAnalyticsData;
   sortOrder?: 'asc' | 'desc';
@@ -23,13 +22,50 @@ export const useOccasAnalytics = (
   dateRange: [Date, Date] | null,
   options: UseOccasAnalyticsOptions = {}
 ) => {
-  const { page = 1, pageSize = 10, sortField = 'reach', sortOrder = 'desc' } = options;
+  const { pageSize = 10, sortField = 'reach', sortOrder = 'desc' } = options;
   
   const [data, setData] = useState<OccasAnalyticsResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [allData, setAllData] = useState<OccaAnalyticsData[]>([]);
   
+  // Fetch single page of data 
+  const fetchPage = useCallback(async (pageNum: number) => {
+    const ocasData = await analyticsTrendService.getAllOccasAnalytics(
+      dateRange!,
+      pageNum,
+      pageSize,
+      sortField,
+      sortOrder
+    );
+    return ocasData;
+  }, [dateRange, pageSize, sortField, sortOrder]);
+
+  // Fetch all pages  
+  const fetchAllPages = useCallback(async () => {
+    const firstPage = await fetchPage(1);
+    const totalPages = firstPage.totalPages;
+
+    // First page data
+    const allOccas = [...firstPage.data];
+    setData(firstPage);
+
+    // Fetch remaining pages in parallel
+    if (totalPages > 1) {
+      const pagePromises = [];
+      for (let i = 2; i <= totalPages; i++) {
+        pagePromises.push(fetchPage(i));
+      }
+
+      const remainingPages = await Promise.all(pagePromises);
+      remainingPages.forEach(page => {
+        allOccas.push(...page.data); 
+      });
+    }
+
+    setAllData(allOccas);
+  }, [fetchPage]);
+
   // Fetch the data for all occas
   const fetchOccasAnalytics = useCallback(async () => {
     if (!dateRange) {
@@ -42,20 +78,7 @@ export const useOccasAnalytics = (
       setLoading(true);
       
       if (dateRange[0] instanceof Date && dateRange[1] instanceof Date) {
-        const occasData = await analyticsTrendService.getAllOccasAnalytics(
-          dateRange,
-          page,
-          pageSize,
-          sortField,
-          sortOrder
-        );
-        
-        setData(occasData);
-        
-        // The top events will be the first page of sorted data
-        // No need for a separate call to the server
-        setAllData(occasData.data);
-        
+        await fetchAllPages();
         setError(null);
       } else {
         throw new Error('Invalid date range: dates must be Date objects');
@@ -66,13 +89,13 @@ export const useOccasAnalytics = (
     } finally {
       setLoading(false);
     }
-  }, [dateRange, page, pageSize, sortField, sortOrder]);
-  
+  }, [dateRange, fetchAllPages]);
+
   useEffect(() => {
     fetchOccasAnalytics();
   }, [fetchOccasAnalytics]);
 
-  // Return the paginated data and the function to get top occas
+  // Return the paginated data and complete data
   return { 
     data, 
     loading, 
@@ -94,7 +117,6 @@ export const useTopOccasAnalytics = (
     loading,
     error
   } = useOccasAnalytics(dateRange, {
-    page: 1,
     pageSize: Math.max(limit, 10),
     sortField,
     sortOrder: 'desc'
