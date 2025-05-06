@@ -9,9 +9,13 @@ import java.util.UUID;
 
 @Repository
 public interface TicketRepository extends JpaRepository<Ticket, UUID> {
-    Long countByTicketClassId(UUID ticketClassId);
-
+    List<Ticket> findByEndUserId(UUID endUserId);
+    
     List<Ticket> findByEndUserIdAndCheckedInAtIsNull(UUID endUserId);
     
-    List<Ticket> findByEndUserId(UUID endUserId);
+    Long countByTicketClassId(UUID ticketClassId);
+    
+    Long countByTicketClassIdAndEndUserIdIsNotNull(UUID ticketClassId);
+
+    List<Ticket> findAllByEndUserIdIsNotNull();
 }

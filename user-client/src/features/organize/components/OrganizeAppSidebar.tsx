@@ -2,9 +2,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Calendar,
-  TicketIcon,
-  Users,
-  Settings,
   ArrowLeft,
   BarChart2,
 } from "lucide-react";
@@ -34,29 +31,11 @@ const navigationItems = [
     exact: false,
   },
   {
-    name: "Vé đã bán",
-    href: "/organize/tickets",
-    icon: TicketIcon,
-    exact: false,
-  },
-  {
     name: "Thống kê",
     href: "/organize/analytics",
     icon: BarChart2,
     exact: false,
-  },
-  {
-    name: "Khách hàng",
-    href: "/organize/customers",
-    icon: Users,
-    exact: false,
-  },
-  {
-    name: "Cài đặt",
-    href: "/organize/settings",
-    icon: Settings,
-    exact: false,
-  },
+  }
 ];
 
 export function OrganizeAppSidebar({

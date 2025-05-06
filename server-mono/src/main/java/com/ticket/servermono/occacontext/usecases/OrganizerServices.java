@@ -680,16 +680,13 @@ public class OrganizerServices {
      * @return AnalyticsOverviewResponse chứa dữ liệu phân tích
      */    @Transactional(readOnly = true)
     public AnalyticsOverviewResponse getOverviewAnalytics(UUID userId, LocalDateTime from, LocalDateTime to) {
+        log.info("Analyzing data from {} to {} for user {}", from, to, userId);
+
         // Lấy tất cả sự kiện của user trong khoảng thời gian
-        List<Occa> userOccas = occaRepository.findByCreatedBy(userId).stream()
-                .filter(occa -> {
-                    LocalDateTime createdAt = occa.getCreatedAt();
-                    return createdAt != null && 
-                           !createdAt.isBefore(from) && 
-                           !createdAt.isAfter(to);
-                })
-                .collect(Collectors.toList());
-        
+        List<Occa> userOccas = occaRepository.findByCreatedBy(userId);
+
+        log.info("Found {} total events for user", userOccas.size());
+
         // Lấy ID của các sự kiện
         List<UUID> occaIds = userOccas.stream()
                 .map(Occa::getId)
@@ -704,6 +701,8 @@ public class OrganizerServices {
                            !lastUpdated.isAfter(to);
                 })
                 .collect(Collectors.toList());
+
+        log.info("Found {} tracking records in date range", trackingStats.size());
         
         // Tính tổng lượt tiếp cận
         int totalReach = trackingStats.stream()

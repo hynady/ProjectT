@@ -1,6 +1,5 @@
 import React from 'react';
 import { CardContent } from '@/commons/components/card';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface VisitorCardProps {
   title: string;
@@ -13,7 +12,6 @@ const VisitorCard: React.FC<VisitorCardProps> = ({
   title, 
   value, 
   subtitle,
-  trend
 }) => {
   return (
     <CardContent className="p-6">
@@ -26,19 +24,6 @@ const VisitorCard: React.FC<VisitorCardProps> = ({
           )}
         </div>
       </div>
-      {trend !== undefined && (
-        <div className="mt-3 flex items-center text-sm">
-          <div className={`flex items-center font-medium ${trend >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-            {trend >= 0 ? (
-              <ArrowUpRight className="h-3 w-3 mr-1" />
-            ) : (
-              <ArrowDownRight className="h-3 w-3 mr-1" />
-            )}
-            <span>{Math.abs(trend)}%</span>
-          </div>
-          <span className="text-muted-foreground ml-1">so với tuần trước</span>
-        </div>
-      )}
     </CardContent>
   );
 };

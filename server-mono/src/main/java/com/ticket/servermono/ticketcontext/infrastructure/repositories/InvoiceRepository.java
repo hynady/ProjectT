@@ -12,9 +12,11 @@ import com.ticket.servermono.ticketcontext.domain.enums.PaymentStatus;
 import com.ticket.servermono.ticketcontext.entities.Invoice;
 
 @Repository
-public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
-    
-    Optional<Invoice> findByPaymentId(String paymentId);
+public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {    Optional<Invoice> findByPaymentId(String paymentId);
     
     List<Invoice> findByStatusAndExpiresAtBefore(PaymentStatus status, LocalDateTime dateTime);
+    
+    List<Invoice> findByStatus(PaymentStatus status);
+    
+    List<Invoice> findByStatusAndShowId(PaymentStatus status, UUID showId);
 }
