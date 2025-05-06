@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { analyticsTrendService, TrendData } from '../services/analytics-trend.service';
 
+/**
+ * Hook for fetching visitor trend data
+ */
 export const useAnalyticsTrends = (dateRange: [Date, Date] | null) => {
   const [data, setData] = useState<TrendData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,21 +24,8 @@ export const useAnalyticsTrends = (dateRange: [Date, Date] | null) => {
         const [from, to] = dateRange;
 
         if (from instanceof Date && to instanceof Date) {
-          // Normalize dates to start and end of day
-          const normalizedFrom = new Date(from);
-          normalizedFrom.setHours(0, 0, 0, 0);
-          
-          const normalizedTo = new Date(to);
-          normalizedTo.setHours(23, 59, 59, 999);
-
-          if (normalizedFrom > normalizedTo) {
-            throw new Error('Start date must be before end date');
-          }
-          
-          const trendData = await analyticsTrendService.getTrendDataByDateRange(
-            normalizedFrom, 
-            normalizedTo
-          );
+          // Using the new service method specific for visitor trends
+          const trendData = await analyticsTrendService.getVisitorTrendByDateRange(from, to);
           
           if (isMounted) {
             setData(trendData);
@@ -45,7 +35,7 @@ export const useAnalyticsTrends = (dateRange: [Date, Date] | null) => {
           throw new Error('Invalid date range: dates must be Date objects');
         }
       } catch (err) {
-        console.error('Failed to fetch trend data:', err);
+        console.error('Failed to fetch visitor trend data:', err);
         if (isMounted) {
           setError(err instanceof Error ? err : new Error('Unknown error'));
           setData([]);

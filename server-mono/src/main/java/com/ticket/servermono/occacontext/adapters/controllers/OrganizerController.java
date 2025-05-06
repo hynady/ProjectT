@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +24,7 @@ import com.ticket.servermono.occacontext.adapters.dtos.organizer.AnalyticsOvervi
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaRequest;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.DailyVisitorsItem;
+import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaAnalyticsResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OrganizerOccaUnit;
 import com.ticket.servermono.occacontext.usecases.OrganizerServices;
@@ -35,9 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/organize")
-public class OrganizerController {
-
-    private final OrganizerServices organizerServices;
+public class OrganizerController {    private final OrganizerServices organizerServices;
 
     /**
      * Lấy danh sách sự kiện của người tổ chức
@@ -196,7 +196,7 @@ public class OrganizerController {
             log.error("Error getting analytics overview: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
         }
-    }
+    }    
     /**
      * Lấy dữ liệu trendline số lượt truy cập theo ngày
      * 
@@ -205,7 +205,7 @@ public class OrganizerController {
      * @param to Thời điểm kết thúc phân tích (ISO-8601 format)
      * @return Danh sách số lượt truy cập theo ngày
      */
-    @GetMapping("/analytics/trends/range")
+    @GetMapping("/analytics/visitors/trend")
     public ResponseEntity<?> getTrendlineAnalytics(
             Principal principal,
             @RequestParam(name = "from", required = true) String fromStr,
@@ -245,6 +245,58 @@ public class OrganizerController {
         } catch (Exception e) {
             log.error("Error getting trendline analytics: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
+        }
+    }    /**
+     * Lấy danh sách phân tích sự kiện của người tổ chức với phân trang
+     *
+     * @param principal  User principal để lấy userId
+     * @param page       Số trang (mặc định: 1)
+     * @param pageSize   Số phần tử mỗi trang (mặc định: 10)
+     * @param from       Thời gian bắt đầu tính (format: ISO-8601, e.g. 2025-04-28T17:00:00.000Z)
+     * @param to         Thời gian kết thúc tính (format: ISO-8601, e.g. 2025-05-06T16:59:59.999Z)
+     * @param sortField  Trường để sắp xếp (reach, revenue, fillRate)
+     * @param sortOrder  Hướng sắp xếp (asc, desc)
+     * @return ResponseEntity<OccaAnalyticsResponse> Danh sách phân tích sự kiện đã phân trang
+     */
+    @GetMapping("/analytics/occas")
+    public ResponseEntity<OccaAnalyticsResponse> getOccaAnalytics(
+            Principal principal,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(name = "from", required = false) String fromDateStr,
+            @RequestParam(name = "to", required = false) String toDateStr,
+            @RequestParam(required = false, defaultValue = "reach") String sortField,
+            @RequestParam(required = false, defaultValue = "desc") String sortOrder) {
+        
+        try {
+            // Lấy userId từ principal
+            UUID userId = UUID.fromString(principal.getName());
+              // Chuyển đổi tham số thời gian
+            LocalDateTime fromDate = null;
+            LocalDateTime toDate = null;
+            
+            if (fromDateStr != null && !fromDateStr.isEmpty()) {
+                // Format: 2025-04-28T17:00:00.000Z
+                Instant fromInstant = Instant.parse(fromDateStr);
+                fromDate = LocalDateTime.ofInstant(fromInstant, ZoneId.systemDefault());
+            }
+            
+            if (toDateStr != null && !toDateStr.isEmpty()) {
+                // Format: 2025-05-06T16:59:59.999Z
+                Instant toInstant = Instant.parse(toDateStr);
+                toDate = LocalDateTime.ofInstant(toInstant, ZoneId.systemDefault());
+            }
+              // Gọi service để lấy dữ liệu phân tích - trừ 1 vì page bắt đầu từ 1 trong API nhưng bắt đầu từ 0 trong code
+            OccaAnalyticsResponse response = organizerServices.getOccaAnalytics(
+                userId, page - 1, pageSize, fromDate, toDate, sortField, sortOrder);
+            
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid userId format: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("Error retrieving occa analytics: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

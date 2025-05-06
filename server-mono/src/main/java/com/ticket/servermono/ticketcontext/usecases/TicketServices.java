@@ -1,27 +1,40 @@
 package com.ticket.servermono.ticketcontext.usecases;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ticket.servermono.occacontext.adapters.dtos.organizer.DailyVisitorsItem;
+import com.ticket.servermono.occacontext.entities.Occa;
+import com.ticket.servermono.occacontext.entities.OccaTrackingStats;
 import com.ticket.servermono.ticketcontext.adapters.dtos.AddTicketClassRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockResponse;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingPayload;
+import com.ticket.servermono.ticketcontext.adapters.dtos.DailyRevenueItem;
 import com.ticket.servermono.ticketcontext.adapters.dtos.ListTicketsResponse;
+import com.ticket.servermono.ticketcontext.adapters.dtos.RevenueOverviewResponse;
+import com.ticket.servermono.ticketcontext.adapters.dtos.RevenueOverviewResponse.Period;
+import com.ticket.servermono.ticketcontext.adapters.dtos.RevenueOverviewResponse.RevenueDistributionItem;
 import com.ticket.servermono.ticketcontext.adapters.dtos.TicketClassResponse;
 import com.ticket.servermono.ticketcontext.domain.enums.PaymentStatus;
 import com.ticket.servermono.ticketcontext.entities.Invoice;
 import com.ticket.servermono.ticketcontext.entities.PaymentInfo;
 import com.ticket.servermono.ticketcontext.entities.Ticket;
 import com.ticket.servermono.ticketcontext.entities.TicketClass;
+import com.ticket.servermono.ticketcontext.grpc.OccaCreatorGrpcClient;
+import com.ticket.servermono.ticketcontext.grpc.OccaGrpcClient;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.InvoiceRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.PaymentInfoRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
@@ -34,10 +47,6 @@ import net.devh.boot.grpc.client.inject.GrpcClient;
 import occa.OccaDataResponse;
 import occa.OccaResquest;
 import occa.ShowDataResponse;
-import occa.ShowRequest;
-import occa.ShowResponse;
-import occa.ShowServicesGrpc.ShowServicesBlockingStub;
-import occa.OccaServicesGrpc.OccaServicesBlockingStub;
 import user.UserExistsRequest;
 import user.UserServiceGrpc;
 
@@ -49,15 +58,11 @@ public class TicketServices {
     private final TicketRepository ticketRepository;
     private final InvoiceRepository invoiceRepository;
     private final PaymentInfoRepository paymentInfoRepository;
+    private final OccaGrpcClient occaGrpcClient;
+    private final OccaCreatorGrpcClient occaCreatorGrpcClient;
 
     @GrpcClient("user-service")
     private UserServiceGrpc.UserServiceBlockingStub userStub;
-
-    @GrpcClient("occa-service")
-    private ShowServicesBlockingStub showStub;
-
-    @GrpcClient("occa-service")
-    private OccaServicesBlockingStub occaStub;
 
     public int calculateAvailableTickets(TicketClass ticketClass) {
         Long soldTickets = ticketRepository.countByTicketClassId(ticketClass.getId());
@@ -88,18 +93,20 @@ public class TicketServices {
 
             e.printStackTrace();
         }
-    }
-
-    @Transactional
+    }    @Transactional
     public void bookTicket(BookingPayload payload, UUID userId) {
 
-        // Kiểm tra xem show có tồn tại không thông qua
-        ShowRequest showRequest = ShowRequest.newBuilder()
-                .setShowId(payload.getShowId().toString())
-                .build();
-        ShowResponse showResponse = showStub.isShowExist(showRequest);
-        if (!showResponse.getIsShowExist()) {
-            throw new EntityNotFoundException("Show not found");
+        // Kiểm tra xem show có tồn tại không thông qua gRPC
+        try {
+            if (!occaGrpcClient.isShowExist(payload.getShowId())) {
+                throw new EntityNotFoundException("Show not found");
+            }
+        } catch (Exception e) {
+            if (e instanceof EntityNotFoundException) {
+                throw e;
+            }
+            log.error("Error checking if show exists: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to verify show existence", e);
         }
 
         // Kiểm tra người dùng có tồn tại không sử dụng gRPC
@@ -187,8 +194,7 @@ public class TicketServices {
             log.error("Error checking if user exists via gRPC: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to check user existence", e);
         }
-    }
-
+    }    
     private List<ListTicketsResponse> buildTicketsResponse(List<Ticket> tickets) {
         if (tickets == null || tickets.isEmpty()) {
             return new ArrayList<>();
@@ -220,19 +226,15 @@ public class TicketServices {
             List<Ticket> showTickets = entry.getValue();
             
             try {
-                // Lấy thông tin show từ gRPC
-                ShowRequest showRequest = ShowRequest.newBuilder()
-                    .setShowId(showId.toString())
-                    .build();
+                // Lấy thông tin show từ gRPC client
+                ShowDataResponse showData = occaGrpcClient.getShowById(showId);
                 
-                ShowDataResponse showData = showStub.getShowById(showRequest);
-                
-                // Lấy thông tin occa từ gRPC
+                // Lấy thông tin occa từ gRPC client
                 OccaResquest occaRequest = OccaResquest.newBuilder()
                     .setOccaId(showData.getOccaId())
                     .build();
                 
-                OccaDataResponse occaData = occaStub.getOccaById(occaRequest);
+                OccaDataResponse occaData = occaGrpcClient.getOccaById(occaRequest);
                 
                 // Tạo response cho mỗi vé trong show
                 for (Ticket ticket : showTickets) {
@@ -662,5 +664,133 @@ public class TicketServices {
             default:
                 return "unknown";
         }
+    }
+
+    /**
+     * Get revenue overview analytics data for a date range filtered by creator ID
+     * 
+     * @param from The start date of the analytics period
+     * @param to The end date of the analytics period
+     * @param creatorId The ID of the creator/organizer
+     * @return Revenue overview analytics data for the creator
+     */    
+    @Transactional(readOnly = true)
+    public RevenueOverviewResponse getRevenueOverview(LocalDateTime from, LocalDateTime to, String creatorId) {
+        log.info("Getting revenue overview from {} to {} for creator {}", from, to, creatorId);
+        
+        // Get all show_id belong principal
+        List<UUID> showIds = occaCreatorGrpcClient.getShowIdsByCreatorId(creatorId);
+        
+        // Get all successful payment invoices within the date range with showId filter
+        List<Invoice> allInvoices = invoiceRepository.findByStatus(PaymentStatus.PAYMENT_SUCCESS).stream()
+                .filter(invoice -> {
+                    LocalDateTime createdAt = invoice.getCreatedAt();
+                    return createdAt != null && 
+                           !createdAt.isBefore(from) && 
+                           !createdAt.isAfter(to) && 
+                           showIds.contains(invoice.getShowId());
+                })
+                .collect(Collectors.toList());
+        
+        log.info("Found {} successful payments in date range", allInvoices.size());
+        
+        // Calculate total revenue
+        double totalRevenue = allInvoices.stream()
+                .mapToDouble(Invoice::getSoTien)
+                .sum();
+                
+        // Group invoices by occa name for revenue distribution
+        Map<String, Double> revenueByOcca = new HashMap<>();
+        
+        for (Invoice invoice : allInvoices) {
+            UUID showId = invoice.getShowId();
+            if (showId != null) {
+                // Use OccaGrpcClient to get occa name
+                String occaName = occaGrpcClient.getOccaNameByShowId(showId);
+                revenueByOcca.put(occaName, revenueByOcca.getOrDefault(occaName, 0.0) + invoice.getSoTien());
+            }
+        }
+        
+        // Convert the map to list of revenue distribution items
+        List<RevenueDistributionItem> distributionItems = revenueByOcca.entrySet().stream()
+                .map(entry -> RevenueDistributionItem.builder()
+                        .name(entry.getKey())
+                        .amount(entry.getValue())
+                        .build())
+                .collect(Collectors.toList());
+        
+        // Create period object
+        Period period = Period.builder()
+                .from(from)
+                .to(to)
+                .build();
+        
+        // Build and return the response
+        return RevenueOverviewResponse.builder()
+                .totalRevenue(totalRevenue)
+                .revenueDistribution(distributionItems)
+                .period(period)
+                .build();
+    }
+
+    /**
+     * Get trendline analytics data for a date range
+     * 
+     * @param userId The ID of the user
+     * @param from The start date of the analytics period
+     * @param to The end date of the analytics period
+     * @return List of daily visitors items for the trendline
+     */
+    @Transactional(readOnly = true)
+    public List<DailyRevenueItem> getTrendlineAnalytics(UUID userId, LocalDateTime from, LocalDateTime to) {
+
+        // Get all show_id belong principal
+        List<UUID> showIds = occaCreatorGrpcClient.getShowIdsByCreatorId(userId.toString());
+
+        // Get all successful payment invoices within the date range for the user
+        List<Invoice> allInvoices = invoiceRepository.findByStatus(PaymentStatus.PAYMENT_SUCCESS).stream()
+                .filter(invoice -> {
+                    LocalDateTime createdAt = invoice.getCreatedAt();
+                    return createdAt != null &&
+                           !createdAt.isBefore(from) &&
+                           !createdAt.isAfter(to) &&
+                           showIds.contains(invoice.getShowId());
+                })
+                .collect(Collectors.toList());
+        
+        log.info("Found {} successful payments in date range", allInvoices.size());
+        
+        // Group invoices by date and calculate total revenue for each date
+        Map<LocalDate, Double> revenueByDate = new HashMap<>();
+        
+        // Create list of all dates in the range
+        LocalDate currentDate = from.toLocalDate();
+        LocalDate endDate = to.toLocalDate();
+        
+        // Initialize all dates with zero revenue
+        while (!currentDate.isAfter(endDate)) {
+            revenueByDate.put(currentDate, 0.0);
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        // Add actual revenue to dates that have it
+        for (Invoice invoice : allInvoices) {
+            LocalDateTime createdAt = invoice.getCreatedAt();
+            if (createdAt != null) {
+                LocalDate invoiceDate = createdAt.toLocalDate();
+                revenueByDate.put(invoiceDate, revenueByDate.getOrDefault(invoiceDate, 0.0) + invoice.getSoTien());
+            }
+        }
+
+        // Convert the map to list of daily revenue items
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM");
+        
+        return revenueByDate.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey()) // Sort by date
+                .map(entry -> DailyRevenueItem.builder()
+                        .date(entry.getKey().format(formatter))
+                        .revenue(entry.getValue().intValue())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

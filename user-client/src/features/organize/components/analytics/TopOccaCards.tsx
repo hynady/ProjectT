@@ -6,31 +6,33 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
-interface EventData {
+interface OccaData {
   id: string;
   title: string;
   reach: number;
+  revenue?: number;
+  fillRate?: number;
 }
 
-interface TopEventCardsProps {
+interface TopOccaCardsProps {
   title: string;
   description: string;
-  events: EventData[];
+  occas: OccaData[];
   colors: string[];
   onViewDetails: (id: string) => void;
   totalReach?: number;
 }
 
-const TopEventCards: React.FC<TopEventCardsProps> = ({
+const TopOccaCards: React.FC<TopOccaCardsProps> = ({
   title,
   description,
-  events,
+  occas: occas,
   colors,
   onViewDetails,
   totalReach,
 }) => {
   // Show only top 5 events
-  const topEvents = events.slice(0, 5);
+  const topOccas = occas.slice(0, 5);
 
   return (
     <Card className="shadow-sm col-span-7">
@@ -41,10 +43,10 @@ const TopEventCards: React.FC<TopEventCardsProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        {topEvents.length > 0 ? (
+        {topOccas.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {topEvents.map((event, index) => (
-              <Card key={event.id} className="overflow-hidden">
+            {topOccas.map((occa, index) => (
+              <Card key={occa.id} className="overflow-hidden">
                 <CardContent className="p-0">
                   <div className="h-2" style={{ backgroundColor: colors[index % colors.length] }}></div>
                   <div className="p-4 space-y-3">
@@ -61,32 +63,45 @@ const TopEventCards: React.FC<TopEventCardsProps> = ({
                     </div>
                     
                     <div>
-                      <h4 className="font-medium text-base truncate" title={event.title}>
-                        {event.title}
+                      <h4 className="font-medium text-base truncate" title={occa.title}>
+                        {occa.title}
                       </h4>
-                      <p className="text-xs text-muted-foreground mt-1">ID: {event.id}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      <p className="text-xs text-muted-foreground mt-1">ID: {occa.id}</p>
+                    </div>                    <div className="grid grid-cols-2 gap-2 mt-3">
                       <div className="space-y-1">
                         <p className="text-xs text-muted-foreground">Lượt tiếp cận</p>
-                        <p className="font-medium">{event.reach.toLocaleString()}</p>
+                        <p className="font-medium">{occa.reach.toLocaleString()}</p>
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center space-x-1">
                           <p className="text-xs text-muted-foreground">So với tổng tiếp cận</p>
                         </div>
                         <p className="font-medium">
-                          {totalReach ? ((event.reach / totalReach) * 100).toFixed(1) : '0'}%
+                          {totalReach ? ((occa.reach / totalReach) * 100).toFixed(1) : '0'}%
                         </p>
                       </div>
                     </div>
+
+                    {occa.revenue !== undefined && (
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">Doanh thu</p>
+                          <p className="font-medium">{occa.revenue.toLocaleString()} ₫</p>
+                        </div>
+                        {occa.fillRate !== undefined && (
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Tỉ lệ lấp đầy</p>
+                            <p className="font-medium">{occa.fillRate}%</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <Button
                       variant="outline"
                       size="sm"
                       className="w-full mt-2"
-                      onClick={() => onViewDetails(event.id)}
+                      onClick={() => onViewDetails(occa.id)}
                     >
                       <span>Chi tiết</span>
                       <ExternalLink className="ml-1 h-3.5 w-3.5" />
@@ -110,4 +125,4 @@ const TopEventCards: React.FC<TopEventCardsProps> = ({
   );
 };
 
-export default TopEventCards;
+export default TopOccaCards;

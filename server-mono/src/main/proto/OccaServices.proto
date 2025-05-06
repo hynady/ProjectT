@@ -55,3 +55,15 @@ message TicketStatusData {
 message TicketStatusResponse {
     repeated TicketStatusData tickets = 1;
 }
+
+service ShowIdServices {
+    rpc GetShowIdsByOccaId(OccaIdRequest) returns (ShowIdResponse);
+}
+
+message OccaIdRequest {
+    string occa_id = 1;
+}
+
+message ShowIdResponse {
+    repeated string show_ids = 1;
+}

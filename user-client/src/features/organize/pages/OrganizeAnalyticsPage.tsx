@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/commons/components/button';
 import { Card } from '@/commons/components/card';
@@ -10,27 +10,39 @@ import { DateRange } from 'react-day-picker';
 // Import components
 import TrendChart from '../components/analytics/TrendChart';
 import TrafficSourcesChart from '../components/analytics/TrafficSourcesChart';
-import TopEvents from '../components/analytics/TopEventCards';
+import RevenueTrendChart from '../components/analytics/RevenueTrendChart';
+import RevenueDistributionChart from '../components/analytics/RevenueDistributionChart';
 import { Skeleton } from '@/commons/components/skeleton';
 import VisitorCard from '../components/analytics/VisitorCard';
+import TopOccaCards from '@/features/organize/components/analytics/TopOccaCards';
+import OccasDataTable from '@/features/organize/components/analytics/OccasDataTable';
 
 // Custom Hooks
 import { useAnalyticsOverview } from '../hooks/useAnalyticsOverview';
 import { useAnalyticsTrends } from '../hooks/useAnalyticsTrends';
+import { useRevenueTrends } from '../hooks/useRevenueTrends';
+import { useRevenueOverview } from '../hooks/useRevenueOverview';
+import { useOccasAnalytics } from '../hooks/useOccasAnalytics';
 import { DashboardLayout } from "../layouts/DashboardLayout";
+import { OccaAnalyticsData } from '../services/analytics-trend.service';
 
 const COLORS = ['#8884d8', '#00C49F', '#FFBB28', '#FF8042', '#0088FE'];
 
-const OrganizeAnalyticsPageNew = () => {
+const OrganizeAnalyticsPage = () => {
   // Date range state with default to last 7 days  
-  const [dateRange, setDateRange] = React.useState<DateRange>({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     to: new Date()
   });
 
   // Temporary date range for selection
-  const [tempDateRange, setTempDateRange] = React.useState<DateRange>(dateRange);
-  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const [tempDateRange, setTempDateRange] = useState<DateRange>(dateRange);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  // Table state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [sortField, setSortField] = useState<keyof OccaAnalyticsData>('reach');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Use dateRange for analytics
   const analyticsPeriod = React.useMemo(() => {
@@ -38,16 +50,40 @@ const OrganizeAnalyticsPageNew = () => {
       return [dateRange.from, dateRange.to] as [Date, Date];
     }
     return null;
-  }, [dateRange.from, dateRange.to]);
-
-  // Get data based on date range
+  }, [dateRange.from, dateRange.to]);  // Get data based on date range
   const { 
     data: analyticsData, 
     loading: overviewLoading 
   } = useAnalyticsOverview(analyticsPeriod);
+  
+  const {
+    data: revenueData,
+    loading: revenueLoading
+  } = useRevenueOverview(analyticsPeriod);
+  
   const { 
-    data: trendData
+    data: visitorTrendData
   } = useAnalyticsTrends(analyticsPeriod);
+  
+  const {
+    data: revenueTrendData
+  } = useRevenueTrends(analyticsPeriod);
+  const {
+    data: occasAnalyticsData,
+    loading: occasLoading,
+    allData
+  } = useOccasAnalytics(analyticsPeriod, {
+    page: currentPage,
+    pageSize: pageSize,
+    sortField: sortField,
+    sortOrder: sortOrder
+  });
+
+  // Use the first 5 items from the server response as featured events
+  // The data is already sorted by the server according to sortField and sortOrder
+  const topOccasData = React.useMemo(() => {
+    return allData.slice(0, 5);
+  }, [allData]);
 
   // UI state
   const handleTempDateChange = (range: DateRange | undefined) => {
@@ -59,6 +95,18 @@ const OrganizeAnalyticsPageNew = () => {
       setDateRange(tempDateRange);
       setIsCalendarOpen(false);
     }
+  };
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleSortChange = (field: keyof OccaAnalyticsData, order: 'asc' | 'desc') => {
+    setSortField(field);
+    setSortOrder(order);
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(1); // Reset to first page on new search
   };
 
   return (
@@ -116,16 +164,17 @@ const OrganizeAnalyticsPageNew = () => {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-12">
-          {overviewLoading ? (
+        <div className="grid gap-4 md:grid-cols-12">          {overviewLoading || revenueLoading ? (
             <>
+              <Skeleton className="h-[120px] md:col-span-4" />
+              <Skeleton className="h-[120px] md:col-span-4" />
+              <Skeleton className="h-[120px] md:col-span-4" />
               <Skeleton className="h-[120px] md:col-span-4" />
               <Skeleton className="h-[120px] md:col-span-4" />
               <Skeleton className="h-[120px] md:col-span-4" />
             </>
           ) : (
-            <>
-              <Card className="md:col-span-4">
+            <>              <Card className="md:col-span-4">
                 <VisitorCard
                   title="Lượt tiếp cận"
                   value={analyticsData?.totalReach || 0}
@@ -139,13 +188,36 @@ const OrganizeAnalyticsPageNew = () => {
                   subtitle={analyticsData?.sourceDistribution?.[0]?.name}
                   trend={8.1}
                 />
+              </Card>              <Card className="md:col-span-4">
+                <VisitorCard
+                  title="Sự kiện được xem nhiều nhất"
+                  value={topOccasData?.[0]?.reach || 0}
+                  subtitle={topOccasData?.[0]?.title}
+                  trend={-5.2}
+                />
               </Card>
               <Card className="md:col-span-4">
                 <VisitorCard
-                  title="Sự kiện được xem nhiều nhất"
-                  value={analyticsData?.topOccas?.[0]?.reach || 0}
-                  subtitle={analyticsData?.topOccas?.[0]?.title}
-                  trend={-5.2}
+                  title="Tổng doanh thu"
+                  value={revenueData?.totalRevenue || 0}
+                  subtitle="VNĐ"
+                  trend={15.7}
+                />
+              </Card>
+              <Card className="md:col-span-4">
+                <VisitorCard
+                  title="Sự kiện có doanh số cao nhất"
+                  value={topOccasData?.[0]?.revenue || 0}
+                  subtitle={topOccasData?.[0]?.title}
+                  trend={10.3}
+                />
+              </Card>
+              <Card className="md:col-span-4">
+                <VisitorCard
+                  title="Show có doanh số cao nhất"
+                  value={revenueData?.revenueDistribution?.[0]?.amount || 0}
+                  subtitle={revenueData?.revenueDistribution?.[0]?.name}
+                  trend={7.5}
                 />
               </Card>
             </>
@@ -155,7 +227,7 @@ const OrganizeAnalyticsPageNew = () => {
             <TrendChart
               title="Xu hướng truy cập theo thời gian"
               description="Biểu đồ thể hiện số lượt truy cập theo thời gian"
-              data={trendData || []}
+              data={visitorTrendData || []}
               dateRange={{
                 from: dateRange.from || new Date(),
                 to: dateRange.to || new Date()
@@ -171,21 +243,55 @@ const OrganizeAnalyticsPageNew = () => {
               colors={COLORS}
             />
           </div>
-
-          <div className="md:col-span-12">
-            <TopEvents
+          
+          <div className="md:col-span-8">
+            <RevenueTrendChart
+              title="Xu hướng doanh thu theo thời gian"
+              description="Biểu đồ thể hiện doanh thu theo thời gian"
+              data={revenueTrendData || []}
+              dateRange={{
+                from: dateRange.from || new Date(),
+                to: dateRange.to || new Date()
+              }}
+            />
+          </div>          <div className="md:col-span-4">
+            <RevenueDistributionChart
+              title="Phân bố doanh thu theo loại"
+              description="Tỉ lệ doanh thu từ các loại sự kiện"
+              data={revenueData?.revenueDistribution || []}
+              colors={COLORS}
+            />
+          </div><div className="md:col-span-12">
+            <TopOccaCards
               title="Sự kiện nổi bật"
               description="Top sự kiện có lượt truy cập cao nhất"
-              events={analyticsData?.topOccas || []}
+              occas={topOccasData || []}
               onViewDetails={() => {}}
               colors={COLORS}
               totalReach={analyticsData?.totalReach || 0}
             />
           </div>
+
+          <div className="md:col-span-12">
+            <OccasDataTable
+              title="Tất cả sự kiện"
+              description="Dữ liệu chi tiết về tất cả các sự kiện"
+              data={occasAnalyticsData?.data || []}
+              total={occasAnalyticsData?.total || 0}
+              page={currentPage}
+              pageSize={pageSize}
+              totalPages={occasAnalyticsData?.totalPages || 1}
+              loading={occasLoading}
+              onPageChange={handlePageChange}
+              onSortChange={handleSortChange}
+              onSearch={handleSearch}
+              sortField={sortField}
+              sortOrder={sortOrder}
+            />
+          </div>
         </div>
-      </div>
-    </DashboardLayout>
+      </div>    </DashboardLayout>
   );
 };
 
-export default OrganizeAnalyticsPageNew;
+export default OrganizeAnalyticsPage;

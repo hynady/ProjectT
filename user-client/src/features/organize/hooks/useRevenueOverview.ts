@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
-import { analyticsTrendService, AnalyticsOverviewData } from '../services/analytics-trend.service';
+import { analyticsTrendService, RevenueOverviewData } from '../services/analytics-trend.service';
 
 /**
- * Hook for fetching analytics overview data
+ * Hook for fetching revenue overview data
  */
-export const useAnalyticsOverview = (dateRange: [Date, Date] | null) => {
-  const [data, setData] = useState<AnalyticsOverviewData | null>(null);
+export const useRevenueOverview = (dateRange: [Date, Date] | null) => {
+  const [data, setData] = useState<RevenueOverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    const fetchOverview = async () => {
+    const fetchRevenueOverview = async () => {
       if (!dateRange) {
         setError(new Error('Date range is required'));
         setLoading(false);
@@ -24,17 +24,17 @@ export const useAnalyticsOverview = (dateRange: [Date, Date] | null) => {
         const [from, to] = dateRange;
 
         if (from instanceof Date && to instanceof Date) {
-          const overviewData = await analyticsTrendService.getOverviewAnalytics(dateRange);
+          const revenueData = await analyticsTrendService.getRevenueOverview(dateRange);
           
           if (isMounted) {
-            setData(overviewData);
+            setData(revenueData);
             setError(null);
           }
         } else {
           throw new Error('Invalid date range: dates must be Date objects');
         }
       } catch (err) {
-        console.error('Failed to fetch overview data:', err);
+        console.error('Failed to fetch revenue overview data:', err);
         if (isMounted) {
           setError(err instanceof Error ? err : new Error('Unknown error'));
         }
@@ -45,7 +45,7 @@ export const useAnalyticsOverview = (dateRange: [Date, Date] | null) => {
       }
     };
 
-    fetchOverview();
+    fetchRevenueOverview();
 
     return () => {
       isMounted = false;

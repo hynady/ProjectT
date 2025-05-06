@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ticket.servermono.occacontext.adapters.dtos.kafka.TicketClassCreateDTO;
+import ticket.OccaTicketStats;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.AnalyticsOverviewResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.AnalyticsOverviewResponse.OccaReachItem;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.AnalyticsOverviewResponse.SourceDistributionItem;
@@ -31,6 +33,8 @@ import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaReque
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.CreateOccaResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.DailyVisitorsItem;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.GalleryDTO;
+import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaAnalyticsItem;
+import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaAnalyticsResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OrganizerOccaUnit;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.ShowDTO;
@@ -46,6 +50,7 @@ import com.ticket.servermono.occacontext.entities.Show;
 import com.ticket.servermono.occacontext.entities.Venue;
 import com.ticket.servermono.occacontext.entities.OccaTrackingStats;
 import com.ticket.servermono.occacontext.infrastructure.clients.TicketClassGrpcClient;
+import com.ticket.servermono.occacontext.infrastructure.clients.TicketStatsGrpcClient;
 import com.ticket.servermono.occacontext.infrastructure.repositories.CategoryRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaDetailInfoRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaRepository;
@@ -62,15 +67,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OrganizerServices {
-
-    private final OccaRepository occaRepository;
+public class OrganizerServices {    private final OccaRepository occaRepository;
     private final VenueRepository venueRepository;
     private final RegionRepository regionRepository;
-    private final CategoryRepository categoryRepository;    private final OccaDetailInfoRepository occaDetailInfoRepository;
+    private final CategoryRepository categoryRepository;    
+    private final OccaDetailInfoRepository occaDetailInfoRepository;
     private final ShowRepository showRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final TicketClassGrpcClient ticketClassGrpcClient;
+    private final TicketStatsGrpcClient ticketStatsGrpcClient;
     private final OccaTrackingStatsRepository occaTrackingStatsRepository;
 
     /**
@@ -811,5 +816,121 @@ public class OrganizerServices {
                         .visitors(visitorsByDate.getOrDefault(date, 0))
                         .build())
                 .collect(Collectors.toList());
+    }    /**
+     * Lấy danh sách phân tích sự kiện của người tổ chức với phân trang
+     * 
+     * @param userId    ID của người tổ chức
+     * @param page      Số trang (bắt đầu từ 0)
+     * @param size      Số phần tử mỗi trang
+     * @param startDate Thời gian bắt đầu tính doanh thu (nếu null, sẽ lấy 1 năm trước)
+     * @param endDate   Thời gian kết thúc tính doanh thu (nếu null, sẽ lấy thời điểm hiện tại)
+     * @param sortField Trường sắp xếp (reach, revenue, fillRate)
+     * @param sortOrder Hướng sắp xếp (asc, desc)
+     * @return OccaAnalyticsResponse Danh sách phân tích sự kiện đã phân trang
+     */
+    @Transactional(readOnly = true)
+    public OccaAnalyticsResponse getOccaAnalytics(UUID userId, int page, int size, 
+                                                 LocalDateTime startDate, LocalDateTime endDate,
+                                                 String sortField, String sortOrder) {
+        log.info("Fetching occa analytics for user: {}, page: {}, size: {}, dateRange: {} to {}, sort: {} {}", 
+                userId, page, size, startDate, endDate, sortField, sortOrder);
+          // Sử dụng giá trị mặc định nếu không được cung cấp
+        if (startDate == null) {
+            startDate = LocalDateTime.now().minusYears(1);
+        }
+        if (endDate == null) {
+            endDate = LocalDateTime.now();
+        }
+        
+        // Lấy tất cả sự kiện của người tổ chức
+        List<Occa> userOccas = occaRepository.findByCreatedBy(userId);
+        
+        // Lấy ID của tất cả sự kiện để lấy dữ liệu trước khi phân trang
+        List<UUID> allOccaIds = userOccas.stream()
+                .map(Occa::getId)
+                .collect(Collectors.toList());
+        
+        // Lấy dữ liệu tracking stats cho tất cả ID
+        Map<UUID, OccaTrackingStats> trackingStatsMap = occaTrackingStatsRepository.findAllById(allOccaIds)
+                .stream()
+                .collect(Collectors.toMap(
+                    OccaTrackingStats::getOccaId,
+                    stats -> stats,
+                    (existing, replacement) -> existing
+                ));
+        
+        // Gọi gRPC để lấy thông tin về doanh thu và tỷ lệ lấp đầy trong khoảng thời gian
+        Map<String, OccaTicketStats> ticketStatsMap = ticketStatsGrpcClient.getTicketStatsByOccaIds(allOccaIds, startDate, endDate);
+        
+        // Tạo danh sách đầy đủ (chưa phân trang) để có thể sắp xếp
+        List<OccaAnalyticsItem> allAnalyticsItems = userOccas.stream()
+                .map(occa -> {
+                    String occaIdStr = occa.getId().toString();
+                    OccaTrackingStats trackingStats = trackingStatsMap.get(occa.getId());
+                    OccaTicketStats ticketStats = ticketStatsMap.get(occaIdStr);
+                    
+                    return OccaAnalyticsItem.builder()
+                            .id(occaIdStr)
+                            .title(occa.getTitle())
+                            .reach(trackingStats != null ? trackingStats.getTotalCount() : 0)
+                            .revenue(ticketStats != null ? ticketStats.getRevenue() : 0)
+                            .fillRate(ticketStats != null ? ticketStats.getFillRate() : 0)
+                            .build();
+                })
+                .collect(Collectors.toList());
+        
+        // Sắp xếp theo trường đã chọn
+        boolean isAscending = "asc".equalsIgnoreCase(sortOrder);
+        
+        if ("revenue".equalsIgnoreCase(sortField)) {
+            if (isAscending) {
+                allAnalyticsItems.sort(Comparator.comparing(OccaAnalyticsItem::getRevenue));
+            } else {
+                allAnalyticsItems.sort(Comparator.comparing(OccaAnalyticsItem::getRevenue).reversed());
+            }
+        } else if ("fillRate".equalsIgnoreCase(sortField)) {
+            if (isAscending) {
+                allAnalyticsItems.sort(Comparator.comparing(OccaAnalyticsItem::getFillRate));
+            } else {
+                allAnalyticsItems.sort(Comparator.comparing(OccaAnalyticsItem::getFillRate).reversed());
+            }
+        } else { // Default: sort by reach
+            if (isAscending) {
+                allAnalyticsItems.sort(Comparator.comparing(OccaAnalyticsItem::getReach));
+            } else {
+                allAnalyticsItems.sort(Comparator.comparing(OccaAnalyticsItem::getReach).reversed());
+            }
+        }
+        
+        // Tính tổng số lượng
+        int totalOccas = allAnalyticsItems.size();
+        
+        // Tính toán phân trang thủ công
+        int totalPages = (int) Math.ceil((double) totalOccas / size);
+        int fromIndex = page * size;
+        int toIndex = Math.min(fromIndex + size, totalOccas);
+        
+        // Kiểm tra nếu fromIndex vượt quá kích thước danh sách
+        if (fromIndex >= totalOccas) {
+            // Trả về danh sách rỗng nếu trang yêu cầu vượt quá tổng số trang
+            return OccaAnalyticsResponse.builder()
+                    .data(new ArrayList<>())
+                    .total(totalOccas)
+                    .page(page + 1) // Trả về số trang bắt đầu từ 1 thay vì 0
+                    .pageSize(size)
+                    .totalPages(totalPages)
+                    .build();
+        }
+        
+        // Lấy danh sách con cho trang hiện tại (sau khi đã sắp xếp)
+        List<OccaAnalyticsItem> pagedAnalyticsItems = allAnalyticsItems.subList(fromIndex, toIndex);
+          // Tạo và trả về response
+        return OccaAnalyticsResponse.builder()
+                .data(pagedAnalyticsItems)
+                .total(totalOccas)
+                .page(page + 1) // Trả về số trang bắt đầu từ 1 thay vì 0
+                .pageSize(size)
+                .totalPages(totalPages)
+                .build();
     }
 }

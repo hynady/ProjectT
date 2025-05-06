@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "ticket";
+option java_outer_classname = "TicketStatsProto";
+
+package ticket;
+
+service TicketStatsService {
+  rpc GetTicketStatsByOccaIds (TicketStatsRequest) returns (TicketStatsResponse) {}
+}
+
+message TicketStatsRequest {
+  repeated string occa_ids = 1;
+  string start_date = 2; // Format: ISO 8601 (e.g., "2025-01-01T00:00:00")
+  string end_date = 3;   // Format: ISO 8601 (e.g., "2025-05-01T23:59:59")
+}
+
+message TicketStatsResponse {
+  repeated OccaTicketStats stats = 1;
+}
+
+message OccaTicketStats {
+  string occa_id = 1;
+  int64 revenue = 2;
+  int32 fill_rate = 3;
+}
