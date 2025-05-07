@@ -410,4 +410,19 @@ public class EndUserServices {    private final EndUserRepository eUserRepo;
                 .role(newRole.toLowerCase())
                 .build();
     }
+    
+    /**
+     * Gets the role of a user
+     * @param userId The ID of the user
+     * @return The user's role as a lowercase string
+     */
+    @Transactional(readOnly = true)
+    public String getUserRole(UUID userId) {
+        // Find the user by ID
+        EndUser user = eUserRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Return the role in lowercase
+        return user.getRoles().toLowerCase();
+    }
 }

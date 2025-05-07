@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useState, ReactNode, useEffect} from "react";
 import CookieManager from "@/commons/lib/utils/cookieManager";
 import {useNavigate} from "react-router-dom";
+import { clearAdminStatus } from "./utils/role-utils";
 
 interface AuthContextProps {
   isAuthenticated: boolean;
@@ -37,12 +38,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
     setToken(newToken);
     setIsAuthenticated(true);
     navigate('/');
-  };
-
-  const logout = () => {
+  };  const logout = () => {
     CookieManager.removeAuthToken();
     setToken(null);
     setIsAuthenticated(false);
+    
+    // Clear any user role/admin status from sessionStorage
+    clearAdminStatus();
+    
     navigate('/');
   };
 

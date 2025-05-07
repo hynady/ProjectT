@@ -28,6 +28,7 @@ import {
 } from "@/commons/components/alert-dialog.tsx"
 import {useAuth} from "@/features/auth/contexts.tsx";
 import { useUser } from '@/features/auth/contexts/UserContext';
+import { AdminMenuButton } from '@/features/admin/components/AdminMenuButton';
 import {
   Dialog,
   DialogContent,
@@ -197,14 +198,14 @@ const Navbar = () => {
                   onClick={() => navigate("my-ticket")}>
                   <Ticket className="w-4 h-4 mr-2"/>
                   Vé của tôi
-                </Button>
-                <Button
+                </Button>                <Button
                   variant="outline"
                   className="text-sm px-3 h-9"
                   onClick={() => navigate("/organize")}>
                   <LayoutDashboard className="w-4 h-4 mr-2"/>
                   Quản lý sự kiện
                 </Button>
+                <AdminMenuButton />
               </>
             )}
           </nav>

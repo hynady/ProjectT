@@ -162,4 +162,30 @@ public class UserController {
                             .build());
         }
     }
+      @GetMapping("/role")
+    public ResponseEntity<String> getUserRole(@Nullable Principal principal) {
+        // Kiểm tra xem có người dùng đăng nhập không
+        if (principal == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        // Lấy userId từ principal name
+        String userId = principal.getName();
+        
+        try {
+            UUID userUuid = UUID.fromString(userId);
+            
+            // Lấy role của user thông qua service
+            String userRole = endUserServices.getUserRole(userUuid);
+            
+            // Return the user role
+            return ResponseEntity.ok(userRole);
+        } catch (IllegalArgumentException e) {
+            // Xử lý trường hợp userId không phải là UUID hợp lệ
+            return ResponseEntity.status(401).build();
+        } catch (RuntimeException e) {
+            // Xử lý trường hợp không tìm thấy user
+            return ResponseEntity.status(404).body("User not found");
+        }
+    }
 }

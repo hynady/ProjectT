@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { useAuth } from '@/features/auth/contexts';
 import { getAvatarUrl } from '@/utils/cloudinary.utils';
 import { userService } from '../services/user.service';
+import { clearAdminStatus } from '@/features/auth/utils/role-utils';
+import { roleService } from '@/features/auth/services/role.service';
 
 // Define user data interface
 export interface UserData {
@@ -21,6 +23,7 @@ interface UserContextType {
   showProfileCompletion: boolean;
   dismissProfileCompletion: () => void;
   isProfileComplete: boolean;
+  isAdmin: boolean;
   refreshUserData: () => Promise<void>;
   refreshTrigger: number;
 }
@@ -34,6 +37,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
   const [showProfileCompletion, setShowProfileCompletion] = useState<boolean>(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   // Initialize and check profile completion status
   useEffect(() => {
@@ -48,6 +52,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (!isAuthenticated) {
       setLoading(false);
       setUserData(null);
+      setIsAdmin(false);
       return;
     }
 
@@ -55,13 +60,23 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const data = await userService.getCurrentUser();
       setUserData(data);
-      
-      // Only show profile completion dialog if name is missing AND not previously dismissed
+        // Only show profile completion dialog if name is missing AND not previously dismissed
       const profileCompletionDismissed = localStorage.getItem('profileCompletionDismissed');
       if (profileCompletionDismissed !== 'true' && (!data.name || data.name.trim() === '')) {
         setShowProfileCompletion(true);
       } else {
         setShowProfileCompletion(false);
+      }
+      
+      // Check if user has admin role - force fresh check
+      try {
+        // Clear any cached admin status to get fresh result
+        clearAdminStatus();
+        const role = await roleService.getUserRole(true);
+        setIsAdmin(role === 'role_admin');
+      } catch (roleError) {
+        console.error("Error checking admin access:", roleError);
+        setIsAdmin(false);
       }
       
       // Increment the refresh trigger to notify dependent components
@@ -103,6 +118,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     showProfileCompletion,
     dismissProfileCompletion,
     isProfileComplete,
+    isAdmin,
     refreshUserData: fetchUserData,
     refreshTrigger
   };

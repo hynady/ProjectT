@@ -7,6 +7,7 @@ import {ThemeProvider} from "@/commons/blocks/theme-provider.tsx";
 import {AuthProvider} from "@/features/auth/contexts.tsx";
 import {UserProvider} from "@/features/auth/contexts/UserContext.tsx";
 import DevToolbar from "@/commons/blocks/DevToolbar.tsx";
+import { AdminRoleMonitor } from '@/features/admin/components/AdminRoleMonitor';
 
 createRoot(document.getElementById('root')!).render(
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
@@ -15,6 +16,8 @@ createRoot(document.getElementById('root')!).render(
           <UserProvider>
             <AppRouter/>
             <Toaster/>
+            {/* Global admin role monitor to check for role changes */}
+            <AdminRoleMonitor />
           </UserProvider>
         </AuthProvider>
         <DevToolbar />

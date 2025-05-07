@@ -74,9 +74,7 @@ function AppRouter() {
           <Route path="edit/:id" element={<ProtectedRoute><EditOccaPage /></ProtectedRoute>} />
           <Route path="events" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
           <Route path="analytics" element={<ProtectedRoute><OrganizeAnalyticsPage /></ProtectedRoute>} />
-        </Route>
-
-        {/* Admin Routes - Protected - WITHOUT NavLayout */}
+        </Route>        {/* Admin Routes - Protected - WITHOUT NavLayout */}
         <Route path="/admin/*" element={<AdminRoutes />} />
 
         {/* Preview Routes */}
