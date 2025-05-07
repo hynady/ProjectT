@@ -5,6 +5,8 @@ import com.ticket.servermono.authcontext.adapters.dtos.UpdateProfileRequest;
 import com.ticket.servermono.authcontext.adapters.dtos.UpdateProfileResponse;
 import com.ticket.servermono.authcontext.adapters.dtos.UpdateUserStatusRequest;
 import com.ticket.servermono.authcontext.adapters.dtos.UpdateUserStatusResponse;
+import com.ticket.servermono.authcontext.adapters.dtos.UpdateUserRoleRequest;
+import com.ticket.servermono.authcontext.adapters.dtos.UpdateUserRoleResponse;
 import com.ticket.servermono.authcontext.adapters.dtos.UserInfoDTO;
 import com.ticket.servermono.authcontext.adapters.dtos.UserListDTO;
 import com.ticket.servermono.authcontext.usecases.EndUserServices;
@@ -88,14 +90,15 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String role,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "asc") String direction) {
         
-        log.info("Getting users with page={}, size={}, status={}, search={}, sort={}, direction={}", 
-                page, size, status, search, sort, direction);
+        log.info("Getting users with page={}, size={}, status={}, role={}, search={}, sort={}, direction={}", 
+                page, size, status, role, search, sort, direction);
         
-        Page<UserListDTO> result = endUserServices.getUsersByRole(page, size, status, search, sort, direction);
+        Page<UserListDTO> result = endUserServices.getUsersByRole(page, size, status, role, search, sort, direction);
         
         return ResponseEntity.ok(result);
     }
@@ -130,6 +133,30 @@ public class UserController {
             log.error("Error updating user status: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(UpdateUserStatusResponse.builder()
+                            .success(false)
+                            .message(e.getMessage())
+                            .build());
+        }
+    }
+    
+    @PutMapping("/users/{userId}/role")
+    public ResponseEntity<UpdateUserRoleResponse> updateUserRole(
+            @PathVariable UUID userId,
+            @RequestBody UpdateUserRoleRequest request) {
+        log.info("Updating role for userId={} to role={}", userId, request.getRole());
+        
+        try {
+            UpdateUserRoleResponse response = endUserServices.updateUserRole(userId, request);
+            
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (RuntimeException e) {
+            log.error("Error updating user role: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(UpdateUserRoleResponse.builder()
                             .success(false)
                             .message(e.getMessage())
                             .build());

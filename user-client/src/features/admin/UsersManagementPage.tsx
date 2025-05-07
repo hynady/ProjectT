@@ -6,20 +6,26 @@ import { useDataTable } from "@/commons/hooks/use-data-table";
 import { DataTable, Column, StatusOption } from "@/commons/components/data-table";
 import { Badge } from "@/commons/components/badge";
 import { Input } from "@/commons/components/input";
-import { Search, UserIcon, Calendar, Eye, PowerIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/commons/components/select";
+import { Search, UserIcon, Calendar, Eye, PowerIcon, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { ActionMenu } from "@/commons/components/data-table/ActionMenu";
 import { UserDetailsDialog } from "./components/UserDetailsDialog";
+import { SetRoleDialog } from "./components/SetRoleDialog";
 import { toast } from "@/commons/hooks/use-toast";
 
 const UsersManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);  const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUserInfo | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>("all");
 
   const fetchData = useCallback((params: AdminUserFilterParams) => {
-    return adminService.getUsersList(params);
-  }, []);
+    return adminService.getUsersList({
+      ...params,
+      role: roleFilter !== "all" ? roleFilter : undefined
+    });  }, [roleFilter]);
 
   const {
     data,
@@ -62,7 +68,6 @@ const UsersManagementPage = () => {
     setSelectedUserId(userId);
     setShowDetailsDialog(true);
   };
-
   const handleToggleUserStatus = async (userId: string, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
@@ -85,11 +90,21 @@ const UsersManagementPage = () => {
       });
     }
   };
+  const handleSetRole = (user: AdminUserInfo) => {
+    setSelectedUser(user);
+    setShowRoleDialog(true);
+  };
 
   const statusOptions: StatusOption[] = [
     { value: 'all', label: 'All Users' },
     { value: 'active', label: 'Active', badge: 'success' },
     { value: 'inactive', label: 'Inactive', badge: 'secondary' }
+  ];
+
+  const roleOptions: StatusOption[] = [
+    { value: 'all', label: 'All Roles' },
+    { value: 'role_user', label: 'Users', badge: 'secondary' },
+    { value: 'role_admin', label: 'Administrators', badge: 'default' }
   ];
 
   const columns: Column<AdminUserInfo>[] = useMemo(() => [
@@ -123,18 +138,8 @@ const UsersManagementPage = () => {
       id: "role",
       header: "Role",
       cell: (user) => (
-        <Badge variant={
-          user.role === "admin" 
-            ? "default" 
-            : user.role === "organizer" 
-              ? "outline" 
-              : "secondary"
-        }>
-          {user.role === "admin" 
-            ? "Admin" 
-            : user.role === "organizer" 
-              ? "Organizer" 
-              : "User"}
+        <Badge variant={user.role === "role_admin" ? "default" : "secondary"}>
+          {user.role === "role_admin" ? "Admin" : "User"}
         </Badge>
       )
     },
@@ -179,20 +184,32 @@ const UsersManagementPage = () => {
           <p className="text-muted-foreground">View and manage platform users</p>
         </header>
         
-        {/* Search bar */}
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search users by name or email..."
-            className="pl-8 w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        {/* Search bar */}        <div className="flex gap-4 items-center">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search users by name or email..."
+              className="pl-8 w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>          {/* Role filter */}
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              {roleOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
-        {/* Main table */}
-        <div className="rounded-md border flex-1 flex flex-col h-[calc(100vh-13rem)] bg-background overflow-hidden">
+        {/* Main table */}        <div className="rounded-md border flex-1 flex flex-col h-[calc(100vh-13rem)] bg-background overflow-hidden">
           <DataTable
             data={data}
             columns={columns}
@@ -205,7 +222,7 @@ const UsersManagementPage = () => {
             isLast={isLast}
             isFirst={isFirst}
             sortField={sortField}
-            sortDirection={sortDirection as 'asc' | 'desc'}
+            sortDirection={sortDirection as 'asc' | 'desc'}            
             statusOptions={statusOptions}
             statusFilter={statusFilter}
             searchQuery={searchTerm}
@@ -214,13 +231,17 @@ const UsersManagementPage = () => {
             onSortChange={handleSortChange}
             onStatusChange={handleStatusChange}
             refreshData={refreshData}
-            rowActions={(user) => (
-              <ActionMenu
+            rowActions={(user) => (              <ActionMenu
                 actions={[
                   {
                     label: "View Details",
                     icon: <Eye className="h-4 w-4" />,
                     onClick: () => handleViewUserDetails(user.id)
+                  },
+                  {
+                    label: "Set Role",
+                    icon: <Shield className="h-4 w-4" />,
+                    onClick: () => handleSetRole(user)
                   },
                   {
                     label: user.status === "active" ? "Disable User" : "Enable User",
@@ -233,15 +254,25 @@ const UsersManagementPage = () => {
             )}
           />
         </div>
-      </div>
-
-      {/* User Details Dialog */}
+      </div>      {/* User Details Dialog */}
       {selectedUserId && (
         <UserDetailsDialog
           open={showDetailsDialog}
           onOpenChange={setShowDetailsDialog}
           userId={selectedUserId}
           onStatusUpdate={refreshData}
+        />
+      )}
+
+      {/* Set Role Dialog */}
+      {selectedUser && (
+        <SetRoleDialog
+          open={showRoleDialog}
+          onOpenChange={setShowRoleDialog}
+          userId={selectedUser.id}
+          userName={selectedUser.name}
+          currentRole={selectedUser.role}
+          onRoleUpdate={refreshData}
         />
       )}
     </AdminDashboardLayout>

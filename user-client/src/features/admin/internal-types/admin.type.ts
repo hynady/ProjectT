@@ -1,5 +1,5 @@
 export type OccaApprovalStatus = 'draft' | 'pending' | 'approved' | 'rejected';
-export type UserRole = 'user' | 'organizer' | 'admin';
+export type UserRole = 'role_user' | 'role_admin';
 export type UserStatus = 'active' | 'inactive';
 export type ActivityType = 'occa_submitted' | 'occa_approved' | 'occa_rejected' | 'user_registered' | 'user_login';
 

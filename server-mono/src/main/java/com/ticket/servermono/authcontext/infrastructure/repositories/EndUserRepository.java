@@ -19,11 +19,10 @@ public interface EndUserRepository extends JpaRepository<EndUser, UUID> {
     @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM EndUser e WHERE e.email = :email AND e.activatedStatus = 'ACTIVE'")
     Boolean existsByEmail(String email);    @Query(value = "SELECT avatar FROM EndUser e WHERE e.id = :id AND e.activatedStatus = 'ACTIVE'")
     String findAvatarById(@Param("id") UUID id);
-    
-    /**
+      /**
      * Find all users with a specific role with pagination and optional search
      */
-    @Query("SELECT e FROM EndUser e WHERE e.roles LIKE %:role% " +
+    @Query("SELECT e FROM EndUser e WHERE (:role IS NULL OR e.roles LIKE %:role%) " +
            "AND (:status IS NULL OR e.activatedStatus = :status) " +
            "AND (:search IS NULL OR LOWER(e.name) LIKE %:search% OR LOWER(e.email) LIKE %:search%)")    Page<EndUser> findByRoleAndDeletedStatusAndSearch(@Param("role") String role, @Param("status") UserStatus status, 
                                                       @Param("search") String search, Pageable pageable);

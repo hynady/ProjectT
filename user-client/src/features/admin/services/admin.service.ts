@@ -8,7 +8,8 @@ import {
   AdminUserFilterParams,
   AdminOccaDetail,
   AdminUserDetail,
-  UserStatus
+  UserStatus,
+  UserRole
 } from '../internal-types/admin.type';
 import { 
   mockOccas, 
@@ -81,13 +82,13 @@ class AdminService extends BaseService {
       mockResponse: () => this.getMockDashboardStatistics()
     });
   }
-
   getUsersList(params: AdminUserFilterParams): Promise<Page<AdminUserInfo>> {
     const searchParams = new URLSearchParams();
 
     if (params.page !== undefined) searchParams.append('page', params.page.toString());
     if (params.size !== undefined) searchParams.append('size', params.size.toString());
     if (params.search) searchParams.append('search', params.search);
+    if (params.role) searchParams.append('role', params.role);
     if (params.status) searchParams.append('status', params.status);
     if (params.sort) searchParams.append('sort', params.sort);
     if (params.direction) searchParams.append('direction', params.direction);
@@ -106,13 +107,21 @@ class AdminService extends BaseService {
       mockResponse: () => this.getMockUserDetail(userId)
     });
   }
-
   updateUserStatus(userId: string, data: { status: 'active' | 'inactive' }): Promise<void> {
     return this.request({
       method: 'PUT',
       url: `/user/users/${userId}/status`,
       data: data,
       mockResponse: () => this.getMockUpdateUserStatus(userId, data.status)
+    });
+  }
+
+  updateUserRole(userId: string, data: { role: UserRole }): Promise<void> {
+    return this.request({
+      method: 'PUT', 
+      url: `/user/users/${userId}/role`,
+      data: data,
+      mockResponse: () => this.getMockUpdateUserRole(userId, data.role)
     });
   }
 
@@ -363,10 +372,7 @@ class AdminService extends BaseService {
           totalSpent: Math.floor(Math.random() * 5000000)
         };
 
-        // Add organizer stats if user is an organizer
-        if (user.role === 'organizer') {
-          mockStats.eventsOrganized = Math.floor(Math.random() * 8);
-        }
+        mockStats.eventsOrganized = Math.floor(Math.random() * 8);
 
         resolve({
           ...user,
@@ -377,7 +383,6 @@ class AdminService extends BaseService {
       }, 800);
     });
   }
-
   private getMockUpdateUserStatus(userId: string, status: UserStatus): Promise<void> {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
@@ -390,6 +395,24 @@ class AdminService extends BaseService {
         
         // Update user status in mock data
         mockUsers[userIndex].status = status;
+        
+        resolve();
+      }, 800);
+    });
+  }
+
+  private getMockUpdateUserRole(userId: string, role: UserRole): Promise<void> {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const userIndex = mockUsers.findIndex(u => u.id === userId);
+        
+        if (userIndex === -1) {
+          reject(new Error("User not found"));
+          return;
+        }
+        
+        // Update user role in mock data
+        mockUsers[userIndex].role = role;
         
         resolve();
       }, 800);

@@ -262,11 +262,10 @@ public class EndUserServices {    private final EndUserRepository eUserRepo;
                 .message("User status updated successfully")
                 .status(requestedStatus)
                 .build();
-    }
-    @Transactional(readOnly = true)
-    public Page<UserListDTO> getUsersByRole(int page, int size, String status, String search, String sort, String direction) {
-        log.info("Getting users with role ROLE_USER with page={}, size={}, status={}, search={}, sort={}, direction={}", 
-                page, size, status, search, sort, direction);
+    }    @Transactional(readOnly = true)
+    public Page<UserListDTO> getUsersByRole(int page, int size, String status, String role, String search, String sort, String direction) {
+        log.info("Getting users with page={}, size={}, status={}, role={}, search={}, sort={}, direction={}", 
+                page, size, status, role, search, sort, direction);
         
         // Create sort specification
         Sort.Direction sortDirection = Sort.Direction.ASC;
@@ -286,7 +285,11 @@ public class EndUserServices {    private final EndUserRepository eUserRepo;
                 default:
                     sortField = "createdAt"; // Default to creation date
             }
-        }          Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortField));        // Convert status string to UserStatus enum for repository
+        }
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortField));
+
+        // Convert status string to UserStatus enum for repository
         UserStatus statusEnum = null; // Default to null for all statuses
         if (status != null) {
             switch (status.toLowerCase()) {
@@ -297,15 +300,27 @@ public class EndUserServices {    private final EndUserRepository eUserRepo;
                     statusEnum = UserStatus.INACTIVE;
                     break;
                 default:
-                    // Keep statusEnum as null for any other status
                     break;
+            }
+        }        // Convert role to enum value if provided, otherwise keep null to return all roles
+        String roleFilter = null;
+        if (role != null) {
+            switch (role.toLowerCase()) {
+                case "role_user":
+                    roleFilter = UserRole.ROLE_USER.name();
+                    break;
+                case "role_admin":
+                    roleFilter = UserRole.ROLE_ADMIN.name();
+                    break;
+                default:
+                    // Invalid role value provided, but we'll return all roles instead of empty
+                    log.warn("Invalid role value '{}' provided, returning all roles", role);
             }
         }
         
-        // When status is null, we want to return users with any status
-        // The repository query is set up to handle null status correctly
+        // When role and status are null, return users with any role/status
         Page<EndUser> userPage = eUserRepo.findByRoleAndDeletedStatusAndSearch(
-                UserRole.ROLE_USER.name(), statusEnum, search, pageable);
+                roleFilter, statusEnum, search, pageable);
         
         // Map to response DTOs with proper status handling
         return userPage.map(user -> convertToUserListDTO(user, status));
@@ -338,5 +353,61 @@ public class EndUserServices {    private final EndUserRepository eUserRepo;
             .createdAt(user.getCreatedAt())
             .lastActive(lastActive)
             .build();
+    }
+    
+    /**
+     * Update user's role
+     * @param userId The ID of the user to update
+     * @param roleRequest The role update request containing the new role
+     * @return Response with update status and message
+     */
+    @Transactional
+    public UpdateUserRoleResponse updateUserRole(UUID userId, UpdateUserRoleRequest roleRequest) {
+        // Find the user by ID
+        EndUser user = eUserRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Validate and convert role
+        String requestedRole = roleRequest.getRole().toUpperCase();
+        String newRole;
+        
+        switch (requestedRole) {
+            case "ROLE_ADMIN":
+            case "ROLE_USER":
+                newRole = requestedRole;
+                break;
+            default:
+                return UpdateUserRoleResponse.builder()
+                        .success(false)
+                        .message("Invalid role value. Valid values are 'role_admin' or 'role_user'")
+                        .role(user.getRoles().toLowerCase())
+                        .build();
+        }
+        
+        // If role isn't changing, return early
+        if (user.getRoles().equals(newRole)) {
+            return UpdateUserRoleResponse.builder()
+                    .success(true)
+                    .message("User role already set to " + requestedRole.toLowerCase())
+                    .role(requestedRole.toLowerCase())
+                    .build();
+        }
+        
+        // Update the role
+        user.setRoles(newRole);
+        eUserRepo.save(user);
+        
+        // Log the role change
+        log.info("User ID {} role changed from {} to {}", 
+                userId, 
+                user.getRoles(), 
+                newRole);
+        
+        // Return success response
+        return UpdateUserRoleResponse.builder()
+                .success(true)
+                .message("User role updated successfully")
+                .role(newRole.toLowerCase())
+                .build();
     }
 }
