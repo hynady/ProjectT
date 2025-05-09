@@ -2,15 +2,7 @@ import { Badge } from '@/commons/components/badge.tsx';
 import { Card } from '@/commons/components/card.tsx';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import {OccaHeroActions} from "@/features/detail/components/OccaHeroActions.tsx";
-
-export interface OccaHeroSectionUnit {
-  bannerUrl: string;
-  title: string;
-  artist: string;
-  date: string;
-  time: string;
-  location: string;
-}
+import { OccaHeroSectionUnit } from '@/features/detail/internal-types/detail.type';
 
 interface OccaHeroSectionProps {
   occa: OccaHeroSectionUnit;
@@ -33,9 +25,8 @@ export const OccaHeroSection = ({ occa }: OccaHeroSectionProps) => {
           <Card className="animate-fade-up animate-ease-in-out p-6 flex flex-col space-y-4 sm:space-y-6 lg:flex-row lg:justify-between lg:items-end lg:space-y-0 lg:gap-6">
             <div className="space-y-2 sm:space-y-4">
               <div className="hidden sm:flex flex-wrap gap-1.5 sm:gap-2">
-                <Badge variant="destructive" className="text-xs sm:text-sm">Hot</Badge>
-                <Badge variant="default" className="text-xs sm:text-sm">Music</Badge>
-                <Badge variant="default" className="text-xs sm:text-sm">Concert</Badge>
+                <Badge variant="default" className="text-xs sm:text-sm">{occa.region}</Badge>
+                <Badge variant="primary" className="text-xs sm:text-sm">{occa.category}</Badge>
               </div>
 
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">

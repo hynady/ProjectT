@@ -17,4 +17,6 @@ public class OccaHeroDetailResponse {
     private LocalDate date;
     private LocalTime time;
     private String location;
+    private String category;
+    private String region;
 }

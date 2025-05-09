@@ -5,8 +5,9 @@ export interface OccaHeroSectionUnit {
   bannerUrl: string;
   date: string;
   time: string;
-  duration: string;
   location: string;
+  category: string;
+  region: string;
 }
 
 // Define the type for Show Unit

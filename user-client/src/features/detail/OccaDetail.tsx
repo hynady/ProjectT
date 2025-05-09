@@ -63,7 +63,9 @@ export default function OccaDetail() {
       ) : hero.error ? (
         <ErrorMessage className='pt-12 h-28' message="Không thể tải thông tin sự kiện" />
       ) : hero.data && (
-        <OccaHeroSection occa={hero.data} />
+        <OccaHeroSection
+          occa={hero.data}
+        />
       )}
 
       <main className="container mx-auto max-w-6xl px-4 py-12">

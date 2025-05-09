@@ -107,6 +107,8 @@ const PreviewOccaDetail = () => {
               date: previewData.shows?.length > 0 ? previewData.shows[0].date : new Date().toISOString().split('T')[0],
               time: previewData.shows?.length > 0 ? previewData.shows[0].time : "19:00",
               location: previewData.location || "Địa điểm",
+              category: previewData.category || "Thể loại",
+              region: previewData.region || "Khu vực",
               status: "active", // Add status for preview
             },
             loading: false,

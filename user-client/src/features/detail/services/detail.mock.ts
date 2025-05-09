@@ -14,8 +14,9 @@ export const detailMockData = {
     artist: "BlackPink",
     date: "2025-01-15",
     time: "20:00",
-    duration: "150",
     location: "Sân vận động Việt Trì",
+    category: "Âm nhạc",
+    region: "Hà Nội"
   } as OccaHeroSectionUnit,
   locationData: {
     location: "Sân vận động Việt Trì",

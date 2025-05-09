@@ -18,7 +18,7 @@ public interface OccaDetailInfoRepository extends JpaRepository<OccaDetailInfo, 
             "o.id, o.title, o.artist, odi.bannerUrl, " +
             "CASE WHEN o.nextShowDateTime IS NOT NULL THEN CAST(FUNCTION('date', o.nextShowDateTime) AS LocalDate) ELSE NULL END, " + 
             "CASE WHEN o.nextShowDateTime IS NOT NULL THEN CAST(FUNCTION('time', o.nextShowDateTime) AS LocalTime) ELSE NULL END, " +
-            "o.venue.location) " +
+            "o.venue.location, o.category.name, o.venue.region.name) " +
             "FROM Occa o " +
             "LEFT JOIN o.detailInfo odi " +
             "WHERE o.id = :occaId")

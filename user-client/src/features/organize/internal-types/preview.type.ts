@@ -33,6 +33,8 @@ export interface PreviewData {
   shows: PreviewShow[];
   tickets: PreviewTicket[];
   gallery: PreviewGalleryItem[];
+  category: string;
+  region: string;
 }
 
 export interface PreviewShowWithPrices extends PreviewShow {
@@ -54,6 +56,8 @@ export interface PreviewHeroData {
   time: string;
   location: string;
   status: string;
+  category: string;
+  region: string;
 }
 
 export interface PreviewOverviewData {
