@@ -7,6 +7,7 @@ import com.ticket.servermono.occacontext.domain.enums.SaleStatus;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -38,6 +39,7 @@ public class Show extends BaseSQLEntity {
     @Column(name = "sale_status")
     private SaleStatus saleStatus; // UPCOMING, ON_SALE, SOLD_OUT, ENDED
     
+    @Builder.Default
     @Column(name = "auto_update_status", nullable = false)
     private Boolean autoUpdateStatus = true; // Mặc định là tự động cập nhật
 }

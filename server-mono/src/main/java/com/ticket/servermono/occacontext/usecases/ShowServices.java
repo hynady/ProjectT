@@ -42,7 +42,9 @@ public class ShowServices {
     private final OccaRepository occaRepository;
 
     @GrpcClient("ticket-service")
-    private TicketShowServicesBlockingStub ticketShowStub;    public List<OrganizeShowResponse> getOrganizeShowsByOccaId(UUID occaId) {
+    private TicketShowServicesBlockingStub ticketShowStub;
+
+    public List<OrganizeShowResponse> getOrganizeShowsByOccaId(UUID occaId) {
         List<Show> shows = showRepository.findByOccaId(occaId);
         if (shows.isEmpty()) {
             throw new EntityNotFoundException("No shows found for occasion: " + occaId);
@@ -54,11 +56,11 @@ public class ShowServices {
                     response.setId(show.getId());
                     response.setDate(show.getDate().toString());
                     response.setTime(show.getTime().toString());
-                    
+
                     // Determine sale status based on show's properties
                     response.setSaleStatus(formatSaleStatus(determineSaleStatus(show)));
                     response.setAutoUpdateStatus(show.getAutoUpdateStatus());
-                    
+
                     // Get ticket prices and availability for this show
                     List<TicketInfo> tickets = getTicketInfoForShow(show.getId());
                     response.setTickets(tickets);
@@ -67,12 +69,13 @@ public class ShowServices {
                 })
                 .collect(Collectors.toList());
     }
-      /**
+
+    /**
      * Xác định trạng thái bán hàng của một show dựa trên nhiều yếu tố:
      * 1. Nếu autoUpdateStatus = false, giữ nguyên trạng thái hiện tại
      * 2. Nếu show đã lưu trạng thái và không phải là UPCOMING thì giữ nguyên
      * 3. Nếu ngày của show đã qua thì ENDED
-     * 4. Nếu không có vé nào thì UPCOMING 
+     * 4. Nếu không có vé nào thì UPCOMING
      * 5. Nếu không có vé nào có sẵn (số lượng = 0) thì SOLD_OUT
      * 6. Nếu có vé có sẵn thì ON_SALE
      */
@@ -82,40 +85,40 @@ public class ShowServices {
             // Nếu tắt tự động cập nhật, giữ nguyên trạng thái
             return show.getSaleStatus() != null ? show.getSaleStatus() : SaleStatus.UPCOMING;
         }
-        
+
         // Nếu show đã có trạng thái khác UPCOMING, giữ nguyên
         if (show.getSaleStatus() != null && show.getSaleStatus() != SaleStatus.UPCOMING) {
             return show.getSaleStatus();
         }
-        
+
         // Kiểm tra ngày - nếu show đã qua thì ENDED
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
-        
-        if (show.getDate().isBefore(today) || 
-            (show.getDate().isEqual(today) && show.getTime().isBefore(now))) {
+
+        if (show.getDate().isBefore(today) ||
+                (show.getDate().isEqual(today) && show.getTime().isBefore(now))) {
             return SaleStatus.ENDED;
         }
-        
+
         // Kiểm tra tình trạng vé
         List<PriceInfo> priceInfos = getTicketClassesForShow(show.getId());
-        
+
         // Không có loại vé nào
         if (priceInfos.isEmpty()) {
             return SaleStatus.UPCOMING;
         }
-        
+
         // Kiểm tra số lượng vé còn lại
         boolean hasAvailableTickets = priceInfos.stream()
                 .anyMatch(priceInfo -> priceInfo.getAvailable() != null && priceInfo.getAvailable() > 0);
-        
+
         if (hasAvailableTickets) {
             return SaleStatus.ON_SALE;
         } else {
             return SaleStatus.SOLD_OUT;
         }
     }
-    
+
     /**
      * Chuyển đổi enum SaleStatus thành chuỗi phù hợp với client
      */
@@ -123,14 +126,14 @@ public class ShowServices {
         if (status == null) {
             return "upcoming"; // Giá trị mặc định
         }
-        
+
         return status.name().toLowerCase();
     }
-    
+
     private List<TicketInfo> getTicketInfoForShow(UUID showId) {
         try {
             List<PriceInfo> priceInfos = getTicketClassesForShow(showId);
-            
+
             return priceInfos.stream()
                     .map(priceInfo -> {
                         TicketInfo ticketInfo = new TicketInfo();
@@ -149,7 +152,10 @@ public class ShowServices {
     }
 
     public List<OccaShowDataResponse> getShowsByOccaId(UUID occaId) {
-        List<Show> shows = showRepository.findByOccaId(occaId);
+        List<Show> shows = showRepository.findByOccaIdAndSaleStatusIn(
+                occaId,
+                List.of(SaleStatus.ON_SALE, SaleStatus.SOLD_OUT));
+
         if (shows.isEmpty()) {
             throw new EntityNotFoundException("No shows found for occasion: " + occaId);
         }
@@ -206,6 +212,7 @@ public class ShowServices {
 
     /**
      * Lấy giá thấp nhất cho một show cụ thể thông qua gRPC
+     * 
      * @param showId ID của show cần lấy giá
      * @return Giá thấp nhất hoặc null nếu không có giá
      */
@@ -213,12 +220,12 @@ public class ShowServices {
     public Double getMinPriceForShow(UUID showId) {
         // Giả sử bạn có một phương thức để lấy tất cả các loại vé của một show
         List<PriceInfo> priceInfos = getTicketClassesForShow(showId);
-        
+
         // Nếu danh sách trống, trả về 0
         if (priceInfos.isEmpty()) {
             return 0.0;
         }
-        
+
         // Tìm giá thấp nhất trong các loại vé
         return priceInfos.stream()
                 .map(PriceInfo::getPrice)
@@ -231,7 +238,7 @@ public class ShowServices {
 
         kafkaTemplate.send(CLASS_INIT, showId.toString());
     }
-    
+
     /**
      * Chuyển đổi string thành SaleStatus enum
      * Tương tự như phương thức parseApprovalStatus trong OrganizerServices
@@ -248,10 +255,11 @@ public class ShowServices {
             return SaleStatus.UPCOMING;
         }
     }
-    
+
     /**
      * Add a new show to an occasion
-     * @param occaId ID of the occasion
+     * 
+     * @param occaId   ID of the occasion
      * @param showData Show data payload
      * @return Created show response
      */
@@ -260,11 +268,11 @@ public class ShowServices {
         // Find the occasion
         Occa occa = occaRepository.findById(occaId)
                 .orElseThrow(() -> new EntityNotFoundException("Occasion not found with ID: " + occaId));
-        
+
         // Parse date and time
         LocalDate date = LocalDate.parse(showData.getDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         LocalTime time = LocalTime.parse(showData.getTime(), DateTimeFormatter.ofPattern("HH:mm"));
-        
+
         // Create new show with parsed sale status
         Show show = Show.builder()
                 .occa(occa)
@@ -273,10 +281,10 @@ public class ShowServices {
                 .saleStatus(parseSaleStatus(showData.getSaleStatus()))
                 .autoUpdateStatus(showData.getAutoUpdateStatus() != null ? showData.getAutoUpdateStatus() : true)
                 .build();
-        
+
         // Save the show
         Show savedShow = showRepository.save(show);
-        
+
         // Prepare response
         ShowResponse response = new ShowResponse();
         response.setId(savedShow.getId());
@@ -285,14 +293,15 @@ public class ShowServices {
         response.setSaleStatus(formatSaleStatus(savedShow.getSaleStatus()));
         response.setAutoUpdateStatus(savedShow.getAutoUpdateStatus());
         response.setTickets(List.of()); // Empty tickets list for new show
-        
+
         return response;
     }
 
     /**
      * Update an existing show
-     * @param occaId ID of the occasion
-     * @param showId ID of the show to update
+     * 
+     * @param occaId   ID of the occasion
+     * @param showId   ID of the show to update
      * @param showData Updated show data
      * @return Updated show response
      */
@@ -301,29 +310,29 @@ public class ShowServices {
         // Find the show and verify it belongs to the specified occasion
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new EntityNotFoundException("Show not found with ID: " + showId));
-        
+
         // Verify the show belongs to the correct occasion
         if (!show.getOcca().getId().equals(occaId)) {
             throw new EntityNotFoundException("Show does not belong to the specified occasion");
         }
-        
+
         // Parse date and time
         LocalDate date = LocalDate.parse(showData.getDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         LocalTime time = LocalTime.parse(showData.getTime(), DateTimeFormatter.ofPattern("HH:mm"));
-        
+
         // Update show fields
         show.setDate(date);
         show.setTime(time);
         show.setSaleStatus(parseSaleStatus(showData.getSaleStatus()));
-        
+
         // Update autoUpdateStatus if provided
         if (showData.getAutoUpdateStatus() != null) {
             show.setAutoUpdateStatus(showData.getAutoUpdateStatus());
         }
-        
+
         // Save the updated show
         Show updatedShow = showRepository.save(show);
-          // Prepare response
+        // Prepare response
         ShowResponse response = new ShowResponse();
         response.setId(updatedShow.getId());
         // Format date explicitly to ensure consistent format
@@ -331,29 +340,30 @@ public class ShowServices {
         response.setTime(updatedShow.getTime().format(DateTimeFormatter.ofPattern("HH:mm")));
         response.setSaleStatus(formatSaleStatus(updatedShow.getSaleStatus()));
         response.setAutoUpdateStatus(updatedShow.getAutoUpdateStatus());
-        
+
         // Get ticket information for the show - Convert to ShowResponse.TicketInfo
         List<OrganizeShowResponse.TicketInfo> organizeTickets = getTicketInfoForShow(showId);
         List<ShowResponse.TicketInfo> responseTickets = organizeTickets.stream()
-            .map(orgTicket -> {
-                ShowResponse.TicketInfo ticketInfo = new ShowResponse.TicketInfo();
-                ticketInfo.setId(orgTicket.getId());
-                ticketInfo.setType(orgTicket.getType());
-                ticketInfo.setPrice(orgTicket.getPrice());
-                ticketInfo.setAvailable(orgTicket.getAvailable());
-                // Setting sold to 0 as a default if not available
-                ticketInfo.setSold(0);
-                return ticketInfo;
-            })
-            .collect(Collectors.toList());
-            
+                .map(orgTicket -> {
+                    ShowResponse.TicketInfo ticketInfo = new ShowResponse.TicketInfo();
+                    ticketInfo.setId(orgTicket.getId());
+                    ticketInfo.setType(orgTicket.getType());
+                    ticketInfo.setPrice(orgTicket.getPrice());
+                    ticketInfo.setAvailable(orgTicket.getAvailable());
+                    // Setting sold to 0 as a default if not available
+                    ticketInfo.setSold(0);
+                    return ticketInfo;
+                })
+                .collect(Collectors.toList());
+
         response.setTickets(responseTickets);
-        
+
         return response;
     }
 
     /**
      * Delete a show
+     * 
      * @param occaId ID of the occasion
      * @param showId ID of the show to delete
      */
@@ -362,12 +372,12 @@ public class ShowServices {
         // Find the show and verify it belongs to the specified occasion
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new EntityNotFoundException("Show not found with ID: " + showId));
-        
+
         // Verify the show belongs to the correct occasion
         if (!show.getOcca().getId().equals(occaId)) {
             throw new EntityNotFoundException("Show does not belong to the specified occasion");
         }
-        
+
         // Delete the show
         showRepository.delete(show);
     }

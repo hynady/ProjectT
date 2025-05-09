@@ -49,9 +49,13 @@ export const ShowCard = ({
   
   return (
     <Card key={show.id || index}>
-      <CardContent className="p-6 relative">
-        {/* Status badge in top right corner */}
+      <CardContent className="p-6 relative">        {/* Status badges in top right corner */}
         <div className="absolute top-3 right-3 flex items-center gap-2">
+          {!show.autoUpdateStatus && (
+            <Badge variant="outline" className="border-yellow-500 text-yellow-500">
+              Đã tắt tự động
+            </Badge>
+          )}
           <Badge variant={statusOption.color as 'primary' | 'success' | 'destructive' | 'secondary'}>
             {statusOption.label}
           </Badge>

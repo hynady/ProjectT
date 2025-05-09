@@ -10,6 +10,7 @@ import com.ticket.servermono.occacontext.entities.Show;
 
 public interface ShowRepository extends JpaRepository<Show, UUID> {
     List<Show> findByOccaId(UUID occaId);
+    List<Show> findByOccaIdAndSaleStatusIn(UUID occaId, List<SaleStatus> statuses);
     List<Show> findByCreatedBy(UUID userId);
     
     /**

@@ -6,12 +6,12 @@ import { Button } from "@/commons/components/button";
 import { ShowSaleStatus } from "../../internal-types/organize.type";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/commons/components/tooltip";
 
-interface ShowHeaderProps {
-  show: {
+interface ShowHeaderProps {  show: {
     id: string;
     date: string;
     time: string;
     saleStatus: ShowSaleStatus;
+    autoUpdateStatus: boolean;
     tickets: {
       id: string;
       type: string;
@@ -57,13 +57,14 @@ export const ShowHeader = ({ show, onEdit, onDelete }: ShowHeaderProps) => {
           <Clock className="h-4 w-4 text-primary flex-shrink-0 mr-1.5" />
           <span>{show.time}</span>
         </div>
-        <div className="hidden sm:block ml-auto">
+        <div className="hidden sm:flex ml-auto items-center gap-2">
+          {!show.autoUpdateStatus && (
+            <Badge variant="outline" className="h-6 border-yellow-500 text-yellow-500">
+              Đã tắt kết thúc
+            </Badge>
+          )}
           {getStatusBadge(show.saleStatus)}
         </div>
-      </div>
-      
-      <div className="flex sm:hidden mr-auto">
-        {getStatusBadge(show.saleStatus)}
       </div>
       
       <div className="flex items-center gap-1">

@@ -1,6 +1,7 @@
 import {Button} from '@/commons/components/button.tsx';
 import {Card} from '@/commons/components/card.tsx';
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/commons/components/accordion.tsx';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +16,7 @@ import {useNavigate, useLocation} from 'react-router-dom';
 import { useAuth } from "@/features/auth/contexts";
 import { useState } from "react";
 import { BookingInfo, OccaShowUnit } from '@/features/detail/internal-types/detail.type';
+import { Info } from 'lucide-react';
 
 interface OccaShowSelectionProps {
   shows: OccaShowUnit[];
@@ -28,6 +30,13 @@ export const OccaShowSelection = ({shows, organizer, occaInfo, isPreview = false
   const location = useLocation();
   const { isAuthenticated } = useAuth();
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+
+  // Sort shows by date and time, closest to current time first
+  const sortedShows = [...shows].sort((a, b) => {
+    const dateA = new Date(`${a.date}T${a.time}`);
+    const dateB = new Date(`${b.date}T${b.time}`);
+    return dateA.getTime() - dateB.getTime();
+  });
 
   const handleNavigateToLogin = () => {
     navigate('/login', { 
@@ -87,8 +96,12 @@ export const OccaShowSelection = ({shows, organizer, occaInfo, isPreview = false
       <div className="sticky top-16">
         <div className="bg-card rounded-xl p-6">
           <h2 className="text-xl font-semibold text-card-foreground mb-4">Chọn buổi diễn</h2>
+          <div className="flex items-center gap-1.5 mb-4 text-xs text-muted-foreground">
+            <Info className="h-3 w-3" />
+            <span className="italic">Các buổi diễn hết thời hạn sẽ không hiển thị</span>
+          </div>
           <Accordion type="single" collapsible>
-            {shows.map((show, index) => (
+            {sortedShows.map((show, index) => (
               <AccordionItem key={index} value={`show-${index}`}>
                 <AccordionTrigger>
                   {new Date(show.date).toLocaleDateString('en-GB', {
@@ -154,7 +167,6 @@ export const OccaShowSelection = ({shows, organizer, occaInfo, isPreview = false
               Đăng nhập để đặt vé
             </Button>
           )}
-
           <p className="text-center text-sm text-muted-foreground mt-4">
             {isPreview ? "Đây là bản xem trước" : `Vé được bán bởi ${organizer}`}
           </p>
