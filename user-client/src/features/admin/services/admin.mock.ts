@@ -63,7 +63,7 @@ export const mockUsers: AdminUserInfo[] = [
         id: "user-1",
         name: "Nguyen Van A",
         email: "nguyenvana@example.com",
-        role: "organizer",
+        role: "role_user",
         status: "active",
         createdAt: "2023-10-15T08:30:00Z",
         lastActive: "2023-12-05T10:15:00Z"
@@ -72,7 +72,7 @@ export const mockUsers: AdminUserInfo[] = [
         id: "user-2",
         name: "Tran Thi B",
         email: "tranthib@example.com",
-        role: "user",
+        role: "role_user",
         status: "active",
         createdAt: "2023-09-22T14:20:00Z",
         lastActive: "2023-12-04T17:45:00Z"
@@ -81,7 +81,7 @@ export const mockUsers: AdminUserInfo[] = [
         id: "user-3",
         name: "Le Van C",
         email: "levanc@example.com",
-        role: "admin",
+        role: "role_admin",
         status: "active",
         createdAt: "2023-08-10T09:15:00Z",
         lastActive: "2023-12-05T09:30:00Z"
@@ -90,7 +90,7 @@ export const mockUsers: AdminUserInfo[] = [
         id: "user-4",
         name: "Pham Thi D",
         email: "phamthid@example.com",
-        role: "user",
+        role: "role_user",
         status: "inactive",
         createdAt: "2023-11-05T11:40:00Z",
         lastActive: "2023-11-15T16:20:00Z"
@@ -99,7 +99,7 @@ export const mockUsers: AdminUserInfo[] = [
         id: "user-5",
         name: "Hoang Van E",
         email: "hoangvane@example.com",
-        role: "organizer",
+        role: "role_user",
         status: "active",
         createdAt: "2023-07-20T10:30:00Z",
         lastActive: "2023-12-05T11:00:00Z"
@@ -108,7 +108,7 @@ export const mockUsers: AdminUserInfo[] = [
         id: "user-6",
         name: "Le Thi F",
         email: "lethif@example.com",
-        role: "user",
+        role: "role_user",
         status: "inactive",
         createdAt: "2023-08-12T09:20:00Z",
         lastActive: "2023-09-01T14:30:00Z"
