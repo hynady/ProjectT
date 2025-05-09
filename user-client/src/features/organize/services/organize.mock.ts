@@ -126,6 +126,7 @@ export const organizeMockData = {
       date: "2025-12-15",
       time: "19:30",
       saleStatus: "sold_out", // Changed from status to saleStatus and value from "available" to "on_sale"
+      autoUpdateStatus: true,
       tickets: [
         { id: "ticket-1", type: "VIP", price: 500000, available: 50, sold: 20 },
         { id: "ticket-2", type: "Standard", price: 300000, available: 100, sold: 45 },

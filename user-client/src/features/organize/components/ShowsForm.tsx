@@ -41,7 +41,7 @@ export const ShowsForm = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Handle adding or updating a show
-  const handleSaveShow = (date: string, time: string, status: string) => {
+  const handleSaveShow = (date: string, time: string, status: string, autoUpdateStatus: boolean) => {
     // Nếu có các hàm từ useOccaForm, ưu tiên sử dụng chúng
     if (editIndex !== null) {
       // Cập nhật show
@@ -50,7 +50,8 @@ export const ShowsForm = ({
         updateShow(showId, {
           date,
           time,
-          saleStatus: status as ShowSaleStatus
+          saleStatus: status as ShowSaleStatus,
+          autoUpdateStatus
         });
       } else {
         // Fallback nếu không có hàm updateShow
@@ -59,7 +60,8 @@ export const ShowsForm = ({
           id: shows[editIndex]?.id || '',
           date,
           time,
-          saleStatus: status as ShowSaleStatus
+          saleStatus: status as ShowSaleStatus,
+          autoUpdateStatus
         };
         onChange(updatedShows);
       }
@@ -70,14 +72,16 @@ export const ShowsForm = ({
         addShow({
           date,
           time,
-          saleStatus: status as ShowSaleStatus
+          saleStatus: status as ShowSaleStatus,
+          autoUpdateStatus
         });
       } else if (createShow) {
         // Tạo show mới rồi thêm vào danh sách
         const newShow = createShow({
           date,
           time,
-          saleStatus: status as ShowSaleStatus
+          saleStatus: status as ShowSaleStatus,
+          autoUpdateStatus
         });
         onChange([...shows, newShow]);
       } else {
@@ -86,7 +90,8 @@ export const ShowsForm = ({
           id: `temp-show-${Date.now()}`,
           date,
           time,
-          saleStatus: status as ShowSaleStatus
+          saleStatus: status as ShowSaleStatus,
+          autoUpdateStatus
         }]);
       }
     }
@@ -102,42 +107,40 @@ export const ShowsForm = ({
   
   // Delete show after confirmation
   const handleDeleteShow = () => {
-    if (showToDeleteIndex !== null) {
-      const showToDeleteId = shows[showToDeleteIndex]?.id;
-      
-      if (deleteShow && showToDeleteId) {
-        // Sử dụng hàm deleteShow từ useOccaForm nếu có
-        deleteShow(showToDeleteId);
-      } else {
-        // Fallback
-        const updatedShows = shows.filter((_, i) => i !== showToDeleteIndex);
-        onChange(updatedShows);
-      }
-      
-      setDeleteDialogOpen(false);
-      setShowToDeleteIndex(null);
+    if (showToDeleteIndex === null) return;
+
+    const showId = shows[showToDeleteIndex]?.id;
+    
+    if (deleteShow && showId) {
+      deleteShow(showId);
+    } else {
+      // Fallback nếu không có hàm deleteShow
+      const updatedShows = shows.filter((_, index) => index !== showToDeleteIndex);
+      onChange(updatedShows);
     }
+    
+    setShowToDeleteIndex(null);
+    setDeleteDialogOpen(false);
   };
   
-  // Show delete confirmation
+  // Show delete confirmation dialog
   const showDeleteConfirm = (index: number) => {
     setShowToDeleteIndex(index);
     setDeleteDialogOpen(true);
   };
   
-  // Update show status
-  const handleStatusChange = (index: number, status: string) => {
+  // Status change handler
+  const handleStatusChange = (index: number, newStatus: string) => {
     const showId = shows[index]?.id;
     
     if (updateShow && showId) {
-      // Sử dụng hàm updateShow từ useOccaForm nếu có
-      updateShow(showId, { saleStatus: status as ShowSaleStatus });
+      updateShow(showId, { saleStatus: newStatus as ShowSaleStatus });
     } else {
-      // Fallback
+      // Fallback nếu không có hàm updateShow
       const updatedShows = [...shows];
-      updatedShows[index] = { 
-        ...updatedShows[index], 
-        saleStatus: status as ShowSaleStatus 
+      updatedShows[index] = {
+        ...updatedShows[index],
+        saleStatus: newStatus as ShowSaleStatus,
       };
       onChange(updatedShows);
     }

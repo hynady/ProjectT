@@ -14,4 +14,5 @@ public class ShowDTO {
     private String date;
     private String time;
     private String saleStatus; // upcoming, on_sale, sold_out, ended
+    private Boolean autoUpdateStatus; // Optional: defaults to true if not specified
 }

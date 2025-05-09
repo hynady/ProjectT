@@ -10,4 +10,5 @@ public class AddShowPayload {
     private String date;      // Ngày của suất diễn (yyyy-MM-dd)
     private String time;      // Giờ của suất diễn (HH:mm)
     private String saleStatus; // Trạng thái bán vé (upcoming, on_sale, sold_out, ended)
+    private Boolean autoUpdateStatus; // Tự động cập nhật trạng thái (true/false)
 }

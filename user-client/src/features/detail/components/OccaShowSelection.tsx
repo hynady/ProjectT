@@ -95,7 +95,7 @@ export const OccaShowSelection = ({shows, organizer, occaInfo, isPreview = false
                   day: '2-digit',
                   month: '2-digit',
                   year: 'numeric'
-                  }).replace(/\//g, '/')} - {show.time}
+                  }).replace(/\//g, '/')} - {show.time.substring(0, 5)}
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-4">

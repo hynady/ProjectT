@@ -37,4 +37,7 @@ public class Show extends BaseSQLEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "sale_status")
     private SaleStatus saleStatus; // UPCOMING, ON_SALE, SOLD_OUT, ENDED
+    
+    @Column(name = "auto_update_status", nullable = false)
+    private Boolean autoUpdateStatus = true; // Mặc định là tự động cập nhật
 }

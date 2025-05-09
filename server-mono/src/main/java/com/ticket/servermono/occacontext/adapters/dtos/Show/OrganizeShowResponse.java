@@ -11,6 +11,7 @@ public class OrganizeShowResponse {
     private String date;
     private String time;
     private String saleStatus; // "on_sale" or "upcoming"
+    private Boolean autoUpdateStatus; // Tự động cập nhật trạng thái (true/false)
     private List<TicketInfo> tickets;
 
     @Data

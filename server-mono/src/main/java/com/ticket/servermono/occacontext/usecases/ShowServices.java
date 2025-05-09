@@ -42,9 +42,7 @@ public class ShowServices {
     private final OccaRepository occaRepository;
 
     @GrpcClient("ticket-service")
-    private TicketShowServicesBlockingStub ticketShowStub;
-
-    public List<OrganizeShowResponse> getOrganizeShowsByOccaId(UUID occaId) {
+    private TicketShowServicesBlockingStub ticketShowStub;    public List<OrganizeShowResponse> getOrganizeShowsByOccaId(UUID occaId) {
         List<Show> shows = showRepository.findByOccaId(occaId);
         if (shows.isEmpty()) {
             throw new EntityNotFoundException("No shows found for occasion: " + occaId);
@@ -58,8 +56,8 @@ public class ShowServices {
                     response.setTime(show.getTime().toString());
                     
                     // Determine sale status based on show's properties
-                    // This is a placeholder implementation - adjust according to your business logic
                     response.setSaleStatus(formatSaleStatus(determineSaleStatus(show)));
+                    response.setAutoUpdateStatus(show.getAutoUpdateStatus());
                     
                     // Get ticket prices and availability for this show
                     List<TicketInfo> tickets = getTicketInfoForShow(show.getId());
@@ -69,16 +67,22 @@ public class ShowServices {
                 })
                 .collect(Collectors.toList());
     }
-    
-    /**
+      /**
      * Xác định trạng thái bán hàng của một show dựa trên nhiều yếu tố:
-     * 1. Nếu show đã lưu trạng thái và không phải là UPCOMING thì giữ nguyên
-     * 2. Nếu ngày của show đã qua thì ENDED
-     * 3. Nếu không có vé nào thì UPCOMING 
-     * 4. Nếu không có vé nào có sẵn (số lượng = 0) thì SOLD_OUT
-     * 5. Nếu có vé có sẵn thì ON_SALE
+     * 1. Nếu autoUpdateStatus = false, giữ nguyên trạng thái hiện tại
+     * 2. Nếu show đã lưu trạng thái và không phải là UPCOMING thì giữ nguyên
+     * 3. Nếu ngày của show đã qua thì ENDED
+     * 4. Nếu không có vé nào thì UPCOMING 
+     * 5. Nếu không có vé nào có sẵn (số lượng = 0) thì SOLD_OUT
+     * 6. Nếu có vé có sẵn thì ON_SALE
      */
     private SaleStatus determineSaleStatus(Show show) {
+        // Kiểm tra cài đặt tự động cập nhật
+        if (show.getAutoUpdateStatus() != null && !show.getAutoUpdateStatus()) {
+            // Nếu tắt tự động cập nhật, giữ nguyên trạng thái
+            return show.getSaleStatus() != null ? show.getSaleStatus() : SaleStatus.UPCOMING;
+        }
+        
         // Nếu show đã có trạng thái khác UPCOMING, giữ nguyên
         if (show.getSaleStatus() != null && show.getSaleStatus() != SaleStatus.UPCOMING) {
             return show.getSaleStatus();
@@ -267,6 +271,7 @@ public class ShowServices {
                 .date(date)
                 .time(time)
                 .saleStatus(parseSaleStatus(showData.getSaleStatus()))
+                .autoUpdateStatus(showData.getAutoUpdateStatus() != null ? showData.getAutoUpdateStatus() : true)
                 .build();
         
         // Save the show
@@ -278,6 +283,7 @@ public class ShowServices {
         response.setDate(savedShow.getDate().toString());
         response.setTime(savedShow.getTime().toString());
         response.setSaleStatus(formatSaleStatus(savedShow.getSaleStatus()));
+        response.setAutoUpdateStatus(savedShow.getAutoUpdateStatus());
         response.setTickets(List.of()); // Empty tickets list for new show
         
         return response;
@@ -310,16 +316,21 @@ public class ShowServices {
         show.setTime(time);
         show.setSaleStatus(parseSaleStatus(showData.getSaleStatus()));
         
+        // Update autoUpdateStatus if provided
+        if (showData.getAutoUpdateStatus() != null) {
+            show.setAutoUpdateStatus(showData.getAutoUpdateStatus());
+        }
+        
         // Save the updated show
         Show updatedShow = showRepository.save(show);
-        
-        // Prepare response
+          // Prepare response
         ShowResponse response = new ShowResponse();
         response.setId(updatedShow.getId());
         // Format date explicitly to ensure consistent format
         response.setDate(updatedShow.getDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
         response.setTime(updatedShow.getTime().format(DateTimeFormatter.ofPattern("HH:mm")));
         response.setSaleStatus(formatSaleStatus(updatedShow.getSaleStatus()));
+        response.setAutoUpdateStatus(updatedShow.getAutoUpdateStatus());
         
         // Get ticket information for the show - Convert to ShowResponse.TicketInfo
         List<OrganizeShowResponse.TicketInfo> organizeTickets = getTicketInfoForShow(showId);

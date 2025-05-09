@@ -5,12 +5,14 @@ export interface AddShowPayload {
   date: string;
   time: string;
   saleStatus: ShowSaleStatus;
+  autoUpdateStatus: boolean;
 }
 
 export interface UpdateShowPayload {
   date?: string;
   time?: string;
   saleStatus?: ShowSaleStatus;
+  autoUpdateStatus?: boolean;
 }
 
 // Types for Ticket operations

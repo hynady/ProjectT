@@ -20,9 +20,8 @@ import { EmptyState } from "./shows/EmptyState";
 import { ShowList } from "./shows/ShowList";
 import { ShowFormDialog } from "./shows/ShowFormDialog";
 import { DeleteConfirmDialog } from "@/commons/components/data-table/DeleteConfirmDialog";
-import { vi } from "date-fns/locale";
-import { TicketFormValues } from "./shows/TicketFormDialog";
 import { AddShowPayload, AddTicketPayload, UpdateShowPayload } from "../internal-types/show-operations.type";
+import { TicketFormValues } from "@/features/organize/components/shows/TicketFormDialog";
 
 interface ShowListModalProps {
   open: boolean;
@@ -57,11 +56,15 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
       
       setLoading(true);
       setError(null);
-      
-      try {
+        try {
         const result = await organizeService.getShowsByOccaId(occa.id);
-        setShows(result);
-        setFilteredShows(result);
+        // Transform ShowResponse[] to ShowInfo[] by ensuring autoUpdateStatus has a default value
+        const showsWithDefaults = result.map(show => ({
+          ...show,
+          autoUpdateStatus: show.autoUpdateStatus ?? true // Default to true if not provided
+        }));
+        setShows(showsWithDefaults);
+        setFilteredShows(showsWithDefaults);
       } catch (err) {
         console.error("Error fetching shows:", err);
         setError("Không thể tải danh sách suất diễn. Vui lòng thử lại sau.");
@@ -184,17 +187,19 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
     }
   };
   
-  const handleSaveShow = async (date: string, time: string, status: string) => {
+  const handleSaveShow = async (date: string, time: string, status: string, autoUpdateStatus: boolean) => {
+    // Check for duplicate show
     try {
       const isDuplicate = shows.some(show => {
-        if (editingShow && show.id === editingShow.id) return false;
-        return show.date === date && show.time === time;
+        return show.date === date && 
+               show.time === time && 
+               (!editingShow || show.id !== editingShow.id);
       });
 
       if (isDuplicate) {
         toast({
-          title: "Trùng lặp",
-          description: "Đã có suất diễn vào ngày và giờ này",
+          title: "Đã tồn tại",
+          description: "Đã có suất diễn vào thời gian này",
           variant: "destructive",
         });
         return;
@@ -205,7 +210,8 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
         const updatePayload: UpdateShowPayload = {
           date,
           time,
-          saleStatus: status as ShowSaleStatus
+          saleStatus: status as ShowSaleStatus,
+          autoUpdateStatus
         };
         
         // Update existing show
@@ -218,7 +224,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
         // Update local state
         setShows(prevShows => prevShows.map(show => 
           show.id === editingShow.id 
-            ? { ...show, date, time, saleStatus: status as ShowSaleStatus } 
+            ? { ...show, date, time, saleStatus: status as ShowSaleStatus, autoUpdateStatus } 
             : show
         ));
         
@@ -226,12 +232,15 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
           title: "Suất diễn đã được cập nhật",
           description: `Đã cập nhật suất diễn vào ngày ${format(new Date(date), "dd/MM/yyyy")}`,
         });
+        
+        setEditingShow(null);
       } else {
         // Chuẩn bị payload theo interface
         const addPayload: AddShowPayload = {
           date,
           time,
-          saleStatus: status as ShowSaleStatus
+          saleStatus: status as ShowSaleStatus,
+          autoUpdateStatus
         };
         
         // Add new show
@@ -246,6 +255,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
           date,
           time,
           saleStatus: status as ShowSaleStatus,
+          autoUpdateStatus,
           tickets: []
         };
         
@@ -612,7 +622,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteShow}
         title="Xóa suất diễn"
-        description={`Bạn có chắc chắn muốn xóa suất diễn vào ngày ${showToDelete ? format(new Date(showToDelete.date), "dd/MM/yyyy", { locale: vi }) : ""} lúc ${showToDelete?.time || ""}? Hành động này không thể hoàn tác.`}
+        description={`Bạn có chắc chắn muốn xóa suất diễn vào ngày ${showToDelete ? format(new Date(showToDelete.date), "dd/MM/yyyy") : ""} lúc ${showToDelete?.time || ""}? Hành động này không thể hoàn tác.`}
         isDeleting={isDeleting}
       />
     </>

@@ -394,6 +394,7 @@ public class OrganizerServices {
                         .date(show.getDate().toString())
                         .time(show.getTime().toString())
                         .saleStatus(formatSaleStatus(show.getSaleStatus())) // Thêm saleStatus
+                        .autoUpdateStatus(show.getAutoUpdateStatus() != null ? show.getAutoUpdateStatus() : true)
                         .build())
                 .collect(Collectors.toList());
 
@@ -653,6 +654,7 @@ public class OrganizerServices {
                 .date(LocalDate.parse(showDTO.getDate()))
                 .time(LocalTime.parse(showDTO.getTime()))
                 .saleStatus(parseSaleStatus(showDTO.getSaleStatus()))
+                .autoUpdateStatus(showDTO.getAutoUpdateStatus() != null ? showDTO.getAutoUpdateStatus() : true)
                 .build();
     }
 
@@ -666,6 +668,9 @@ public class OrganizerServices {
         // Nếu có status, cập nhật thêm
         if (showDTO.getSaleStatus() != null) {
             show.setSaleStatus(parseSaleStatus(showDTO.getSaleStatus()));
+        }
+        if (showDTO.getAutoUpdateStatus() != null) {
+            show.setAutoUpdateStatus(showDTO.getAutoUpdateStatus());
         }
     }
     

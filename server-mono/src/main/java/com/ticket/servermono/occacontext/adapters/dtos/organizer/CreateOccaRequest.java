@@ -18,4 +18,5 @@ public class CreateOccaRequest {
     private List<GalleryDTO> gallery;
     private String status;
     private String approvalStatus;
+    private Boolean autoUpdateStatus;  // Added for auto-update status mechanism
 }

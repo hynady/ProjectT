@@ -187,6 +187,7 @@ class OrganizeService extends BaseService {
             date: showData.date,
             time: showData.time,
             saleStatus: showData.saleStatus,
+            autoUpdateStatus: showData.autoUpdateStatus,
             tickets: []
           });
         }, 500);
@@ -213,6 +214,7 @@ class OrganizeService extends BaseService {
             date: showData.date || show.date,
             time: showData.time || show.time,
             saleStatus: (showData.saleStatus) || show.saleStatus,
+            autoUpdateStatus: showData.autoUpdateStatus ?? show.autoUpdateStatus
           };
           
           resolve(updatedShow);

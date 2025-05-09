@@ -22,6 +22,7 @@ export interface ShowFormData {
   date: string;
   time: string;
   saleStatus?: ShowSaleStatus;
+  autoUpdateStatus?: boolean;
 }
 
 export interface TicketFormData {
@@ -115,6 +116,7 @@ export interface ShowResponse {
     available: number;
     sold?: number;
   }[];
+  autoUpdateStatus?: boolean;
 }
 
 // New type for show sale status

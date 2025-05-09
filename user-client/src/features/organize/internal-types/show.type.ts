@@ -5,6 +5,7 @@ export interface ShowInfo {
   date: string;
   time: string;
   saleStatus: ShowSaleStatus;
+  autoUpdateStatus: boolean;
   tickets: Array<{
     id: string;
     type: string;

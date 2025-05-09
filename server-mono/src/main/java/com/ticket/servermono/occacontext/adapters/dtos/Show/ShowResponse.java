@@ -14,6 +14,7 @@ public class ShowResponse {
     private String date;
     private String time;
     private String saleStatus; // 'upcoming', 'on_sale', 'sold_out', 'ended'
+    private Boolean autoUpdateStatus; // Tự động cập nhật trạng thái (true/false)
     private List<TicketInfo> tickets;
 
     @Data

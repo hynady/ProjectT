@@ -20,11 +20,12 @@ import {
   PopoverTrigger 
 } from "@/commons/components/popover";
 import { cn } from "@/commons/lib/utils/utils";
+import { Switch } from "@/commons/components/switch";
 
 interface ShowFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (date: string, time: string, status: string) => void;
+  onSave: (date: string, time: string, status: string, autoUpdateStatus: boolean) => void;
   showData?: ShowFormData | null;
 }
 
@@ -37,37 +38,40 @@ export const ShowFormDialog = ({
   const [date, setDate] = useState<Date | undefined>(
     showData?.date ? parse(showData.date, 'yyyy-MM-dd', new Date()) : undefined
   );
-  
   const [time, setTime] = useState<string>(showData?.time || '19:30');
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [autoUpdateStatus, setAutoUpdateStatus] = useState<boolean>(showData?.autoUpdateStatus ?? true); 
+
   // Reset form data when dialog opens
   useEffect(() => {
     if (open) {
       if (showData) {
         setDate(showData.date ? parse(showData.date, 'yyyy-MM-dd', new Date()) : undefined);
         setTime(showData.time || '19:30');
+        setAutoUpdateStatus(showData.autoUpdateStatus ?? true);
       } else {
         setDate(undefined);
         setTime('19:30');
+        setAutoUpdateStatus(true);
       }
     }
   }, [open, showData]);
-  
+
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!date) {
       return; // Validation error - date required
     }
-    
+
     const formattedDate = format(date, 'yyyy-MM-dd');
     onSave(
-      formattedDate, 
-      time, 
-      // Maintain existing status or default to 'upcoming'
-      showData?.saleStatus || 'upcoming'
+      formattedDate,
+      time,
+      // Status remains unchanged if editing, 'upcoming' if new
+      showData?.saleStatus || 'upcoming',
+      autoUpdateStatus
     );
   };
 
@@ -84,12 +88,12 @@ export const ShowFormDialog = ({
               : 'Nhập thông tin thời gian cho suất diễn mới.'}
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="date">Ngày</Label>
-              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     id="date"
@@ -110,14 +114,14 @@ export const ShowFormDialog = ({
                     selected={date}
                     onSelect={(date) => {
                       setDate(date);
-                      setCalendarOpen(false);
+                      setPopoverOpen(false);
                     }}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="time">Giờ</Label>
               <div className="relative">
@@ -132,8 +136,19 @@ export const ShowFormDialog = ({
                 />
               </div>
             </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="autoUpdate"
+                checked={autoUpdateStatus}
+                onCheckedChange={setAutoUpdateStatus}
+              />
+              <Label htmlFor="autoUpdate" className="text-sm cursor-pointer">
+                Tự động kết thúc sự kiện khi tới thời hạn
+              </Label>
+            </div>
           </div>
-          
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Hủy
