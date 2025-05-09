@@ -98,7 +98,8 @@ public class OrganizerServices {
             String status,
             String search,
             String sort,
-            String direction) {
+            String direction,
+            UUID userId) {
 
         // Xác định hướng sắp xếp
         Direction sortDirection = "desc".equalsIgnoreCase(direction) ? Direction.DESC : Direction.ASC;
@@ -127,19 +128,19 @@ public class OrganizerServices {
         if (approvalStatus != null) {
             if (search != null && !search.isEmpty()) {
                 // Tìm kiếm theo trạng thái và từ khóa
-                occaPage = occaRepository.findByApprovalStatusAndTitleContainingIgnoreCase(
-                        approvalStatus, search, pageable);
+                occaPage = occaRepository.findByCreatedByAndApprovalStatusAndTitleContainingIgnoreCase(
+                        userId, approvalStatus, search, pageable);
             } else {
                 // Tìm kiếm chỉ theo trạng thái
-                occaPage = occaRepository.findByApprovalStatus(approvalStatus, pageable);
+                occaPage = occaRepository.findByCreatedByAndApprovalStatus(userId, approvalStatus, pageable);
             }
         } else {
             if (search != null && !search.isEmpty()) {
                 // Tìm kiếm chỉ theo từ khóa
-                occaPage = occaRepository.findByTitleContainingIgnoreCase(search, pageable);
+                occaPage = occaRepository.findByCreatedByAndTitleContainingIgnoreCase(userId, search, pageable);
             } else {
                 // Lấy tất cả
-                occaPage = occaRepository.findAll(pageable);
+                occaPage = occaRepository.findByCreatedBy(userId, pageable);
             }
         }
 

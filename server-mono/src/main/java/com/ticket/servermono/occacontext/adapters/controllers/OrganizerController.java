@@ -52,6 +52,7 @@ public class OrganizerController {    private final OrganizerServices organizerS
      */
     @GetMapping("/occas")
     public ResponseEntity<Page<OrganizerOccaUnit>> getOccas(
+            Principal principal,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String status,
@@ -59,12 +60,20 @@ public class OrganizerController {    private final OrganizerServices organizerS
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "asc") String direction) {
         
-        log.info("Getting occas with page={}, size={}, status={}, search={}, sort={}, direction={}", 
-                page, size, status, search, sort, direction);
+        if (principal == null) {
+            log.error("No authenticated user found");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+
+        log.info("Getting occas with page={}, size={}, status={}, search={}, sort={}, direction={}, userId={}",
+                page, size, status, search, sort, direction, principal.getName());
+        // Lấy userId từ principal
+        UUID userId = UUID.fromString(principal.getName());
         
+        // Chuyển đổi tham số sort và direction
         Page<OrganizerOccaUnit> result = organizerServices.getOrganizerOccas(
-                page, size, status, search, sort, direction);
-        
+                page, size, status, search, sort, direction, userId);
+
         return ResponseEntity.ok(result);
     }
     /**

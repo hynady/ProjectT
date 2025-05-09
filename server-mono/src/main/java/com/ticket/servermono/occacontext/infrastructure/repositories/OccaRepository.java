@@ -25,13 +25,15 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
         List<Occa> findByVenueId(UUID venueId);
         List<Occa> findByCategoryId(UUID categoryId);
         List<Occa> findByArtistContainingIgnoreCase(String artist);
-        Page<Occa> findByApprovalStatus(ApprovalStatus status, Pageable pageable);
-        
-        Page<Occa> findByApprovalStatusAndTitleContainingIgnoreCase(
-                ApprovalStatus status, String title, Pageable pageable);
-                
-        Page<Occa> findByTitleContainingIgnoreCase(String title, Pageable pageable);
-        
+        Page<Occa> findByCreatedByAndApprovalStatus(UUID userId, ApprovalStatus status, Pageable pageable);
+
+        Page<Occa> findByCreatedByAndApprovalStatusAndTitleContainingIgnoreCase(
+                UUID userId, ApprovalStatus status, String title, Pageable pageable);
+
+        Page<Occa> findByCreatedByAndTitleContainingIgnoreCase(UUID userId, String title, Pageable pageable);
+
+        Page<Occa> findByCreatedBy(UUID userId, Pageable pageable);
+
         @Query("SELECT o FROM Occa o WHERE " +
                "(:status IS NULL OR o.approvalStatus = :status) AND " +
                "(:search IS NULL OR LOWER(o.title) LIKE CONCAT('%', LOWER(:search), '%'))")
