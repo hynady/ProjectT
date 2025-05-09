@@ -49,17 +49,23 @@ import occa.OccaResquest;
 import occa.ShowDataResponse;
 import user.UserExistsRequest;
 import user.UserServiceGrpc;
+import org.springframework.kafka.core.KafkaTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TicketServices {
+    private static final String TICKET_BOOKING_TOPIC = "ticket.booking.stats";
+    
     private final TicketClassRepository ticketClassRepository;
     private final TicketRepository ticketRepository;
     private final InvoiceRepository invoiceRepository;
     private final PaymentInfoRepository paymentInfoRepository;
     private final OccaGrpcClient occaGrpcClient;
     private final OccaCreatorGrpcClient occaCreatorGrpcClient;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     @GrpcClient("user-service")
     private UserServiceGrpc.UserServiceBlockingStub userStub;
@@ -170,6 +176,29 @@ public class TicketServices {
 
         log.info("Successfully booked {} tickets for user {} in show {}",
                 createdTickets.size(), userId, payload.getShowId());
+        
+        // Sau khi đặt vé thành công, gửi thông tin thống kê qua Kafka
+        try {
+            // Tính toán thống kê cho người dùng
+            Map<String, Object> userStats = calculateUserTicketStats(userId);
+            
+            // Thêm thông tin bổ sung vào message
+            Map<String, Object> kafkaMessage = new HashMap<>(userStats);
+            kafkaMessage.put("userId", userId.toString());
+            kafkaMessage.put("bookingTime", LocalDateTime.now().toString());
+            kafkaMessage.put("showId", payload.getShowId().toString());
+            kafkaMessage.put("ticketsBooked", createdTickets.size());
+            
+            // Chuyển đổi message thành JSON
+            String jsonMessage = objectMapper.writeValueAsString(kafkaMessage);
+            
+            // Gửi message qua Kafka
+            kafkaTemplate.send(TICKET_BOOKING_TOPIC, userId.toString(), jsonMessage);
+            log.info("Sent ticket booking stats to Kafka for user: {}", userId);
+        } catch (Exception e) {
+            // Ghi log lỗi nhưng không làm gián đoạn giao dịch đặt vé
+            log.error("Failed to send ticket booking stats to Kafka: {}", e.getMessage(), e);
+        }
     }
 
     /**
@@ -792,5 +821,54 @@ public class TicketServices {
                         .revenue(entry.getValue().intValue())
                         .build())
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Calculate ticket statistics for a user
+     * 
+     * @param userId The ID of the user
+     * @return Map containing statistics including totalOccas, totalSpent, and totalTickets
+     */
+    private Map<String, Object> calculateUserTicketStats(UUID userId) {
+        log.info("Calculating ticket statistics for user: {}", userId);
+        
+        // Get all tickets for the user
+        List<Ticket> userTickets = ticketRepository.findByEndUserId(userId);
+        
+        // Calculate total tickets
+        int totalTickets = userTickets.size();
+        
+        // Calculate total spent - sum of all ticket prices
+        double totalSpent = userTickets.stream()
+                .mapToDouble(ticket -> ticket.getTicketClass().getPrice())
+                .sum();
+        
+        // Calculate total unique occas the user has participated in
+        Set<UUID> uniqueOccas = new HashSet<>();
+        
+        for (Ticket ticket : userTickets) {
+            TicketClass ticketClass = ticket.getTicketClass();
+            UUID showId = ticketClass.getShowId();
+            
+            try {
+                // Get occa ID through show ID
+                ShowDataResponse showData = occaGrpcClient.getShowById(showId);
+                uniqueOccas.add(UUID.fromString(showData.getOccaId()));
+            } catch (Exception e) {
+                log.warn("Failed to get occa ID for show {}: {}", showId, e.getMessage());
+                // Continue to next ticket
+            }
+        }
+        
+        // Build and return the statistics map
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalOccas", uniqueOccas.size());
+        stats.put("totalSpent", totalSpent);
+        stats.put("totalTickets", totalTickets);
+        
+        log.info("User stats calculated - occas: {}, spent: {}, tickets: {}", 
+                uniqueOccas.size(), totalSpent, totalTickets);
+        
+        return stats;
     }
 }

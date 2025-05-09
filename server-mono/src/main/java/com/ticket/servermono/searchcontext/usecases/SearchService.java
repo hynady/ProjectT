@@ -110,7 +110,7 @@ public class SearchService {
                 .totalElements(response.getTotalElements())
                 .build();
         } catch (Exception e) {
-            log.error("Error searching occas", e);
+            log.error("[0]Error searching occas", e);
             throw new RuntimeException("Failed to search occasions", e);
         }
     }

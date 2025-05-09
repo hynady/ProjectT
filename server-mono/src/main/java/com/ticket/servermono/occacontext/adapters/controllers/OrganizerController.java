@@ -74,13 +74,17 @@ public class OrganizerController {    private final OrganizerServices organizerS
      * @return ResponseEntity<CreateOccaResponse> Thông tin sự kiện đã tạo
      */
     @PostMapping("/occas")
-    public ResponseEntity<CreateOccaResponse> createOcca(@RequestBody CreateOccaRequest request) {
-        log.info("Creating new occa with title: {}, category: {}", 
+    public ResponseEntity<?> createOcca(@RequestBody CreateOccaRequest request, Principal principal) {
+        log.info("Creating new occa with title: {}, category: {}, userId: {}", 
                 request.getBasicInfo() != null ? request.getBasicInfo().getTitle() : "unknown",
-                request.getBasicInfo() != null ? request.getBasicInfo().getCategoryId() : "default");
-        
+                request.getBasicInfo() != null ? request.getBasicInfo().getCategoryId() : "default",
+                principal.getName());
+
+        // Lấy userId từ principal
+        UUID userId = UUID.fromString(principal.getName());
+
         try {
-            CreateOccaResponse response = organizerServices.createOcca(request);
+            CreateOccaResponse response = organizerServices.createOcca(request, userId);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (EntityNotFoundException e) {
             log.error("Entity not found when creating occa: {}", e.getMessage());

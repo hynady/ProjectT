@@ -1,5 +1,6 @@
 package com.ticket.servermono.occacontext.usecases;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -67,7 +68,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OrganizerServices {    private final OccaRepository occaRepository;
+public class OrganizerServices {    
+    private final OccaRepository occaRepository;
     private final VenueRepository venueRepository;
     private final RegionRepository regionRepository;
     private final CategoryRepository categoryRepository;    
@@ -157,8 +159,8 @@ public class OrganizerServices {    private final OccaRepository occaRepository;
      * @return CreateOccaResponse Thông tin sự kiện đã tạo
      */
     @Transactional
-    public CreateOccaResponse createOcca(CreateOccaRequest request) {
-        log.info("Creating new occa with title: {}", request.getBasicInfo().getTitle());
+    public CreateOccaResponse createOcca(CreateOccaRequest request, UUID userId) {
+        log.info("Creating new occa with title: {}, userId: {}", request.getBasicInfo().getTitle(), userId);
 
         // 1. Tìm hoặc tạo mới Venue
         Venue venue = findOrCreateVenue(request.getBasicInfo().getLocation(), request.getBasicInfo().getAddress());
@@ -262,9 +264,26 @@ public class OrganizerServices {    private final OccaRepository occaRepository;
                     }
                 }
             }
+        }        
+        
+        // 7. Gửi thông tin về tổng số sự kiện qua Kafka
+        try {
+            // Đếm tổng số sự kiện (bao gồm cả sự kiện vừa tạo của người dùng này)
+            Long totalOccas = occaRepository.countByCreatedBy(userId);
+            // Tạo đối tượng để gửi qua Kafka
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonMessage = objectMapper.writeValueAsString(
+                Map.of("userId", userId, "totalOccas", totalOccas, "latestOccaId", savedOcca.getId())
+            );
+            
+            // Gửi message qua Kafka
+            kafkaTemplate.send("occa-stats", "total-count", jsonMessage);
+            log.info("Sent total occa count to Kafka: {}", totalOccas);
+        } catch (Exception e) {
+            log.error("Failed to send occa count message: {}", e.getMessage(), e);
         }
-
-        // 7. Trả về response
+        
+        // 8. Trả về response
         return CreateOccaResponse.builder()
                 .id(savedOcca.getId())
                 .title(savedOcca.getTitle())

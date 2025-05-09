@@ -21,6 +21,7 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
 
         // Các phương thức cho organizer API
         List<Occa> findByCreatedBy(UUID userId);
+        Long countByCreatedBy(UUID userId);
         List<Occa> findByVenueId(UUID venueId);
         List<Occa> findByCategoryId(UUID categoryId);
         List<Occa> findByArtistContainingIgnoreCase(String artist);

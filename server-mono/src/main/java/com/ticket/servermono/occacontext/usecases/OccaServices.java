@@ -349,30 +349,39 @@ public class OccaServices {
     }
 
     @KafkaListener(topics = "update-next-show-datetime")
-    @Transactional
     public void listenUpdateNextShowDateTime(String occaIdStr) {
         try {
             log.info("Received message to update next show date time for Occa ID: {}", occaIdStr);
-
-            UUID occaId;
-            try {
-                occaId = UUID.fromString(occaIdStr);
-                log.info("Successfully parsed UUID: {}", occaId);
-            } catch (IllegalArgumentException e) {
-                log.error("Invalid UUID format for occaId: {}", occaIdStr);
-                return;
+            
+            UUID occaId = UUID.fromString(occaIdStr);
+            
+            // Thử với độ trễ tăng dần
+            int maxRetries = 3;
+            boolean success = false;
+            
+            for (int attempt = 0; attempt < maxRetries && !success; attempt++) {
+                if (attempt > 0) {
+                    int delayMs = 500 * (1 << attempt); // Exponential backoff: 500ms, 1s, 2s
+                    log.info("Lần thử thứ {} sau {} ms cho Occa ID: {}", attempt + 1, delayMs, occaId);
+                    Thread.sleep(delayMs);
+                }
+                
+                Optional<Occa> occaOptional = occaRepository.findById(occaId);
+                if (occaOptional.isPresent()) {
+                    Occa occa = occaOptional.get();
+                    log.info("Đã tìm thấy occa với ID: {}, title: {}", occa.getId(), occa.getTitle());
+                    updateNextShowDateTime(occa.getId());
+                    success = true;
+                } else {
+                    log.warn("Occa không tìm thấy với ID: {} (lần thử {})", occaId, attempt + 1);
+                }
             }
-
-            Optional<Occa> occaOptional = occaRepository.findById(occaId);
-            if (occaOptional.isPresent()) {
-                Occa occa = occaOptional.get();
-                log.info("Found occa with ID: {}, title: {}", occa.getId(), occa.getTitle());
-                updateNextShowDateTime(occa.getId());
-            } else {
-                log.error("Occa not found with ID: {}", occaId);
+            
+            if (!success) {
+                log.error("Occa không tìm thấy sau {} lần thử với ID: {}", maxRetries, occaId);
             }
         } catch (Exception e) {
-            log.error("Error updating next show datetime: {}", e.getMessage(), e);
+            log.error("Lỗi khi cập nhật next show datetime: {}", e.getMessage(), e);
         }
     }
 }

@@ -1,6 +1,8 @@
 package com.ticket.servermono.occacontext.entities;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.UUID;
 
@@ -27,13 +29,21 @@ public class ShowListener {
     @PostPersist
     @PostUpdate
     public void afterChange(Show show) {
-        if (kafkaTemplate != null && show.getOcca() != null && show.getOcca().getId() != null) {
-            UUID occaId = show.getOcca().getId();
-            log.info("Publishing update next show date time for occa id: {}", occaId);
-            kafkaTemplate.send("update-next-show-datetime", occaId.toString());
+        if (show.getOcca() != null && show.getOcca().getId() != null) {
+            final UUID occaId = show.getOcca().getId();
+            
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    if (kafkaTemplate != null) {
+                        log.info("Publishing update next show date time for occa id: {}", occaId);
+                        kafkaTemplate.send("update-next-show-datetime", occaId.toString());
+                    }
+                }
+            });
         } else {
-            log.warn("Cannot publish event: kafkaTemplate={}, occaId={}", 
-                     (kafkaTemplate != null), (show.getOcca() != null ? show.getOcca().getId() : null));
+            log.warn("Cannot register transaction synchronization: occaId={}", 
+                     (show.getOcca() != null ? show.getOcca().getId() : null));
         }
     }
     

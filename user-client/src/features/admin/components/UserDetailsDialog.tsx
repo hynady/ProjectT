@@ -153,17 +153,9 @@ export function UserDetailsDialog({
               <span>{user.email}</span>
             </div>
             <div className="flex items-center mt-1 space-x-3">
-              <Badge variant={user.role === 'admin' 
-                ? "default" 
-                : user.role === 'organizer' 
-                  ? "outline" 
-                  : "secondary"}>
-                {user.role === 'admin' 
-                  ? "Admin" 
-                  : user.role === 'organizer' 
-                    ? "Organizer" 
-                    : "User"}
-              </Badge>
+                <Badge variant={user.role === 'role_admin' ? "default" : "secondary"}>
+                {user.role === 'role_admin' ? "Admin" : "User"}
+                </Badge>
               <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
                 {user.status === 'active' ? 'Active' : 'Inactive'}
               </Badge>
@@ -288,12 +280,10 @@ export function UserDetailsDialog({
                     <p className="text-sm font-medium text-muted-foreground">Tickets Purchased</p>
                     <p className="text-xl font-semibold">{user.stats.ticketsPurchased}</p>
                   </div>
-                  {user.role === 'organizer' && user.stats.eventsOrganized !== undefined && (
-                    <div className="space-y-1">
+                  <div className="space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">Events Organized</p>
                       <p className="text-xl font-semibold">{user.stats.eventsOrganized}</p>
-                    </div>
-                  )}
+                  </div>
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">Total Spent</p>
                     <p className="text-xl font-semibold">{formatCurrency(user.stats.totalSpent)}</p>

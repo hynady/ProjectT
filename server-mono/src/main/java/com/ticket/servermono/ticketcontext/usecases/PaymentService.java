@@ -165,10 +165,7 @@ public class PaymentService {
                         String code = transaction.get("code").asText();
                         
                         // So sánh mã tham chiếu
-                        //TODO: NHỚ XOÁ
-                        //if (referenceCode.equals(code)) {
-                        if (1 == 1) {
-
+                        if (referenceCode.equals(code)) {
                             log.info("Tìm thấy giao dịch phù hợp: {}", transaction.toString());
                             processSuccessfulTransaction(paymentId, transaction);
                             return;

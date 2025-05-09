@@ -92,12 +92,10 @@ export const OccaShowSelection = ({shows, organizer, occaInfo, isPreview = false
               <AccordionItem key={index} value={`show-${index}`}>
                 <AccordionTrigger>
                   {new Date(show.date).toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                  }).replace(/\//g, '/')} - {show.time.includes(':') 
-                    ? show.time.substring(0, show.time.lastIndexOf(':')) 
-                    : show.time}
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric'
+                  }).replace(/\//g, '/')} - {show.time}
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-4">
