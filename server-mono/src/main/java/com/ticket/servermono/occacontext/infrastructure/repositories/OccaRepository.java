@@ -17,8 +17,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface OccaRepository extends JpaRepository<Occa, UUID> {
-        // TODO: Add logic optimized for user all below methods
-
         // Các phương thức cho organizer API
         List<Occa> findByCreatedBy(UUID userId);
         Long countByCreatedBy(UUID userId);
@@ -49,6 +47,7 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
                         "o.minPrice) " +
                         "FROM Occa o " +
                         "WHERE EXISTS (SELECT 1 FROM Show s WHERE s.occa.id = o.id) " +
+                        "AND o.approvalStatus = com.ticket.servermono.occacontext.domain.enums.ApprovalStatus.APPROVED " +
                         "ORDER BY o.id DESC")
         List<OccaProjection> findFirst6HeroOccas(Pageable pageable);
 
@@ -60,6 +59,7 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
                         "o.minPrice) " +
                         "FROM Occa o " +
                         "WHERE o.nextShowDateTime >= CURRENT_TIMESTAMP " +
+                        "AND o.approvalStatus = com.ticket.servermono.occacontext.domain.enums.ApprovalStatus.APPROVED " +
                         "ORDER BY o.nextShowDateTime ASC")
         List<OccaProjection> findFirst6UpcomingOccas(Pageable pageable);
 
@@ -71,8 +71,9 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
                         "o.minPrice) " +
                         "FROM Occa o " +
                         "WHERE EXISTS (SELECT 1 FROM Show s WHERE s.occa.id = o.id) " +
+                        "AND o.approvalStatus = com.ticket.servermono.occacontext.domain.enums.ApprovalStatus.APPROVED " +
                         "ORDER BY o.id DESC")
-        List<OccaProjection> findFirst3RecommendedOccas(Pageable pageable);
+        List<OccaProjection> findFirst3RecommendedOccasFallback(Pageable pageable);
 
         @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaProjection(" +
                         "o.id, o.title, o.image, " +
@@ -83,17 +84,16 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
                         "FROM Occa o " +
                         "WHERE EXISTS (SELECT 1 FROM Show s WHERE s.occa.id = o.id) " +
                         "ORDER BY o.id DESC")
-        List<OccaProjection> findFirst3TrendingOccas(Pageable pageable);
-
-        @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.SearchBarTemplateResponse(" +
+        List<OccaProjection> findFirst3TrendingOccas(Pageable pageable);        @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.SearchBarTemplateResponse(" +
                         "o.id, o.title, " +
                         "o.nextShowDateTime, " +
                         "o.venue.location) " +
                         "FROM Occa o " +
-                        "WHERE LOWER(o.title) LIKE %:query% " +
+                        "WHERE (LOWER(o.title) LIKE %:query% " +
                         "   OR LOWER(o.venue.location) LIKE %:query% " +
                         "   OR LOWER(o.venue.region.name) LIKE %:query% " +
-                        "   OR SOUNDEX(o.title) = SOUNDEX(:query) " +
+                        "   OR SOUNDEX(o.title) = SOUNDEX(:query)) " +
+                        "AND o.approvalStatus = com.ticket.servermono.occacontext.domain.enums.ApprovalStatus.APPROVED " +
                         "ORDER BY " +
                         "   CASE " +
                         "      WHEN LOWER(o.title) = :query THEN 0 " +
@@ -114,9 +114,7 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
                                 lowercaseQuery,
                                 lowercaseQuery + "%",
                                 pageable);
-        }
-
-        @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaProjection(" +
+        }        @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.OccaProjection(" +
                         "o.id, o.title, o.image, " +
                         "o.nextShowDateTime, " +
                         "o.venue.location, " +
@@ -129,7 +127,8 @@ public interface OccaRepository extends JpaRepository<Occa, UUID> {
                         "       LOWER(o.venue.location) LIKE CONCAT('%', :keyword, '%')) " +
                         "AND (:categoryId IS NULL OR o.category.id = :categoryId) " +
                         "AND (:regionId IS NULL OR o.venue.region.id = :regionId) " +
-                        "AND EXISTS (SELECT 1 FROM Show s WHERE s.occa.id = o.id)")
+                        "AND EXISTS (SELECT 1 FROM Show s WHERE s.occa.id = o.id) " +
+                        "AND o.approvalStatus = com.ticket.servermono.occacontext.domain.enums.ApprovalStatus.APPROVED")
         Page<OccaProjection> searchOccas(
                         @Param("keyword") String keyword,
                         @Param("categoryId") UUID categoryId,

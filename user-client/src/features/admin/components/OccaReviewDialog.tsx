@@ -10,7 +10,7 @@ import {
 import { Button } from "@/commons/components/button";
 import { AdminOccaUnit, AdminOccaDetail } from "../internal-types/admin.type";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/commons/components/tabs";
-import { Calendar, Clock, MapPin, User, Info, Image, CheckCircle, XCircle, Ticket } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Info, Image, CheckCircle, XCircle, Ticket, PencilLine } from "lucide-react";
 import { Separator } from "@/commons/components/separator";
 import { Badge } from "@/commons/components/badge";
 import { format } from "date-fns";
@@ -61,7 +61,6 @@ export function OccaReviewDialog({
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd/MM/yyyy');
   };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -69,7 +68,6 @@ export function OccaReviewDialog({
       minimumFractionDigits: 0
     }).format(amount);
   };
-  const isPending = occa?.approvalStatus === "pending";
   
   // Store the ticket-show assignments in a stable reference
   const [ticketAssignments] = useState(new Map());
@@ -312,9 +310,9 @@ export function OccaReviewDialog({
                 </Tabs>
               </div>
             </div>
-            
-            <DialogFooter className="pt-4 border-t mt-4">
-              {isPending ? (
+              <DialogFooter className="pt-4 border-t mt-4">
+              {/* Hiển thị các nút hành động dựa trên trạng thái hiện tại */}
+              {details?.submissionDetails.approvalStatus === "pending" ? (
                 <>
                   <Button 
                     variant="outline"
@@ -334,6 +332,44 @@ export function OccaReviewDialog({
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Approve
+                  </Button>
+                </>
+              ) : details?.submissionDetails.approvalStatus === "approved" ? (
+                <>
+                  <Button 
+                    variant="outline"
+                    onClick={onClose}
+                  >
+                    Close
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    onClick={onReject}
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Change to Rejected
+                  </Button>
+                </>
+              ) : details?.submissionDetails.approvalStatus === "rejected" ? (
+                <>
+                  <Button 
+                    variant="outline"
+                    onClick={onClose}
+                  >
+                    Close
+                  </Button>
+                  <Button 
+                    onClick={onApprove}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Change to Approved
+                  </Button>
+                  <Button 
+                    variant="secondary"
+                    onClick={onReject}
+                  >
+                    <PencilLine className="w-4 h-4 mr-2" />
+                    Update Rejection Reason
                   </Button>
                 </>
               ) : (

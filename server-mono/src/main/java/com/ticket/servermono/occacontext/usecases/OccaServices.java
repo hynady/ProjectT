@@ -122,7 +122,7 @@ public class OccaServices {
         }
 
         // Fallback for anonymous users or on error
-        List<OccaProjection> projections = occaRepository.findFirst3RecommendedOccas(PageRequest.of(0, 3));
+        List<OccaProjection> projections = occaRepository.findFirst3RecommendedOccasFallback(PageRequest.of(0, 3));
         return convertToOccaResponses(projections);
     }
 

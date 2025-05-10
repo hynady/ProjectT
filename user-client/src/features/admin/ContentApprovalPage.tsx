@@ -27,12 +27,10 @@ import { format } from "date-fns";
 import { OccaReviewDialog } from "./components/OccaReviewDialog";
 
 const ContentApprovalPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [selectedOcca, setSelectedOcca] = useState<AdminOccaUnit | null>(null);
-  const [approvalNote, setApprovalNote] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -77,33 +75,38 @@ const ContentApprovalPage = () => {
   const handleReviewClick = (occa: AdminOccaUnit) => {
     setSelectedOcca(occa);
     setIsReviewDialogOpen(true);
-  };
-
-  // From the review dialog, open the approve dialog
+  };  // From the review dialog, open the approve dialog
   const handleApproveClick = () => {
-    setApprovalNote("");
     setIsReviewDialogOpen(false);
     setIsApproveDialogOpen(true);
   };
 
   // From the review dialog, open the reject dialog
   const handleRejectClick = () => {
-    setRejectionReason("");
+    // Nếu đã reject trước đó, hiển thị lý do đã có
+    if (selectedOcca?.approvalStatus === "rejected") {
+      setRejectionReason(selectedOcca.rejectionReason || "");
+    } else {
+      setRejectionReason("");
+    }
     setIsReviewDialogOpen(false);
     setIsRejectDialogOpen(true);
-  };
-  const handleApproveSubmit = async () => {
+  };  const handleApproveSubmit = async () => {
     if (!selectedOcca) return;
     
     try {
       setIsSubmitting(true);
+      
+      const prevStatus = selectedOcca.approvalStatus;
       await adminService.updateOccaStatus(selectedOcca.id, {
         status: 'approved'
       });
       
       toast({
-        title: "Event approved",
-        description: `${selectedOcca.title} has been approved successfully.`,
+        title: prevStatus === 'approved' ? "Status updated" : "Event approved",
+        description: prevStatus === 'approved' 
+          ? `${selectedOcca.title} update processed successfully.`
+          : `${selectedOcca.title} has been approved successfully.`,
         variant: "success",
       });
       
@@ -112,14 +115,13 @@ const ContentApprovalPage = () => {
     } catch {
       toast({
         title: "Error",
-        description: "Failed to approve the event. Please try again.",
+        description: "Failed to update the event status. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const handleRejectSubmit = async () => {
     if (!selectedOcca) return;
     
@@ -134,14 +136,18 @@ const ContentApprovalPage = () => {
     
     try {
       setIsSubmitting(true);
+      
+      const prevStatus = selectedOcca.approvalStatus;
       await adminService.updateOccaStatus(selectedOcca.id, {
         status: 'rejected',
         rejectionReason: rejectionReason
       });
       
       toast({
-        title: "Event rejected",
-        description: `${selectedOcca.title} has been rejected.`,
+        title: prevStatus === 'rejected' ? "Rejection updated" : "Event rejected",
+        description: prevStatus === 'rejected'
+          ? `${selectedOcca.title} rejection reason updated.`
+          : `${selectedOcca.title} has been rejected.`,
         variant: "success",
       });
       
@@ -325,25 +331,17 @@ const ContentApprovalPage = () => {
       
       {/* Approve Dialog */}
       <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
-        <DialogContent className="max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Approve Event</DialogTitle>
+        <DialogContent className="max-h-[90vh]">          <DialogHeader>            <DialogTitle>
+              {selectedOcca?.approvalStatus === 'approved' 
+                ? 'Update Approved Event' 
+                : 'Approve Event'}
+            </DialogTitle>
             <DialogDescription>
-              Are you sure you want to approve "{selectedOcca?.title}"?
+              {selectedOcca?.approvalStatus === 'approved'
+                ? 'Are you sure you want to keep this event approved?'
+                : `Are you sure you want to approve "${selectedOcca?.title}"?`}
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="py-4 overflow-y-auto max-h-[40vh] pr-1">
-            <label className="text-sm font-medium">
-              Notes (optional)
-            </label>
-            <Textarea 
-              placeholder="Add any additional notes..."
-              value={approvalNote}
-              onChange={(e) => setApprovalNote(e.target.value)}
-              className="mt-1.5"
-            />
-          </div>
           
           <DialogFooter>
             <Button
@@ -358,7 +356,9 @@ const ContentApprovalPage = () => {
               disabled={isSubmitting}
               loading={isSubmitting}
             >
-              {isSubmitting ? "Approving..." : "Approve Event"}
+              {isSubmitting 
+                ? (selectedOcca?.approvalStatus === 'approved' ? "Updating..." : "Approving...") 
+                : (selectedOcca?.approvalStatus === 'approved' ? "Update Approval" : "Approve Event")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -366,11 +366,16 @@ const ContentApprovalPage = () => {
       
       {/* Reject Dialog */}
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent className="max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Reject Event</DialogTitle>
+        <DialogContent className="max-h-[90vh]">          <DialogHeader>
+            <DialogTitle>
+              {selectedOcca?.approvalStatus === 'rejected' 
+                ? 'Update Rejection Reason' 
+                : 'Reject Event'}
+            </DialogTitle>
             <DialogDescription>
-              Please provide a reason for rejecting "{selectedOcca?.title}".
+              {selectedOcca?.approvalStatus === 'rejected'
+                ? `Update the rejection reason for "${selectedOcca?.title}"`
+                : `Please provide a reason for rejecting "${selectedOcca?.title}"`}
             </DialogDescription>
           </DialogHeader>
           
@@ -404,7 +409,9 @@ const ContentApprovalPage = () => {
               disabled={isSubmitting || !rejectionReason.trim()}
               loading={isSubmitting}
             >
-              {isSubmitting ? "Rejecting..." : "Reject Event"}
+              {isSubmitting 
+                ? (selectedOcca?.approvalStatus === 'rejected' ? "Updating..." : "Rejecting...") 
+                : (selectedOcca?.approvalStatus === 'rejected' ? "Update Rejection" : "Reject Event")}
             </Button>
           </DialogFooter>
         </DialogContent>

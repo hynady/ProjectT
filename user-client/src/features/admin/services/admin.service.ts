@@ -58,8 +58,10 @@ class AdminService extends BaseService {
       url: `/approval/occas/${occaId}/detail`,
       mockResponse: () => this.getMockOccaDetail(occaId)
     });
-  }
-  updateOccaStatus(occaId: string, data: { status: string; rejectionReason?: string }): Promise<void> {
+  }  updateOccaStatus(occaId: string, data: { 
+    status: string; 
+    rejectionReason?: string;
+  }): Promise<void> {
     return this.request({
       method: 'PUT',
       url: `/approval/occas/${occaId}/status`,
