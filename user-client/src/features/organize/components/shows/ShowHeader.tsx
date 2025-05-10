@@ -1,12 +1,13 @@
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Calendar, Clock, Edit, Trash } from "lucide-react";
+import { Calendar, Clock, Edit, Key, Trash } from "lucide-react";
 import { Badge } from "@/commons/components/badge";
 import { Button } from "@/commons/components/button";
 import { ShowSaleStatus } from "../../internal-types/organize.type";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/commons/components/tooltip";
 
-interface ShowHeaderProps {  show: {
+interface ShowHeaderProps {  
+  show: {
     id: string;
     date: string;
     time: string;
@@ -22,9 +23,10 @@ interface ShowHeaderProps {  show: {
   };
   onEdit: (e: React.MouseEvent, showId: string) => void;
   onDelete: (e: React.MouseEvent, showId: string) => void;
+  onGetAuthCode?: (e: React.MouseEvent, showId: string) => void;
 }
 
-export const ShowHeader = ({ show, onEdit, onDelete }: ShowHeaderProps) => {
+export const ShowHeader = ({ show, onEdit, onDelete, onGetAuthCode }: ShowHeaderProps) => {
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), "EEEE, dd/MM/yyyy", { locale: vi });
   };
@@ -66,8 +68,23 @@ export const ShowHeader = ({ show, onEdit, onDelete }: ShowHeaderProps) => {
           {getStatusBadge(show.saleStatus)}
         </div>
       </div>
+        <div className="flex items-center gap-1">
+        {onGetAuthCode && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => onGetAuthCode(e, show.id)}
+              >
+                <Key className="h-4 w-4 text-primary" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Lấy xác thực rút gọn</TooltipContent>
+          </Tooltip>
+        )}
       
-      <div className="flex items-center gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button 

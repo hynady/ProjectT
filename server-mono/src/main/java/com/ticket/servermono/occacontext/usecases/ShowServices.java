@@ -58,7 +58,9 @@ public class ShowServices {
                     response.setTime(show.getTime().toString());
 
                     // Determine sale status based on show's properties
-                    response.setSaleStatus(formatSaleStatus(determineSaleStatus(show)));
+                    response.setSaleStatus(show.getSaleStatus() != null
+                            ? formatSaleStatus(show.getSaleStatus())
+                            : formatSaleStatus(determineSaleStatus(show)));
                     response.setAutoUpdateStatus(show.getAutoUpdateStatus());
 
                     // Get ticket prices and availability for this show

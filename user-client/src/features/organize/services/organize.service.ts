@@ -10,12 +10,12 @@ import {
   CategoryType
 } from '../internal-types/organize.type';
 import { organizeMockData } from './organize.mock';
-import { 
-  AddShowPayload, 
+import {   AddShowPayload, 
   UpdateShowPayload, 
   AddTicketPayload, 
   UpdateTicketPayload,
-  TicketResponse
+  TicketResponse,
+  AuthCodeResponse
 } from '../internal-types/show-operations.type';
 
 class OrganizeService extends BaseService {
@@ -395,13 +395,51 @@ class OrganizeService extends BaseService {
         }, 1000);
       })
     });
-  }
-  async getCategories(): Promise<CategoryType[]> {
+  }  async getCategories(): Promise<CategoryType[]> {
     return this.request({
       method: 'GET',
       url: '/occas/categories',
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(organizeMockData.categories), 500);
+      })
+    });
+  }
+
+  // AUTH CODE MANAGEMENT
+  async getAuthCode(showId: string): Promise<AuthCodeResponse> {
+    return this.request({
+      method: 'GET',
+      url: `/shows/${showId}/auth-code`,
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => {
+          // Create expiration date 60 minutes from now
+          const expiresAt = new Date();
+          expiresAt.setMinutes(expiresAt.getMinutes() + 60);
+
+          resolve({
+            authCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+            expiresAt: expiresAt.toISOString()
+          });
+        }, 500);
+      })
+    });
+  }
+
+  async refreshAuthCode(showId: string): Promise<AuthCodeResponse> {
+    return this.request({
+      method: 'POST',
+      url: `/shows/${showId}/refresh-auth-code`,
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => {
+          // Create new expiration date 5 minutes from now
+          const expiresAt = new Date();
+          expiresAt.setMinutes(expiresAt.getMinutes() + 5);
+          
+          resolve({
+            authCode: Math.random().toString(36).substring(2, 8).toUpperCase(), 
+            expiresAt: expiresAt.toISOString()
+          });
+        }, 500);
       })
     });
   }

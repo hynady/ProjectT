@@ -34,3 +34,9 @@ export interface TicketResponse {
   price: number;
   available: number;
 }
+
+// Types for Auth Code operations
+export interface AuthCodeResponse {
+  authCode: string;
+  expiresAt: string; // ISO date string format
+}

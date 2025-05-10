@@ -22,6 +22,7 @@ import { ShowFormDialog } from "./shows/ShowFormDialog";
 import { DeleteConfirmDialog } from "@/commons/components/data-table/DeleteConfirmDialog";
 import { AddShowPayload, AddTicketPayload, UpdateShowPayload } from "../internal-types/show-operations.type";
 import { TicketFormValues } from "@/features/organize/components/shows/TicketFormDialog";
+import { AuthCodeDialog } from "./auth/AuthCodeDialog";
 
 interface ShowListModalProps {
   open: boolean;
@@ -45,10 +46,13 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
   });
   
   const [showDialogOpen, setShowDialogOpen] = useState(false);
-  const [editingShow, setEditingShow] = useState<ShowInfo | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingShow, setEditingShow] = useState<ShowInfo | null>(null);  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [showToDelete, setShowToDelete] = useState<ShowInfo | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Auth code dialog states
+  const [authCodeDialogOpen, setAuthCodeDialogOpen] = useState(false);
+  const [selectedShowForAuth, setSelectedShowForAuth] = useState<ShowInfo | null>(null);
   
   useEffect(() => {
     const fetchShows = async () => {
@@ -535,9 +539,16 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
   const handleDateRangeChange = (range: DateRange | undefined) => {
     setDateRange(range);
   };
-
   const handleClearDateRange = () => {
     setDateRange(undefined);
+  };
+  const handleOpenAuthCodeDialog = (e: React.MouseEvent, showId: string) => {
+    e.stopPropagation();
+    const show = shows.find(s => s.id === showId);
+    if (show) {
+      setSelectedShowForAuth(show);
+      setAuthCodeDialogOpen(true);
+    }
   };
 
   const isFiltered = !!dateRange || selectedStatuses.length > 0;
@@ -587,14 +598,14 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
                   onAddShow={handleAddShow}
                   onClearFilters={handleClearFilters}
                 />
-              ) : (
-                <ShowList
+              ) : (                <ShowList
                   shows={filteredShows}
                   onEditShow={handleEditShow}
                   onDeleteShow={handleConfirmDeleteShow}
                   onAddTicket={(showId, values) => handleAddTicket(showId, values)}
                   onEditTicket={(ticketId, values) => handleEditTicket(ticketId, values)}
                   onDeleteTicket={handleDeleteTicket}
+                  onGetAuthCode={handleOpenAuthCodeDialog}
                 />
               )}
             </ScrollArea>
@@ -614,8 +625,7 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
         open={showDialogOpen}
         onOpenChange={setShowDialogOpen}
         onSave={handleSaveShow}
-        showData={editingShow}
-      />
+        showData={editingShow}      />
       
       <DeleteConfirmDialog
         open={deleteDialogOpen}
@@ -625,6 +635,16 @@ export const ShowListModal = ({ open, onOpenChange, occa }: ShowListModalProps) 
         description={`Bạn có chắc chắn muốn xóa suất diễn vào ngày ${showToDelete ? format(new Date(showToDelete.date), "dd/MM/yyyy") : ""} lúc ${showToDelete?.time || ""}? Hành động này không thể hoàn tác.`}
         isDeleting={isDeleting}
       />
+
+      {/* Auth Code Dialog */}
+      {selectedShowForAuth && (
+        <AuthCodeDialog
+          open={authCodeDialogOpen}
+          onOpenChange={setAuthCodeDialogOpen}
+          showId={selectedShowForAuth.id}
+          showName={`${format(new Date(selectedShowForAuth.date), "dd/MM/yyyy")} - ${selectedShowForAuth.time}`}
+        />
+      )}
     </>
   );
 };

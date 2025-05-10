@@ -27,6 +27,8 @@ import EditOccaPage from "@/features/organize/EditOccaPage";
 import AdminRoutes from "@/features/admin/AdminRoutes";
 import { TrackingProvider } from "@/features/tracking/contexts/TrackingContext";
 import OrganizeAnalyticsPage from "@/features/organize/pages/OrganizeAnalyticsPage";
+import ShowAuthPage from "@/features/ticket-check-in/ShowAuthPage";
+import TicketScanPage from "@/features/ticket-check-in/TicketScanPage";
 
 function AppRouter() {
   return (
@@ -76,6 +78,12 @@ function AppRouter() {
           <Route path="analytics" element={<ProtectedRoute><OrganizeAnalyticsPage /></ProtectedRoute>} />
         </Route>        {/* Admin Routes - Protected - WITHOUT NavLayout */}
         <Route path="/admin/*" element={<AdminRoutes />} />
+
+        {/* Ticket Check-in Routes - No Auth Required */}
+        <Route path="/ticket-check-in">
+          <Route index element={<ShowAuthPage />} />
+          <Route path="scan" element={<TicketScanPage />} />
+        </Route>
 
         {/* Preview Routes */}
         <Route path="/preview/occa" element={<PreviewOccaDetail />} />

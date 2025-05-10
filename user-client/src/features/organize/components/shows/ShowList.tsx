@@ -24,6 +24,7 @@ interface ShowListProps {
   onAddTicket: (showId: string, values: TicketFormValues) => Promise<boolean | void>;
   onEditTicket: (ticketId: string, values: TicketFormValues) => Promise<boolean | void>;
   onDeleteTicket: (ticketId: string) => Promise<void> | void;
+  onGetAuthCode?: (e: React.MouseEvent, showId: string) => void;
 }
 
 export const ShowList = ({
@@ -32,7 +33,8 @@ export const ShowList = ({
   onDeleteShow,
   onAddTicket,
   onEditTicket,
-  onDeleteTicket
+  onDeleteTicket,
+  onGetAuthCode
 }: ShowListProps) => {
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [selectedShowId, setSelectedShowId] = useState<string | null>(null);
@@ -196,11 +198,11 @@ export const ShowList = ({
                 value={show.id} 
                 className="border rounded-md overflow-hidden shadow-sm bg-card mb-3"
               >
-                <AccordionTrigger className="px-4 py-2.5 hover:bg-muted/30 hover:no-underline [&[data-state=open]]:bg-muted/20">
-                  <ShowHeader 
+                <AccordionTrigger className="px-4 py-2.5 hover:bg-muted/30 hover:no-underline [&[data-state=open]]:bg-muted/20">                  <ShowHeader 
                     show={show} 
                     onEdit={onEditShow} 
                     onDelete={onDeleteShow}
+                    onGetAuthCode={onGetAuthCode}
                   />
                 </AccordionTrigger>
                 <AccordionContent className="border-t bg-card/50">

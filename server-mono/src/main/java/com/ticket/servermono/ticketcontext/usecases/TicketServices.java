@@ -12,6 +12,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.ticket.servermono.ticketcontext.adapters.dtos.TicketCheckInRequest;
+import com.ticket.servermono.ticketcontext.adapters.dtos.TicketCheckInResponse;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,11 +64,11 @@ public class TicketServices {
     private final TicketClassRepository ticketClassRepository;
     private final TicketRepository ticketRepository;
     private final InvoiceRepository invoiceRepository;
-    private final PaymentInfoRepository paymentInfoRepository;
-    private final OccaGrpcClient occaGrpcClient;
+    private final PaymentInfoRepository paymentInfoRepository;    private final OccaGrpcClient occaGrpcClient;
     private final OccaCreatorGrpcClient occaCreatorGrpcClient;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+    private final ShowAuthCodeServices showAuthCodeServices;
 
     @GrpcClient("user-service")
     private UserServiceGrpc.UserServiceBlockingStub userStub;
@@ -873,5 +876,91 @@ public class TicketServices {
                 uniqueOccas.size(), totalSpent, totalTickets);
         
         return stats;
+    }
+
+    /**
+     * Check in a ticket using show auth code and ticket code
+     * @param showAuthCode The auth code of the show
+     * @param ticketCode The unique code (UUID) of the ticket
+     * @return The ticket check-in response
+     */
+    @Transactional
+    public TicketCheckInResponse checkInTicket(String showAuthCode, String ticketCode) {
+        log.info("Checking in ticket with code: {}", ticketCode);
+        
+        // Validate the ticket code format
+        UUID ticketId;
+        try {
+            ticketId = UUID.fromString(ticketCode);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid ticket code format: {}", ticketCode);
+            return TicketCheckInResponse.builder()
+                    .success(false)
+                    .message("Invalid ticket code format")
+                    .build();
+        }
+        
+        // Find the ticket by ID
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElse(null);
+                
+        if (ticket == null) {
+            log.warn("Ticket not found with code: {}", ticketCode);
+            return TicketCheckInResponse.builder()
+                    .success(false)
+                    .message("Ticket not found")
+                    .build();
+        }
+        
+        // Check if ticket is already checked in
+        if (ticket.getCheckedInAt() != null) {
+            log.warn("Ticket already checked in at: {}", ticket.getCheckedInAt());
+            return TicketCheckInResponse.builder()
+                    .success(false)
+                    .message("Ticket already checked in")
+                    .checkedInAt(ticket.getCheckedInAt())
+                    .build();
+        }
+        
+        // Get the ticket class and show ID
+        TicketClass ticketClass = ticket.getTicketClass();
+        UUID showId = ticketClass.getShowId();
+        
+        // Validate the show auth code
+        if (!showAuthCodeServices.validateAuthCodeForShow(showAuthCode, showId)) {
+            log.warn("Invalid show auth code: {} for show: {}", showAuthCode, showId);
+            return TicketCheckInResponse.builder()
+                    .success(false)
+                    .message("Invalid show authentication code")
+                    .build();
+        }
+        
+        // Check if the ticket is assigned to a user
+        if (ticket.getEndUserId() == null) {
+            log.warn("Ticket not assigned to any user: {}", ticketCode);
+            return TicketCheckInResponse.builder()
+                    .success(false)
+                    .message("Ticket not assigned to any user")
+                    .build();
+        }
+        
+        // Check-in the ticket
+        String currentTime = LocalDateTime.now().toString();
+        ticket.setCheckedInAt(currentTime);
+        ticketRepository.save(ticket);
+        
+        log.info("Ticket successfully checked in: {}", ticketCode);
+          // Get owner name (if available from a user service)
+        String ownerName = "Ticket Holder"; // Default name if user service is not available
+        
+        // We'll skip detailed user service implementation since we don't know the exact API
+        log.info("Ticket successfully checked in: {}", ticketCode);
+        
+        return TicketCheckInResponse.builder()
+                .success(true)
+                .message("Ticket checked in successfully")
+                .checkedInAt(currentTime)
+                .ownerName(ownerName)
+                .build();
     }
 }

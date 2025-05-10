@@ -32,7 +32,9 @@ public abstract class BaseSQLEntity {
 
     @Version
     @Column(name = "version")
-    private Long version;    @Column(name = "created_by", updatable = false)
+    private Long version;    
+    
+    @Column(name = "created_by", updatable = false)
     private UUID createdBy;
 
     @Column(name = "updated_by")

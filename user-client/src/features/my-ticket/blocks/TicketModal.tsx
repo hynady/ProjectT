@@ -133,7 +133,7 @@ export const TicketModal = ({ticket, onClose}: TicketModalProps) => {
               )}>
                 <CardContent className="p-0">
                   <QRCodeSVG
-                    value={`TICKET:${ticket.ticket.id}:${ticket.occa.id}:${ticket.show.id}`}
+                    value={`${ticket.ticket.id}`}
                     size={224}
                     level="H"
                     includeMargin={false}
