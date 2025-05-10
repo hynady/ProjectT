@@ -13,7 +13,10 @@ import {
 import { Input } from "@/commons/components/input";
 import { ArrowRight, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BasicInfoFormData, CategoryType } from "../internal-types/organize.type";
+import {
+  BasicInfoFormData,
+  CategoryType,
+} from "../internal-types/organize.type";
 import { toast } from "@/commons/hooks/use-toast";
 import { RichTextEditor } from "@/commons/components/rich-text-editor";
 import { organizeService } from "../services/organize.service";
@@ -38,28 +41,37 @@ const basicInfoSchema = z.object({
   }),
   address: z.string().min(5, {
     message: "Địa chỉ phải có ít nhất 5 ký tự",
-  }),  description: z.string().min(10, {
-    message: "Mô tả phải có ít nhất 10 ký tự",
-  }).transform(val => {
-    try {
-      JSON.parse(val);
-      return val;
-    } catch {
-      // If not valid JSON, wrap it in a paragraph structure
-      return JSON.stringify([
-        {
-          type: 'paragraph',
-          children: [{ text: val }],
-        },
-      ]);
-    }
   }),
+  organizer: z.string().min(2, {
+    message: "Tên đơn vị tổ chức phải có ít nhất 2 ký tự",
+  }),
+  description: z
+    .string()
+    .min(10, {
+      message: "Mô tả phải có ít nhất 10 ký tự",
+    })
+    .transform((val) => {
+      try {
+        JSON.parse(val);
+        return val;
+      } catch {
+        // If not valid JSON, wrap it in a paragraph structure
+        return JSON.stringify([
+          {
+            type: "paragraph",
+            children: [{ text: val }],
+          },
+        ]);
+      }
+    }),
   categoryId: z.string().min(1, {
-    message: "Vui lòng chọn danh mục cho sự kiện"
+    message: "Vui lòng chọn danh mục cho sự kiện",
   }),
   bannerUrl: z.string().optional(),
   // Use a custom Zod type for File objects
-  bannerFile: z.instanceof(File, { message: "Vui lòng chọn một tệp hợp lệ" }).optional(),
+  bannerFile: z
+    .instanceof(File, { message: "Vui lòng chọn một tệp hợp lệ" })
+    .optional(),
 });
 
 // Create a type that matches the schema
@@ -71,11 +83,15 @@ interface BasicInfoFormProps {
   onNext: () => void;
 }
 
-export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) => {
+export const BasicInfoForm = ({
+  data,
+  onChange,
+  onNext,
+}: BasicInfoFormProps) => {
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [categories, setCategories] = useState<CategoryType[]>([]);
-  
+
   const form = useForm<FormValues>({
     resolver: zodResolver(basicInfoSchema),
     // Khởi tạo với data nếu có, nếu không thì dùng giá trị mặc định
@@ -84,12 +100,14 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
       artist: data?.artist || "",
       location: data?.location || "",
       address: data?.address || "",
-      description: data?.description || JSON.stringify([
-        {
-          type: 'paragraph',
-          children: [{ text: '' }],
-        },
-      ]),
+      description:
+        data?.description ||
+        JSON.stringify([
+          {
+            type: "paragraph",
+            children: [{ text: "" }],
+          },
+        ]),
       categoryId: data?.categoryId || "",
       bannerUrl: data?.bannerUrl || "",
     },
@@ -104,12 +122,15 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
         artist: data.artist || "",
         location: data.location || "",
         address: data.address || "",
-        description: data.description || JSON.stringify([
-          {
-            type: 'paragraph',
-            children: [{ text: '' }],
-          },
-        ]),
+        organizer: data.organizer || "",
+        description:
+          data.description ||
+          JSON.stringify([
+            {
+              type: "paragraph",
+              children: [{ text: "" }],
+            },
+          ]),
         categoryId: data.categoryId || "",
         bannerUrl: data.bannerUrl || "",
       });
@@ -150,12 +171,13 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
       artist: values.artist || "",
       location: values.location || "",
       address: values.address || "",
+      organizer: values.organizer || "",
       description: values.description || "",
       categoryId: values.categoryId || "",
       bannerUrl: bannerPreview || "",
       bannerFile: bannerFile || undefined,
     };
-    
+
     onChange(currentData);
   };
 
@@ -164,47 +186,47 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
     if (!file) return;
 
     // Revoke the previous blob URL if it exists
-    if (bannerPreview && bannerPreview.startsWith('blob:')) {
+    if (bannerPreview && bannerPreview.startsWith("blob:")) {
       URL.revokeObjectURL(bannerPreview);
     }
 
     // Lưu file để submit sau
     setBannerFile(file);
-    
+
     // Chỉ hiển thị preview mà không upload
     const objectUrl = URL.createObjectURL(file);
     setBannerPreview(objectUrl);
-    
+
     // Lưu File object vào form
     form.setValue("bannerFile", file);
-    
+
     // Update parent on file change
     handleFieldBlur();
-    
+
     toast({
       title: "Đã chọn ảnh",
       description: "Ảnh sẽ được tải lên khi bạn lưu hoặc đăng sự kiện",
     });
-    
+
     // Reset the input value to allow selecting the same file again if needed
-    event.target.value = '';
+    event.target.value = "";
   };
 
   const handleRemoveBanner = () => {
     // Revoke the blob URL if it exists
-    if (bannerPreview && bannerPreview.startsWith('blob:')) {
+    if (bannerPreview && bannerPreview.startsWith("blob:")) {
       URL.revokeObjectURL(bannerPreview);
     }
-    
+
     // Clear the banner preview and file
     setBannerPreview(null);
     setBannerFile(null);
     form.setValue("bannerFile", undefined);
     form.setValue("bannerUrl", "");
-    
+
     // Update parent component
     handleFieldBlur();
-    
+
     toast({
       title: "Đã xóa ảnh",
       description: "Ảnh banner đã được xóa",
@@ -218,12 +240,13 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
       artist: values.artist,
       location: values.location,
       address: values.address,
+      organizer: values.organizer,
       description: values.description,
       categoryId: values.categoryId,
       bannerUrl: bannerPreview || "",
       bannerFile: bannerFile || undefined,
     };
-    
+
     // Lưu dữ liệu trước khi chuyển tab
     onChange(submitData);
     onNext();
@@ -240,9 +263,9 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
               <FormItem>
                 <FormLabel>Tên sự kiện</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="Nhập tên sự kiện" 
-                    {...field} 
+                  <Input
+                    placeholder="Nhập tên sự kiện"
+                    {...field}
                     onBlur={() => {
                       field.onBlur();
                       handleFieldBlur();
@@ -253,7 +276,7 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="artist"
@@ -261,9 +284,9 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
               <FormItem>
                 <FormLabel>Nghệ sĩ / Người trình bày</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="Tên nghệ sĩ hoặc người trình bày" 
-                    {...field} 
+                  <Input
+                    placeholder="Tên nghệ sĩ hoặc người trình bày"
+                    {...field}
                     onBlur={() => {
                       field.onBlur();
                       handleFieldBlur();
@@ -284,9 +307,9 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
               <FormItem>
                 <FormLabel>Địa điểm tổ chức</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="Tên địa điểm (VD: Nhà hát Hòa Bình)" 
-                    {...field} 
+                  <Input
+                    placeholder="Tên địa điểm (VD: Nhà hát Hòa Bình)"
+                    {...field}
                     onBlur={() => {
                       field.onBlur();
                       handleFieldBlur();
@@ -305,9 +328,9 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
               <FormItem>
                 <FormLabel>Địa chỉ cụ thể</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="Địa chỉ đầy đủ của địa điểm" 
-                    {...field} 
+                  <Input
+                    placeholder="Địa chỉ đầy đủ của địa điểm"
+                    {...field}
                     onBlur={() => {
                       field.onBlur();
                       handleFieldBlur();
@@ -344,59 +367,81 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="categoryId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Danh mục</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value}
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    handleFieldBlur();
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn danh mục" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="organizer"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Người tổ chức</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Tên người tổ chức"
+                    {...field}
+                    onBlur={() => {
+                      field.onBlur();
+                      handleFieldBlur();
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="categoryId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Danh mục</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleFieldBlur();
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn danh mục" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        {/* Banner upload section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <FormLabel>Ảnh banner sự kiện</FormLabel>
             {bannerPreview && (
-              <Button 
+              <Button
                 type="button"
-                variant="outline" 
-                size="sm" 
-                onClick={handleRemoveBanner} 
+                variant="outline"
+                size="sm"
+                onClick={handleRemoveBanner}
                 className="text-xs h-7 px-2 py-1"
               >
                 Xóa
               </Button>
             )}
           </div>
-          
+
           <div className="flex items-center gap-4 max-w-[50rem]">
             {/* Updated container to enforce 16:9 aspect ratio */}
-            <div 
+            <div
               className="border-2 border-dashed rounded-lg cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors flex flex-col items-center justify-center w-full overflow-hidden relative"
-              style={{ paddingBottom: '56.25%' }} // 16:9 aspect ratio (9/16 = 0.5625 = 56.25%)
-              onClick={() => document.getElementById('banner-upload')?.click()}
+              style={{ paddingBottom: "56.25%" }} // 16:9 aspect ratio (9/16 = 0.5625 = 56.25%)
+              onClick={() => document.getElementById("banner-upload")?.click()}
             >
               {bannerPreview ? (
                 <>
@@ -407,7 +452,7 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
                   />
                   {/* Status badge for blob URLs vs Cloudinary URLs */}
                   <div className="absolute top-0 right-0 m-2 px-1.5 py-0.5 text-xs rounded bg-black/60 text-white">
-                    {bannerPreview.startsWith('blob:') ? 'Chưa lưu' : 'Đã lưu'}
+                    {bannerPreview.startsWith("blob:") ? "Chưa lưu" : "Đã lưu"}
                   </div>
                 </>
               ) : (
@@ -432,10 +477,12 @@ export const BasicInfoForm = ({ data, onChange, onNext }: BasicInfoFormProps) =>
           </div>
           <div className="flex flex-col gap-1 text-xs text-muted-foreground">
             <p>
-              Hình ảnh sẽ được hiển thị theo tỉ lệ 16:9 trên trang chi tiết sự kiện
+              Hình ảnh sẽ được hiển thị theo tỉ lệ 16:9 trên trang chi tiết sự
+              kiện
             </p>
             <p>
-              <strong>Lưu ý:</strong> Ảnh sẽ được tải lên máy chủ khi bạn lưu hoặc đăng sự kiện
+              <strong>Lưu ý:</strong> Ảnh sẽ được tải lên máy chủ khi bạn lưu
+              hoặc đăng sự kiện
             </p>
           </div>
         </div>

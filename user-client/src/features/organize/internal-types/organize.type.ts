@@ -9,6 +9,7 @@ export interface OrganizerOccaUnit {
 
 export interface BasicInfoFormData {
   title: string;  artist: string;
+  organizer: string; // Added organizer field
   location: string;
   address: string;
   description: string;

@@ -43,6 +43,7 @@ const defaultOccaData: OccaFormData = {
     artist: "",
     location: "",
     address: "",
+    organizer: "",
     description: "",
     bannerUrl: "",
   },

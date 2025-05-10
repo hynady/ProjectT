@@ -1,5 +1,5 @@
 import { Card } from '@/commons/components/card.tsx';
-import { Users } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { SlateContentRenderer } from '@/commons/components/rich-text-editor/slate-content-renderer';
 
 interface OccaOverviewProps {
@@ -15,11 +15,10 @@ export const OccaOverview = ({ details, organizer }: OccaOverviewProps) => {
       </Card>
       <Card className="p-6">
         <h2 className="text-xl font-semibold text-card-foreground mb-4 flex items-center gap-2">
-          <Users className="h-5 w-5 text-blue-500"/>
+          <Building2 className="h-5 w-5 text-blue-500"/>
           Nhà tổ chức
         </h2>
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-muted rounded-lg"/>
           <div>
             <h3 className="text-primary font-medium">{organizer}</h3>
             <p className="text-muted-foreground text-sm">Đơn vị tổ chức sự kiện</p>

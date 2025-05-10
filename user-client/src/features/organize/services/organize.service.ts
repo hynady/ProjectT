@@ -351,6 +351,7 @@ class OrganizeService extends BaseService {
               artist: "Various Artists", // Mock data
               location: basicInfo.location,
               address: "123 Example Street, City", // Mock address
+              organizer: "Example Organizer", // Mock organizer
               description: JSON.stringify([
                 {
                   type: 'paragraph',

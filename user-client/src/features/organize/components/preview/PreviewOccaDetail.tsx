@@ -118,7 +118,7 @@ const PreviewOccaDetail = () => {
             data: {
               id: previewData.id || `preview-${Date.now()}`,
               description: previewData.description || "Mô tả về sự kiện sẽ được cập nhật sau.",
-              organizer: "Preview Organizer"
+              organizer: previewData.organizer || "Người tổ chức",
             },
             loading: false,
             error: null

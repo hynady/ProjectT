@@ -29,6 +29,7 @@ export interface PreviewData {
   location: string;
   address: string;
   description: string;
+  organizer: string;
   bannerUrl: string;
   shows: PreviewShow[];
   tickets: PreviewTicket[];

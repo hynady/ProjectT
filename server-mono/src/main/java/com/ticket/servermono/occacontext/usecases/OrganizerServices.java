@@ -204,7 +204,7 @@ public class OrganizerServices {
                 .occa(savedOcca)
                 .bannerUrl(request.getBasicInfo().getBannerUrl())
                 .description(request.getBasicInfo().getDescription())
-                .organizer("VinGroup Entertainment")
+                .organizer(request.getBasicInfo().getOrganizer())
                 .galleryUrls(galleryUrls)
                 .build();
 
@@ -383,6 +383,7 @@ public class OrganizerServices {
                 .artist(occa.getArtist())
                 .location(occa.getVenue() != null ? occa.getVenue().getLocation() : "")
                 .address(occa.getVenue() != null ? occa.getVenue().getAddress() : "")
+                .organizer(detailInfo.getOrganizer())
                 .description(detailInfo.getDescription())
                 .bannerUrl(detailInfo.getBannerUrl())
                 .categoryId(occa.getCategory() != null ? occa.getCategory().getId() : null)
@@ -466,6 +467,7 @@ public class OrganizerServices {
             // Cập nhật thông tin chi tiết
             if (basicInfo.getBannerUrl() != null) detailInfo.setBannerUrl(basicInfo.getBannerUrl());
             if (basicInfo.getDescription() != null) detailInfo.setDescription(basicInfo.getDescription());
+            if (basicInfo.getOrganizer() != null) detailInfo.setOrganizer(basicInfo.getOrganizer());
             
             occaDetailInfoRepository.save(detailInfo);
         }
