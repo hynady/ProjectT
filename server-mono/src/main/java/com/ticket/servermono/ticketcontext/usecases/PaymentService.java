@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -34,29 +33,34 @@ import com.ticket.servermono.ticketcontext.adapters.dtos.BookingPayload;
 import com.ticket.servermono.ticketcontext.domain.enums.PaymentStatus;
 import com.ticket.servermono.ticketcontext.entities.Invoice;
 import com.ticket.servermono.ticketcontext.entities.TicketClass;
+import com.ticket.servermono.ticketcontext.grpc.OccaGrpcClient;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.InvoiceRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
 
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import occa.OccaDataResponse;
+import occa.OccaResquest;
+import occa.ShowDataResponse;
 
 /**
  * Service đơn giản để quản lý trạng thái thanh toán và thông báo qua WebSocket
  */
 @Slf4j
 @Service
-public class PaymentService {
-
-    private final PaymentStatusNotifier statusNotifier;
+public class PaymentService {    private final PaymentStatusNotifier statusNotifier;
     private final InvoiceRepository invoiceRepository;
     private final TicketClassRepository ticketClassRepository;
     private final TicketServices ticketServices;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
     
-    // Tên của Kafka topic cho sự kiện thanh toán thành công
+    private final KafkaTemplate<String, Object> kafkaTemplate;// Tên của Kafka topic cho sự kiện thanh toán thành công
     private static final String PAYMENT_SUCCESS_TOPIC = "payment.success";
+    private final OccaGrpcClient occaGrpcClient;
+
+    // Tên của Kafka topic cho sự kiện gửi email thông báo đặt vé thành công
+    private static final String PURCHASE_NOTIFICATION_TOPIC = "mail.purchase.success";
     
     @Value("${app.sepayUrl}")
     private String sepayUrl;
@@ -68,9 +72,7 @@ public class PaymentService {
     private final Map<String, ScheduledFuture<?>> runningTrackers = new ConcurrentHashMap<>();
     
     // Executor để lên lịch các task
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
-    
-    /**
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);    /**
      * Constructor với PaymentStatusNotifier 
      */
     public PaymentService(
@@ -80,7 +82,9 @@ public class PaymentService {
             TicketServices ticketServices,
             RestTemplate restTemplate,
             ObjectMapper objectMapper,
-            KafkaTemplate<String, Object> kafkaTemplate) {
+            KafkaTemplate<String, Object> kafkaTemplate,
+            OccaGrpcClient occaGrpcClient
+            ) {
         this.statusNotifier = statusNotifier;
         this.invoiceRepository = invoiceRepository;
         this.ticketClassRepository = ticketClassRepository;
@@ -88,8 +92,9 @@ public class PaymentService {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
         this.kafkaTemplate = kafkaTemplate;
+        this.occaGrpcClient = occaGrpcClient;
     }
-    
+
     /**
      * Bắt đầu theo dõi thanh toán khi WebSocket được thiết lập
      * @param paymentId ID của thanh toán cần theo dõi
@@ -159,20 +164,25 @@ public class PaymentService {
             JsonNode transactionsNode = getSepayTransactions(amount);
             
             // Xử lý response khi nhận được dữ liệu từ Sepay
-            if (transactionsNode != null && transactionsNode.isArray()) {
-                for (JsonNode transaction : transactionsNode) {
-                    if (transaction.has("code")) {
-                        String code = transaction.get("code").asText();
+            //TODO:Xoá chú thích để thanh toán tiền thật
+            // if (transactionsNode != null && transactionsNode.isArray()) {
+            //     for (JsonNode transaction : transactionsNode) {
+            //         if (transaction.has("code")) {
+            //             String code = transaction.get("code").asText();
                         
-                        // So sánh mã tham chiếu
-                        if (referenceCode.equals(code)) {
-                            log.info("Tìm thấy giao dịch phù hợp: {}", transaction.toString());
-                            processSuccessfulTransaction(paymentId, transaction);
-                            return;
-                        }
-                    }
-                }
-            }
+            //             // So sánh mã tham chiếu
+            //             if (referenceCode.equals(code)) {
+            //                 log.info("Tìm thấy giao dịch phù hợp: {}", transaction.toString());
+            //                 processSuccessfulTransaction(paymentId);
+            //                 return;
+            //             }
+            //         }
+            //     }
+            // }
+            
+            //TODO:Xoá đoạn này để thanh toán tiền thật
+            processSuccessfulTransaction(paymentId);
+
         } catch (Exception e) {
             log.error("Lỗi khi kiểm tra thanh toán: {}", e.getMessage(), e);
         }
@@ -268,7 +278,7 @@ public class PaymentService {
      * @param transaction Thông tin giao dịch từ Sepay
      */
     @Transactional
-    private void processSuccessfulTransaction(String paymentId, JsonNode transaction) {
+    private void processSuccessfulTransaction(String paymentId) {
         try {
             // Cập nhật trạng thái: đã nhận thanh toán
             updatePaymentStatus(paymentId, "payment_received");
@@ -296,14 +306,15 @@ public class PaymentService {
                         List<BookingLockRequest.TicketItem> ticketItems = getTicketItemsFromInvoice(paymentId);
                         if (ticketItems != null && !ticketItems.isEmpty()) {
                             BookingPayload payload = createBookingPayload(showId, ticketItems);
-                            
-                            // Tạo vé cho người dùng
+                              // Tạo vé cho người dùng
                             log.info("Bắt đầu tạo vé cho userId: {}, showId: {}", userId, showId);
                             ticketServices.bookTicket(payload, userId);
                             log.info("Đã tạo vé thành công cho userId: {}, showId: {}", userId, showId);
-                            
-                            // Gửi event thanh toán thành công qua Kafka để xử lý giải phóng khóa vé
+                              // Gửi event thanh toán thành công qua Kafka để xử lý giải phóng khóa vé
                             sendPaymentSuccessEvent(paymentId, ticketItems);
+                            
+                            // Gửi thông báo đặt vé thành công qua Kafka
+                            sendPurchaseConfirmationEmail(paymentId, userId, showId, ticketItems);
                         }
                     } catch (Exception e) {
                         log.error("Lỗi khi tạo vé sau thanh toán: {}", e.getMessage(), e);
@@ -416,6 +427,84 @@ public class PaymentService {
             .showId(showId)
             .tickets(tickets)
             .build();
+    }
+    
+    /**
+     * Chuyển đổi danh sách TicketItem sang định dạng phù hợp cho email
+     */
+    private List<Map<String, Object>> convertTicketItemsForEmail(List<BookingLockRequest.TicketItem> ticketItems) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        try {
+            for (BookingLockRequest.TicketItem item : ticketItems) {
+                // Lấy thông tin giá của loại vé
+                UUID ticketClassId = UUID.fromString(item.getId());
+                TicketClass ticketClass = ticketClassRepository.findById(ticketClassId).orElse(null);
+                
+                if (ticketClass != null) {
+                    Map<String, Object> ticketInfo = new HashMap<>();
+                    ticketInfo.put("type", item.getType());
+                    ticketInfo.put("quantity", item.getQuantity());
+                    ticketInfo.put("price", ticketClass.getPrice());
+                    
+                    result.add(ticketInfo);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi chuyển đổi thông tin vé cho email: {}", e.getMessage(), e);
+        }
+        
+        return result;
+    }    /**
+     * Gửi thông báo đặt vé thành công qua Kafka
+     */
+    private void sendPurchaseConfirmationEmail(String paymentId, UUID userId, UUID showId, List<BookingLockRequest.TicketItem> ticketItems) {
+        try {
+            // Lấy thông tin invoice từ database
+            Invoice invoice = invoiceRepository.findByPaymentId(paymentId).orElse(null);
+            if (invoice == null) {
+                log.error("Không tìm thấy invoice với paymentId: {}", paymentId);
+                return;
+            }
+            
+            // Lấy thông tin sự kiện từ Occa
+            ShowDataResponse showData = occaGrpcClient.getShowById(showId);
+            OccaResquest occaRequest = OccaResquest.newBuilder()
+                    .setOccaId(showData.getOccaId())
+                    .build();
+                
+            OccaDataResponse occaData = occaGrpcClient.getOccaById(occaRequest);
+
+            // Chuyển đổi danh sách ticket items sang định dạng phù hợp cho email
+            List<Map<String, Object>> ticketItemsForEmail = convertTicketItemsForEmail(ticketItems);
+
+            // Tạo payload cho Kafka message
+            Map<String, Object> emailData = new HashMap<>();
+            emailData.put("paymentId", paymentId);
+            emailData.put("userId", userId.toString());
+            emailData.put("showId", showId.toString());
+            emailData.put("userEmail", invoice.getEmailReceived());
+            emailData.put("userName", invoice.getNameCustomer());
+            emailData.put("totalAmount", invoice.getSoTien());
+            emailData.put("occaName", occaData.getTitle());
+            emailData.put("location", occaData.getLocation());
+            emailData.put("time", showData.getDate() + "-" + showData.getTime());
+
+            // URL để xem vé
+            String ticketUrl = "https://tackticket.com/tickets/" + paymentId;
+            emailData.put("ticketUrl", ticketUrl);
+            emailData.put("ticketItems", ticketItemsForEmail);
+            
+            // Chuyển đổi payload thành JSON
+            String jsonPayload = objectMapper.writeValueAsString(emailData);
+            
+            // Gửi message qua Kafka
+            kafkaTemplate.send(PURCHASE_NOTIFICATION_TOPIC, paymentId, jsonPayload);
+            
+            log.info("Đã gửi yêu cầu gửi thông báo đặt vé thành công qua Kafka cho paymentId: {}", paymentId);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi thông báo đặt vé thành công: {}", e.getMessage(), e);
+        }
     }
     
     /**

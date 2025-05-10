@@ -41,12 +41,12 @@ public class StatServices {
      * @param message JSON message containing ticket booking statistics
      */
     @KafkaListener(topics = TICKET_BOOKING_STATS_TOPIC, groupId = "user-stats-group")
-    @Transactional
-    public void consumeTicketBookingStats(String message) {
+    @Transactional    public void consumeTicketBookingStats(String message) {
         log.info("Received ticket booking stats message: {}", message);
         
         try {
             // Parse the message
+            @SuppressWarnings("unchecked")
             Map<String, Object> statsMap = objectMapper.readValue(message, Map.class);
             
             // Extract user ID
@@ -57,8 +57,7 @@ public class StatServices {
             }
             
             UUID userId = UUID.fromString(userIdStr);
-            
-            // Extract statistics
+              // Extract statistics
             Integer totalOccas = (Integer) statsMap.get("totalOccas");
             Object totalSpentObj = statsMap.get("totalSpent");
             Double totalSpent = null;
@@ -66,10 +65,17 @@ public class StatServices {
                 totalSpent = (Double) totalSpentObj;
             } else if (totalSpentObj instanceof Integer) {
                 totalSpent = ((Integer) totalSpentObj).doubleValue();
+            } else if (totalSpentObj == null) {
+                totalSpent = 0.0; // Default to zero if totalSpent is null
+                log.warn("Total spent value is null, defaulting to 0.0");
+            } else {
+                // Handle case where totalSpentObj is of an unexpected type
+                log.warn("Total spent value is of unexpected type: {}, defaulting to 0.0", totalSpentObj.getClass().getName());
+                totalSpent = 0.0;
             }
             Integer totalTickets = (Integer) statsMap.get("totalTickets");
             
-            if (totalOccas == null || totalSpent == null || totalTickets == null) {
+            if (totalOccas == null || totalTickets == null) {
                 log.error("Invalid statistics data received: {}", statsMap);
                 return;
             }
@@ -129,12 +135,12 @@ public class StatServices {
      * @param message JSON message containing user occas statistics
      */
     @KafkaListener(topics = OCCA_STATS_TOPIC)
-    @Transactional
-    public void consumeUserOccaStats(String message) {
+    @Transactional    public void consumeUserOccaStats(String message) {
         log.info("Received user occa stats message: {}", message);
         
         try {
             // Parse the message
+            @SuppressWarnings("unchecked")
             Map<String, Object> statsMap = objectMapper.readValue(message, Map.class);
             
             // Extract user ID

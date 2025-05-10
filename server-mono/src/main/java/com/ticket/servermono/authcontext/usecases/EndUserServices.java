@@ -31,17 +31,46 @@ import com.ticket.servermono.authcontext.infrastructure.config.JWTUtils;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class EndUserServices {    private final EndUserRepository eUserRepo;
+public class EndUserServices {    
+    private final EndUserRepository eUserRepo;
     private final UserStatRepository userStatRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final JWTUtils jwtUtils;
-
+    private final org.springframework.kafka.core.KafkaTemplate<String, String> kafkaTemplate;
+    
+    private static final String REGISTRATION_SUCCESS_TOPIC = "auth.register.success";    
+    
     public void newEndUser(String email, String password) {
         //TODO: Validate input
         //Create new user
         EndUser newUser = new EndUser(email, password);
         eUserRepo.save(newUser);
         System.out.println("Đã tạo mới user"+ newUser.getEmail());
+        
+        // Send registration success notification
+        try {
+            // Create data payload with user information
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            java.util.Map<String, Object> registrationData = new java.util.HashMap<>();
+            
+            registrationData.put("userId", newUser.getId().toString());
+            registrationData.put("userEmail", newUser.getEmail());
+            registrationData.put("userName", newUser.getEmail().split("@")[0]); // Use part of email as temporary username
+            
+            // Format current date as registration date
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            String registrationDate = java.time.LocalDateTime.now().format(formatter);
+            registrationData.put("registrationDate", registrationDate);
+            
+            // Convert to JSON and send to Kafka topic
+            String jsonPayload = objectMapper.writeValueAsString(registrationData);
+            kafkaTemplate.send(REGISTRATION_SUCCESS_TOPIC, newUser.getId().toString(), jsonPayload);
+            
+            log.info("Sent registration success notification for user: {}", newUser.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to send registration success notification: {}", e.getMessage(), e);
+            // Don't throw exception as this doesn't affect the core registration functionality
+        }
     }
 
     // Login return jwt token

@@ -35,6 +35,9 @@ app:
     username: ${MAIL_USERNAME:Tack Ticket}
     password: ${MAIL_PASSWORD}
     sender-name: ${MAIL_SENDER_NAME}
+  
+  website:
+    url: ${WEBSITE_URL:https://tackticket.com}
 
 grpc:
   # Cổng mặc định cho gRPC server

@@ -597,7 +597,10 @@ public class TicketServices {
                 .status(PaymentStatus.WAITING_PAYMENT)
                 .paymentId(paymentId)
                 .showId(showId)
-                .expiresAt(LocalDateTime.now().plusMinutes(10)) // Thay đổi từ 15 phút xuống 10 phút
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .emailReceived(request.getRecipient().getEmail())
+                .nameCustomer(request.getRecipient().getName())
+                .phoneCustomer(request.getRecipient().getPhoneNumber())
                 .ticketDetails(ticketDetails) // Lưu chi tiết vé vào invoice
                 .build();
         

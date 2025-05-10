@@ -12,6 +12,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import org.checkerframework.checker.units.qual.C;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -51,6 +52,12 @@ public class Invoice extends BaseSQLEntity {
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
     
+    private String emailReceived;
+
+    private String nameCustomer;
+
+    private String phoneCustomer;
+
     /**
      * Lưu trữ thông tin chi tiết về các loại vé và số lượng đã đặt
      * Key: ID của TicketClass (UUID.toString())
