@@ -1,18 +1,20 @@
 package com.ticket.servermono.ticketcontext.entities;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import org.checkerframework.checker.units.qual.C;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -66,4 +68,10 @@ public class Invoice extends BaseSQLEntity {
     @Column(name = "ticket_details", columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Integer> ticketDetails = new HashMap<>();
+    
+    /**
+     * Danh sách các vé thuộc hóa đơn này
+     */
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Ticket> tickets = new ArrayList<>();
 }

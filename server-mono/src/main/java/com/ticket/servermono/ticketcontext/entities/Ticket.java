@@ -12,7 +12,8 @@ import lombok.experimental.SuperBuilder;
 @Entity
 @Table(name = "tickets",
     indexes = {
-            @Index(name = "idx_ticket_end_user_id", columnList = "end_user_id")
+            @Index(name = "idx_ticket_end_user_id", columnList = "end_user_id"),
+            @Index(name = "idx_ticket_invoice_id", columnList = "invoice_id")
     }
 )
 @Data
@@ -31,8 +32,17 @@ public class Ticket extends BaseSQLEntity {
 
     @Column(name = "checked_in_at", nullable = true)
     private String checkedInAt;
+    
+    @ManyToOne
+    @JoinColumn(name = "invoice_id", nullable = false)
+    private Invoice invoice;
 
     public Ticket(TicketClass ticketClass) {
         this.ticketClass = ticketClass;
+    }
+    
+    public Ticket(TicketClass ticketClass, Invoice invoice) {
+        this.ticketClass = ticketClass;
+        this.invoice = invoice;
     }
 }

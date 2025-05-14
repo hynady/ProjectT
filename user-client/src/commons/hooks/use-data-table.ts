@@ -8,6 +8,7 @@ interface DataTableHookOptions<TFilter> {
   defaultStatusFilter?: string;
   defaultSearchQuery?: string;
   defaultFilter?: TFilter;
+  skipInitialFetch?: boolean;
   fetchData: (params: any) => Promise<{
     content: any[];
     totalElements: number;
@@ -27,6 +28,7 @@ export function useDataTable<TData, TFilter = Record<string, unknown>>({
   defaultStatusFilter = 'all',
   defaultSearchQuery = '',
   defaultFilter = {} as TFilter,
+  skipInitialFetch = false,
   fetchData
 }: DataTableHookOptions<TFilter>) {
   const [data, setData] = useState<TData[]>([]);
@@ -47,8 +49,13 @@ export function useDataTable<TData, TFilter = Record<string, unknown>>({
   const [isFirst, setIsFirst] = useState(true);
   const [isEmpty, setIsEmpty] = useState(false);
 
-  // Function to load data
-  const loadData = useCallback(async () => {
+  // Optimized loadData function to handle conditional fetching
+  const loadData = useCallback(async (forceLoad = false) => {
+    // Skip loading if skipInitialFetch is true and this is not a forced load
+    if (skipInitialFetch && !forceLoad) {
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -58,7 +65,7 @@ export function useDataTable<TData, TFilter = Record<string, unknown>>({
         size: pageSize,
         ...(sortField && { sort: sortField }),
         ...(sortField && { direction: sortDirection }),
-        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(statusFilter !== 'all' && { statusFilter }),
         ...(searchQuery && { search: searchQuery }),
         ...filter
       };
@@ -79,7 +86,7 @@ export function useDataTable<TData, TFilter = Record<string, unknown>>({
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, sortField, sortDirection, statusFilter, searchQuery, filter, fetchData]);
+  }, [page, pageSize, sortField, sortDirection, statusFilter, searchQuery, filter, fetchData, skipInitialFetch]);
 
   useEffect(() => {
     loadData();
@@ -114,7 +121,6 @@ export function useDataTable<TData, TFilter = Record<string, unknown>>({
     setSearchQuery(query);
     setPage(0); // Reset to first page when changing search query
   }, []);
-
   // Handle filter change
   const handleFilterChange = useCallback((newFilter: TFilter) => {
     setFilter(prev => ({
@@ -126,7 +132,7 @@ export function useDataTable<TData, TFilter = Record<string, unknown>>({
 
   // Refresh data manually
   const refreshData = useCallback(() => {
-    loadData();
+    loadData(true); // Force load even if skipInitialFetch is true
   }, [loadData]);
 
   // Reset all filters and pagination

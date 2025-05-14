@@ -209,7 +209,7 @@ public class OrganizerController {    private final OrganizerServices organizerS
             log.error("Error getting analytics overview: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
         }
-    }    
+    }
     /**
      * Lấy dữ liệu trendline số lượt truy cập theo ngày
      * 

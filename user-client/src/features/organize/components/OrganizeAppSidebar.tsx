@@ -3,9 +3,8 @@ import {
   LayoutDashboard,
   Calendar,
   ArrowLeft,
-  BarChart2,
+  BarChart2
 } from "lucide-react";
-import { Button } from "@/commons/components/button";
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +15,7 @@ import {
   SidebarMenuButton,
   SidebarGroupLabel,
 } from "@/commons/components/sidebar";
+import EventTicketsMenu from "./tickets/EventTicketsMenu";
 
 const navigationItems = [
   {
@@ -88,17 +88,28 @@ export function OrganizeAppSidebar({
             })}
           </SidebarMenu>
         </div>
+
+        {isSidebarOpen && (
+          <div className="px-2 py-2 mt-2">
+            <SidebarGroupLabel className="px-2 pb-1 text-xs font-semibold text-muted-foreground">
+              QUẢN LÝ VÉ
+            </SidebarGroupLabel>
+            
+            {/* Ticket management collapsible menu */}
+            <EventTicketsMenu parentPath="/organize/tickets" />
+          </div>
+        )}
       </SidebarContent>
 
       <SidebarFooter>
-        <Button
+        <SidebarMenuButton
           variant="outline"
           className="w-full justify-start gap-2"
           onClick={() => navigate("/")}
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Trở về trang chủ</span>
-        </Button>
+        </SidebarMenuButton>
       </SidebarFooter>
     </Sidebar>
   );

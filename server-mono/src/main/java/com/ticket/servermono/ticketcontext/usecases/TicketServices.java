@@ -8,13 +8,22 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.ticket.servermono.ticketcontext.adapters.dtos.TicketCheckInRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.TicketCheckInResponse;
+import com.ticket.servermono.ticketcontext.adapters.dtos.TicketWithRecipientInfoResponse;
+import com.ticket.servermono.ticketcontext.adapters.dtos.TicketsWithRevenueResponse;
+import com.ticket.servermono.ticketcontext.entities.ShowAuthCode;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -82,10 +91,8 @@ public class TicketServices {
     @Transactional
     boolean isSoldOut(TicketClass ticketClass) {
         return calculateAvailableTickets(ticketClass) == 0;
-    }
-
-    @Transactional
-    public void sellTicket(UUID ticketClassId) {
+    }    @Transactional
+    public void sellTicket(UUID ticketClassId, Invoice invoice) {
         try {
             // check if ticket class exists
             TicketClass ticketClass = ticketClassRepository.findById(ticketClassId)
@@ -94,15 +101,46 @@ public class TicketServices {
             if (isSoldOut(ticketClass)) {
                 throw new IllegalStateException("Ticket class is sold out");
             }
-            // Generate ticket for user and save
-            Ticket sellTicket = new Ticket(ticketClass);
+            // Generate ticket for user and save with invoice association
+            Ticket sellTicket = new Ticket(ticketClass, invoice);
             ticketRepository.save(sellTicket);
 
         } catch (Exception e) {
-
             e.printStackTrace();
         }
-    }    @Transactional
+    }
+    
+    /**
+     * Backward compatibility version of sellTicket that creates a default invoice
+     * @deprecated Use sellTicket(UUID ticketClassId, Invoice invoice) instead
+     */
+    @Deprecated
+    @Transactional
+    public void sellTicket(UUID ticketClassId) {
+        try {
+            // check if ticket class exists
+            TicketClass ticketClass = ticketClassRepository.findById(ticketClassId)
+                    .orElseThrow(() -> new IllegalStateException("Ticket class not found"));
+            
+            // Create a default invoice for this ticket
+            Invoice defaultInvoice = Invoice.builder()
+                    .soTien(ticketClass.getPrice())
+                    .noiDung("Auto-generated invoice for ticket class: " + ticketClass.getName())
+                    .status(PaymentStatus.PAYMENT_SUCCESS)
+                    .paymentId("AUTO_" + System.currentTimeMillis())
+                    .showId(ticketClass.getShowId())
+                    .build();
+            
+            // Save the invoice
+            invoiceRepository.save(defaultInvoice);
+            
+            // Sell the ticket with the invoice
+            sellTicket(ticketClassId, defaultInvoice);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }@Transactional
     public void bookTicket(BookingPayload payload, UUID userId) {
 
         // Kiểm tra xem show có tồn tại không thông qua gRPC
@@ -156,19 +194,66 @@ public class TicketServices {
             ticketClassesToBook.put(ticketClass, item.getQuantity());
         }
 
-        log.info("Validated all ticket classes for booking. Creating tickets for user: {}", userId);
-
+        log.info("Validated all ticket classes for booking. Creating tickets for user: {}", userId);        // Tìm hóa đơn liên quan để liên kết với các vé
+        Invoice invoice = null;
+        // Tìm hóa đơn với các thông tin từ payload
+        List<Invoice> matchingInvoices = invoiceRepository.findByShowIdAndStatus(payload.getShowId(), PaymentStatus.PAYMENT_SUCCESS);
+        
+        // Lọc các hóa đơn theo thông tin chi tiết vé
+        for (Invoice inv : matchingInvoices) {
+            // Kiểm tra xem hóa đơn này có chứa các hạng vé trong payload không
+            boolean matches = true;
+            for (BookingPayload.TicketPayload ticketPayload : payload.getTickets()) {
+                String ticketClassId = ticketPayload.getId().toString();
+                if (!inv.getTicketDetails().containsKey(ticketClassId)) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                invoice = inv;
+                break;
+            }
+        }
+        
+        if (invoice == null) {
+            // Không tìm thấy hóa đơn phù hợp, tạo một hóa đơn mới
+            log.warn("No matching invoice found for booking, creating a new one");
+            double totalAmount = 0.0;
+            Map<String, Integer> ticketDetails = new HashMap<>();
+            
+            for (Map.Entry<TicketClass, Integer> entry : ticketClassesToBook.entrySet()) {
+                TicketClass ticketClass = entry.getKey();
+                int quantity = entry.getValue();
+                totalAmount += ticketClass.getPrice() * quantity;
+                ticketDetails.put(ticketClass.getId().toString(), quantity);
+            }
+            
+            invoice = Invoice.builder()
+                    .soTien(totalAmount)
+                    .noiDung("Auto-generated invoice for booking")
+                    .status(PaymentStatus.PAYMENT_SUCCESS)
+                    .paymentId("AUTO_BOOKING_" + System.currentTimeMillis())
+                    .showId(payload.getShowId())
+                    .ticketDetails(ticketDetails)
+                    .userId(userId)
+                    .build();
+            
+            invoiceRepository.save(invoice);
+        }
+        
+        final Invoice finalInvoice = invoice;
+        
         // Tất cả kiểm tra đã thành công, tiến hành tạo vé
         List<Ticket> createdTickets = new ArrayList<>();
 
-        // Tạo vé cho từng loại và số lượng
+        // Tạo vé cho từng loại và số lượng, liên kết với hóa đơn
         for (Map.Entry<TicketClass, Integer> entry : ticketClassesToBook.entrySet()) {
             TicketClass ticketClass = entry.getKey();
             int quantity = entry.getValue();
 
             for (int i = 0; i < quantity; i++) {
-                Ticket ticket = new Ticket();
-                ticket.setTicketClass(ticketClass);
+                Ticket ticket = new Ticket(ticketClass, finalInvoice);
                 ticket.setEndUserId(userId);
                 createdTickets.add(ticket);
             }
@@ -962,5 +1047,201 @@ public class TicketServices {
                 .checkedInAt(currentTime)
                 .ownerName(ownerName)
                 .build();
+    }
+      /**
+     * Lấy danh sách vé kèm thông tin người nhận theo invoice của một show.
+     * Phương thức này dùng Principal để xác thực quyền truy cập.
+     * Bao gồm cả thông tin doanh thu cho từng hạng vé.
+     * 
+     * @param showId ID của show
+     * @param userId ID của người dùng từ principal
+     * @param page Số trang (bắt đầu từ 0)
+     * @param size Số phần tử mỗi trang
+     * @param sort Trường để sắp xếp
+     * @param direction Hướng sắp xếp (asc/desc)
+     * @return Danh sách vé đã phân trang và thông tin doanh thu
+     */
+    @Transactional(readOnly = true)
+    public TicketsWithRevenueResponse getShowTicketsWithRecipientInfoByPrincipal(
+            UUID showId, UUID userId, int page, int size, String sort, String direction) {
+        
+        // Kiểm tra quyền truy cập
+        boolean isAuthorized = checkUserAuthorizationForShow(userId, showId);
+        
+        if (!isAuthorized) {
+            throw new SecurityException("User is not authorized to access tickets for this show");
+        }
+        
+        // Lấy danh sách vé đã phân trang
+        Page<TicketWithRecipientInfoResponse> tickets = getShowTicketsWithRecipientInfo(showId, page, size, sort, direction);
+        
+        // Lấy thông tin doanh thu cho từng hạng vé
+        List<TicketsWithRevenueResponse.TicketClassRevenue> revenueByTicketClass = getRevenueByTicketClassForShow(showId);
+        
+        // Tạo và trả về response tổng hợp
+        return TicketsWithRevenueResponse.builder()
+                .tickets(tickets)
+                .revenueByTicketClass(revenueByTicketClass)
+                .build();
+    }    /**
+     * Lấy danh sách vé kèm thông tin người nhận theo invoice của một show.
+     * Phương thức này dùng AuthCode để xác thực quyền truy cập
+     * 
+     * @param authCode Mã xác thực của show
+     * @param page Số trang (bắt đầu từ 0)
+     * @param size Số phần tử mỗi trang
+     * @param sort Trường để sắp xếp
+     * @param direction Hướng sắp xếp (asc/desc)
+     * @return Danh sách vé đã phân trang
+     */
+    @Transactional(readOnly = true)
+    public TicketsWithRevenueResponse getShowTicketsWithRecipientInfoByAuthCode(
+            String authCode, int page, int size, String sort, String direction) {
+            
+        // Lấy thông tin ShowAuthCode từ mã xác thực
+        Optional<ShowAuthCode> showAuthCodeOpt = showAuthCodeServices.validateAuthCode(authCode);
+        
+        if (showAuthCodeOpt.isEmpty()) {
+            throw new SecurityException("Invalid authentication code");
+        }
+        
+        // Lấy showId từ ShowAuthCode
+        UUID showId = showAuthCodeOpt.get().getShowId();
+        
+        // Lấy danh sách vé đã phân trang
+        Page<TicketWithRecipientInfoResponse> tickets = getShowTicketsWithRecipientInfo(showId, page, size, sort, direction);
+        
+        // Lấy thông tin doanh thu cho từng hạng vé
+        List<TicketsWithRevenueResponse.TicketClassRevenue> revenueByTicketClass = getRevenueByTicketClassForShow(showId);
+        
+        // Tạo và trả về response tổng hợp
+        return TicketsWithRevenueResponse.builder()
+                .tickets(tickets)
+                .revenueByTicketClass(revenueByTicketClass)
+                .build();
+    }
+    
+    /**
+     * Kiểm tra quyền truy cập của người dùng với show
+     * @param userId ID của người dùng
+     * @param showId ID của show
+     * @return true nếu người dùng có quyền truy cập, false nếu không
+     */
+    private boolean checkUserAuthorizationForShow(UUID userId, UUID showId) {
+        List<TicketClass> ticketClasses = ticketClassRepository.findByShowId(showId);
+        
+        if (ticketClasses.isEmpty()) {
+            throw new EntityNotFoundException("Show not found or no ticket classes available");
+        }
+        
+        // Kiểm tra nếu người dùng là người tạo ít nhất một ticket class cho show này
+        return ticketClasses.stream()
+                .anyMatch(tc -> userId.equals(tc.getCreatedBy()));
+    }
+      /**
+     * Phương thức chung để lấy danh sách vé từ invoice của một show đã phân trang
+     */
+    private Page<TicketWithRecipientInfoResponse> getShowTicketsWithRecipientInfo(
+            UUID showId, int page, int size, String sort, String direction) {
+        // Kiểm tra xem show có tồn tại không
+        if (!occaGrpcClient.isShowExist(showId)) {
+            throw new EntityNotFoundException("Show not found: " + showId);
+        }   
+          // Xác định hướng sắp xếp
+        Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        
+        // Xác định trường sắp xếp và điều chỉnh cho phù hợp với entity
+        String sortField;
+        if ("recipientName".equalsIgnoreCase(sort)) {
+            sortField = "invoice.nameCustomer"; // Sắp xếp theo tên người nhận từ invoice
+        } else if ("ticketType".equalsIgnoreCase(sort)) {
+            sortField = "ticketClass.name"; // Sắp xếp theo loại vé
+        } else if ("price".equalsIgnoreCase(sort)) {
+            sortField = "ticketClass.price"; // Sắp xếp theo giá vé
+        } else if ("checkedIn".equalsIgnoreCase(sort)) {
+            sortField = "checkedInAt"; // Sắp xếp theo trạng thái check-in
+        } else if ("purchaseDate".equalsIgnoreCase(sort)) { 
+            sortField = "invoice.createdAt"; // Sắp xếp theo ngày mua
+        } else {
+            sortField = "invoice.createdAt"; // Mặc định sắp xếp theo ngày mua
+        }
+        
+        // Tạo đối tượng Pageable 
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortField));
+        
+        // Lấy thông tin show
+        ShowDataResponse showData;
+        try {
+            showData = occaGrpcClient.getShowById(showId);
+        } catch (Exception e) {
+            log.error("Error fetching show data for showId {}: {}", showId, e.getMessage());
+            throw new RuntimeException("Failed to fetch show data");
+        }
+        
+        // Lấy thông tin occa
+        final String[] occaTitle = {""};
+        try {
+            OccaResquest occaRequest = OccaResquest.newBuilder()
+                .setOccaId(showData.getOccaId())
+                .build();
+            OccaDataResponse occaData = occaGrpcClient.getOccaById(occaRequest);
+            occaTitle[0] = occaData.getTitle();
+        } catch (Exception e) {
+            log.error("Error fetching occa data for occaId {}: {}", showData.getOccaId(), e.getMessage());
+            // Continue without occa title rather than failing
+            occaTitle[0] = "Unknown Event";
+        }
+        
+        // Lấy danh sách vé trực tiếp từ repository với phân trang
+        Page<Ticket> ticketsPage = ticketRepository.findByTicketClassShowIdAndInvoicePaid(showId, pageable);
+        
+        // Chuyển đổi từ Ticket thành TicketWithRecipientInfoResponse
+        return ticketsPage.map(ticket -> {
+            Invoice invoice = ticket.getInvoice();
+            TicketClass ticketClass = ticket.getTicketClass();
+            
+            return TicketWithRecipientInfoResponse.builder()
+                    .ticketId(ticket.getId())
+                    .ticketType(ticketClass != null ? ticketClass.getName() : "Unknown")
+                    .ticketPrice(ticketClass != null ? ticketClass.getPrice() : 0.0)
+                    .showId(showId)
+                    .showDate(showData.getDate())
+                    .showTime(showData.getTime())
+                    .occaTitle(occaTitle[0])
+                    .recipientName(invoice.getNameCustomer())
+                    .recipientEmail(invoice.getEmailReceived())
+                    .recipientPhone(invoice.getPhoneCustomer())
+                    .checkedInAt(ticket.getCheckedInAt())
+                    .purchasedAt(invoice.getCreatedAt())
+                    .invoiceId(invoice.getId())
+                    .paymentId(invoice.getPaymentId())
+                    .build();
+        });
+    }
+    
+    /**
+     * Lấy thông tin doanh thu cho từng hạng vé của một show
+     * 
+     * @param showId ID của show
+     * @return Danh sách thông tin doanh thu mỗi hạng vé
+     */
+    private List<TicketsWithRevenueResponse.TicketClassRevenue> getRevenueByTicketClassForShow(UUID showId) {
+        List<Object[]> rawResults = ticketRepository.getRevenueByTicketClassForShow(showId);
+        
+        return rawResults.stream()
+                .map(row -> {
+                    UUID ticketClassId = (UUID) row[0];
+                    String ticketClassName = (String) row[1];
+                    Long ticketsSold = (Long) row[2];
+                    Double totalRevenue = (Double) row[3];
+                    
+                    return TicketsWithRevenueResponse.TicketClassRevenue.builder()
+                            .ticketClassId(ticketClassId)
+                            .ticketClassName(ticketClassName)
+                            .ticketsSold(ticketsSold.intValue())
+                            .totalRevenue(totalRevenue != null ? totalRevenue : 0.0)
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 }

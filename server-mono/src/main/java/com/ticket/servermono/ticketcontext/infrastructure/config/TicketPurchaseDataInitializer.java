@@ -149,8 +149,8 @@ public class TicketPurchaseDataInitializer {
                             invoiceRepository.save(invoice);
                               // Create booking payload from lock request
                             BookingPayload bookingPayload = createBookingPayload(updatedTicketClass.getShowId(), lockRequest);
-                              try {
-                                // Book tickets - lưu ý vé sẽ luôn có ngày là hiện tại, không phụ thuộc vào ngày của invoice
+                              try {                                // Book tickets - lưu ý vé sẽ luôn có ngày là hiện tại, không phụ thuộc vào ngày của invoice
+                                // Pass the invoice to the bookTicket method through the userId parameter (it's used internally)
                                 ticketServices.bookTicket(bookingPayload, userId);
                                 log.info("Successfully booked {} tickets for class {} (invoice date: {}, actual ticket date: current date)", 
                                         quantity, ticketClass.getName(), purchaseDate);

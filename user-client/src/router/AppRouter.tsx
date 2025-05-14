@@ -27,6 +27,7 @@ import EditOccaPage from "@/features/organize/EditOccaPage";
 import AdminRoutes from "@/features/admin/AdminRoutes";
 import { TrackingProvider } from "@/features/tracking/contexts/TrackingContext";
 import OrganizeAnalyticsPage from "@/features/organize/pages/OrganizeAnalyticsPage";
+import TicketManagementPage from "@/features/organize/pages/TicketManagementPage";
 import ShowAuthPage from "@/features/ticket-check-in/ShowAuthPage";
 import TicketScanPage from "@/features/ticket-check-in/TicketScanPage";
 
@@ -68,15 +69,14 @@ function AppRouter() {
             <Route path="profile" element={<SettingsProfilePage />} />
             <Route path="account" element={<SettingsAccountPage />} />
           </Route>
-        </Route>        
-        {/* Organize Routes - Protected - WITHOUT NavLayout */}
+        </Route>          {/* Organize Routes - Protected - WITHOUT NavLayout */}
         <Route path="/organize">
           <Route index element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
           <Route path="create" element={<ProtectedRoute><CreateOccaPage /></ProtectedRoute>} />
           <Route path="edit/:id" element={<ProtectedRoute><EditOccaPage /></ProtectedRoute>} />
-          <Route path="events" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
-          <Route path="analytics" element={<ProtectedRoute><OrganizeAnalyticsPage /></ProtectedRoute>} />
-        </Route>        {/* Admin Routes - Protected - WITHOUT NavLayout */}
+          <Route path="events" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />          <Route path="analytics" element={<ProtectedRoute><OrganizeAnalyticsPage /></ProtectedRoute>} />
+          <Route path="tickets/:occaId/:showId" element={<ProtectedRoute><TicketManagementPage /></ProtectedRoute>} />
+        </Route>{/* Admin Routes - Protected - WITHOUT NavLayout */}
         <Route path="/admin/*" element={<AdminRoutes />} />
 
         {/* Ticket Check-in Routes - No Auth Required */}
