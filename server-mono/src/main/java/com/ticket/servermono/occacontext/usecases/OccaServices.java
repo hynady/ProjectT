@@ -59,7 +59,7 @@ public class OccaServices {
                                 .suggestOccasByUserPreferences(userUuid, 3);
                         // Kết hợp hai danh sách và loại bỏ trùng lặp
                         List<OccaProjection> combinedProjections = new ArrayList<>(trendingProjections);
-
+                        
                         for (OccaProjection recommended : recommendedProjections) {
                             // Chỉ thêm vào nếu chưa có trong danh sách kết hợp
                             if (combinedProjections.stream()
@@ -68,10 +68,14 @@ public class OccaServices {
                             }
                         }
 
-                        // Giới hạn số lượng tối đa là 6
+                        // Nếu số lượng < 2 thì fallback về default hero occas
                         List<OccaProjection> limitedProjections = combinedProjections.stream()
                                 .limit(6)
                                 .collect(Collectors.toList());
+                        if (limitedProjections.size() < 2) {
+                            List<OccaProjection> fallbackProjections = occaRepository.findFirst6HeroOccas(PageRequest.of(0, 6));
+                            return convertToOccaResponses(fallbackProjections);
+                        }
 
                         return convertToOccaResponses(limitedProjections);
                     } catch (Exception e) {

@@ -30,6 +30,7 @@ import OrganizeAnalyticsPage from "@/features/organize/pages/OrganizeAnalyticsPa
 import TicketManagementPage from "@/features/organize/pages/TicketManagementPage";
 import ShowAuthPage from "@/features/ticket-check-in/ShowAuthPage";
 import TicketScanPage from "@/features/ticket-check-in/TicketScanPage";
+import TicketListPage from "@/features/ticket-check-in/TicketListPage";
 
 function AppRouter() {
   return (
@@ -77,12 +78,11 @@ function AppRouter() {
           <Route path="events" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />          <Route path="analytics" element={<ProtectedRoute><OrganizeAnalyticsPage /></ProtectedRoute>} />
           <Route path="tickets/:occaId/:showId" element={<ProtectedRoute><TicketManagementPage /></ProtectedRoute>} />
         </Route>{/* Admin Routes - Protected - WITHOUT NavLayout */}
-        <Route path="/admin/*" element={<AdminRoutes />} />
-
-        {/* Ticket Check-in Routes - No Auth Required */}
+        <Route path="/admin/*" element={<AdminRoutes />} />        {/* Ticket Check-in Routes - No Auth Required */}
         <Route path="/ticket-check-in">
           <Route index element={<ShowAuthPage />} />
           <Route path="scan" element={<TicketScanPage />} />
+          <Route path="tickets" element={<TicketListPage />} />
         </Route>
 
         {/* Preview Routes */}

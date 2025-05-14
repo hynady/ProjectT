@@ -1,4 +1,5 @@
 import { BaseService } from '@/commons/base.service';
+import { TicketListResponse } from '@/features/organize/internal-types/ticket.type';
 
 class TicketCheckInService extends BaseService {
   async verifyShowAuthCode(showAuthCode: string): Promise<{ exists: boolean; expiresAt: string }> {
@@ -13,6 +14,19 @@ class TicketCheckInService extends BaseService {
       method: 'POST',
       url: '/tickets/ticket-check-in',
       data: { showAuthCode, ticketCode }
+    });
+  }  async getTicketsByAuthCode(
+    authCode: string, 
+    params: { 
+      page?: number; 
+      size?: number; 
+      sort?: string; 
+      direction?: 'asc' | 'desc'; 
+    }
+  ): Promise<TicketListResponse> {
+    return this.request({
+      method: 'GET',
+      url: `/shows/tickets/by-auth-code?authCode=${authCode}&page=${params.page || 0}&size=${params.size || 10}&sort=${params.sort || 'purchasedAt'}&direction=${params.direction || 'desc'}`
     });
   }
 }

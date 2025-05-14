@@ -23,15 +23,14 @@ export const ShowAuthPage = () => {
     }
 
     setIsLoading(true);
-    try {
-      const response = await ticketCheckInService.verifyShowAuthCode(showAuthCode);
+    try {      const response = await ticketCheckInService.verifyShowAuthCode(showAuthCode);
       if (response && response.exists) {
         // Save to localStorage with expiry time
         localStorage.setItem('showAuthCode', showAuthCode);
         localStorage.setItem('showAuthExpiry', response.expiresAt);
         
-        // Navigate to ticket scanning page
-        navigate('/ticket-check-in/scan');
+        // Navigate to ticket list page instead
+        navigate('/ticket-check-in/tickets');
       } else {
         toast({
           variant: 'destructive',

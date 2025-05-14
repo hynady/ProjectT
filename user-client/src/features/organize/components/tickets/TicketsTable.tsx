@@ -82,21 +82,20 @@ export const TicketsTable = ({
       cell: (ticket) => <TruncatedText text={ticket.ticketId} />
     },
     {
-      id: "occaTitle",
+      id: "occaInfo",
       header: "Sự kiện",
       sortable: true,
-      width: "w-[250px]",
-      cell: (ticket) => <TruncatedText text={ticket.occaTitle} className="font-medium" />
-    },
-    {
-      id: "showDateTime",
-      header: "Thời gian",
-      sortable: true,
-      width: "w-[180px]",
+      width: "w-[200px]",
       cell: (ticket) => (
-        <div className="flex flex-col">
-          <span>{ticket.showDate}</span>
-          <span className="text-muted-foreground text-xs">{ticket.showTime}</span>
+        <div className="space-y-1">
+          <div className="font-medium">
+            <TruncatedText text={ticket.occaTitle} />
+          </div>
+          <div className="text-sm text-muted-foreground flex items-center gap-1">
+            <span>{format(parseISO(ticket.showDate), 'dd/MM/yyyy', { locale: vi })}</span>
+            <span>•</span>
+            <span>{ticket.showTime}</span>
+          </div>
         </div>
       )
     },

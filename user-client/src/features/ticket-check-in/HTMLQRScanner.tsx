@@ -1,6 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import './qr-scanner.css';
+
+// Khai báo các thuộc tính toàn cục cần thiết cho scanner
+declare global {
+  interface Window {
+    qrErrorRestartTimeout?: ReturnType<typeof setTimeout>;
+    scannerInstance?: Html5Qrcode; // Add a global reference to scanner instance
+  }
+}
 
 interface HTMLQRScannerProps {
   onScan: (result: string) => void;
@@ -22,142 +30,377 @@ export const HTMLQRScanner = ({
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState<boolean>(false);
   const [scannerCreated, setScannerCreated] = useState<boolean>(false);
+  const unmountingRef = useRef<boolean>(false);
   
   // We need to ensure the DOM element is created before initializing
   const scannerContainerId = "qr-reader";
-
+  
+  // Restart scanner function defined early to be used in other hooks
+  const restartScanner = useCallback(async () => {
+    // Check if component is unmounting or scanner is not initialized
+    if (!scannerRef.current || unmountingRef.current) {
+      console.log('Cannot restart scanner: component unmounting or scanner not initialized');
+      return;
+    }
+    
+    try {
+      // First stop the scanner if it's running
+      if (scannerRef.current.isScanning) {
+        console.log('Stopping scanner before restart');
+        await scannerRef.current.stop();
+      }
+      
+      // Only update state if component is still mounted
+      if (!unmountingRef.current) {
+        setScanning(false);
+      }
+      
+      // Only proceed with camera switching if component is still mounted
+      if (currentCamera && !unmountingRef.current) {
+        const sameCamera = currentCamera;
+        
+        // Set camera to null and wait a moment before restarting
+        if (!unmountingRef.current) {
+          setCurrentCamera(null);
+        }
+        
+        // Use a promise-based delay instead of nested timeouts
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Double check component is still mounted before continuing
+        if (!unmountingRef.current) {
+          setCurrentCamera(sameCamera);
+        }
+      }
+    } catch (err) {
+      console.error('Error restarting scanner', err);
+      
+      // Force cleanup of any hanging media tracks as a fallback
+      if (!unmountingRef.current) {
+        document.querySelectorAll('video').forEach(video => {
+          try {
+            const stream = video.srcObject as MediaStream;
+            if (stream) {
+              stream.getTracks().forEach(track => {
+                track.stop();
+                console.log('Force stopped media track during restart error');
+              });
+              video.srcObject = null;
+            }
+          } catch (e) {
+            console.error('Error cleaning video during restart error', e);
+          }
+        });
+      }
+    }
+  }, [currentCamera]);
+  
   // Initialize scanner when component mounts
   useEffect(() => {
+    // Create a flag to track if the component is mounted
+    let isMounted = true;
+    unmountingRef.current = false;
+    
+    // Clean up any previously existing scanner instance from a prior render
+    if (window.scannerInstance) {
+      try {
+        if (window.scannerInstance.isScanning) {
+          console.log('Cleaning up existing global scanner instance');
+          window.scannerInstance.stop()
+            .then(() => {
+              console.log('Previous scanner instance stopped successfully');
+              window.scannerInstance = undefined;
+            })
+            .catch(err => console.error('Error stopping previous scanner instance', err));
+        } else {
+          window.scannerInstance = undefined;
+        }
+      } catch (e) {
+        console.error('Error cleaning up previous scanner instance', e);
+        window.scannerInstance = undefined;
+      }
+    }
+    
     // Wait for the DOM to be fully loaded
     const timer = setTimeout(() => {
-      // Check if container element exists before initializing
-      if (document.getElementById(scannerContainerId)) {
-        try {
-          // Create scanner instance
-          scannerRef.current = new Html5Qrcode(scannerContainerId);
+      // Check if component is still mounted and container element exists
+      if (!isMounted || !document.getElementById(scannerContainerId)) {
+        console.log('Scanner container not ready or component unmounted');
+        return;
+      }
+      
+      try {
+        // Create scanner instance
+        scannerRef.current = new Html5Qrcode(scannerContainerId);
+        // Store a global reference for cleanup
+        window.scannerInstance = scannerRef.current;
+        
+        if (isMounted) {
           setScannerCreated(true);
           console.log('Scanner created successfully');
-          
-          // Get available cameras 
-          Html5Qrcode.getCameras()
-            .then((devices) => {
-              if (devices && devices.length > 0) {
-                const cameraList = devices.map(device => ({
-                  id: device.id,
-                  label: device.label
-                }));
-                setCameras(cameraList);
-                
-                // Try to find a back camera
-                const backCamera = cameraList.find(
-                  camera => 
-                    camera.label.toLowerCase().includes('back') || 
-                    camera.label.toLowerCase().includes('rear') ||
-                    camera.label.toLowerCase().includes('sau') ||
-                    camera.label.toLowerCase().includes('chính')
-                );
-                
-                // Use back camera if found, otherwise use the first one
-                const defaultCamera = backCamera ? backCamera.id : cameraList[0].id;
+        }
+        
+        // Get available cameras 
+        Html5Qrcode.getCameras()
+          .then((devices) => {
+            if (!isMounted) return;
+            
+            if (devices && devices.length > 0) {
+              const cameraList = devices.map(device => ({
+                id: device.id,
+                label: device.label
+              }));
+              setCameras(cameraList);
+              
+              // Try to find a back camera
+              const backCamera = cameraList.find(
+                camera => 
+                  camera.label.toLowerCase().includes('back') || 
+                  camera.label.toLowerCase().includes('rear') ||
+                  camera.label.toLowerCase().includes('sau') ||
+                  camera.label.toLowerCase().includes('chính')
+              );
+              
+              // Use back camera if found, otherwise use the first one
+              const defaultCamera = backCamera ? backCamera.id : cameraList[0].id;
+              
+              if (!unmountingRef.current) {
                 setCurrentCamera(defaultCamera);
-              } else {
+              }
+            } else {
+              if (isMounted) {
                 setError('Không tìm thấy thiết bị camera');
               }
-            })
-            .catch((err) => {
-              setError(`Không thể truy cập camera: ${err.message || 'Lỗi không xác định'}`);
-              console.error('Error getting cameras', err);
-            });
-        } catch (err) {
-          const errMsg = err instanceof Error ? err.message : 'Lỗi không xác định';
-          setError(`Không thể khởi tạo máy quét: ${errMsg}`);
-          console.error('Failed to create scanner', err);
-        }
-      } else {
-        setError('Không tìm thấy phần tử scanner trong DOM');
-        console.error('Scanner container element not found in DOM');
+            }
+          })
+          .catch((err) => {
+            if (!isMounted) return;
+            
+            setError(`Không thể truy cập camera: ${err.message || 'Lỗi không xác định'}`);
+            console.error('Error getting cameras', err);
+          });
+      } catch (err) {
+        if (!isMounted) return;
+        
+        const errMsg = err instanceof Error ? err.message : 'Lỗi không xác định';
+        setError(`Không thể khởi tạo máy quét: ${errMsg}`);
+        console.error('Failed to create scanner', err);
       }
     }, 1000); // Give DOM time to render
     
     // Cleanup on unmount
     return () => {
+      // Mark component as unmounted
+      isMounted = false;
+      unmountingRef.current = true;
+      console.log('HTMLQRScanner unmounting - cleaning up resources');
       clearTimeout(timer);
+      
+      if (window.qrErrorRestartTimeout) {
+        clearTimeout(window.qrErrorRestartTimeout);
+        window.qrErrorRestartTimeout = undefined;
+      }
+      
       if (scannerRef.current) {
         try {
           if (scannerRef.current?.isScanning) {
+            console.log('Stopping scanner during component unmount');
             scannerRef.current.stop()
+              .then(() => {
+                console.log('Scanner stopped successfully during unmount');
+                // Clear the scanner reference
+                scannerRef.current = null;
+                window.scannerInstance = undefined;
+              })
               .catch(err => console.error('Error stopping scanner', err));
+          }
+          // Clear scanner even if not scanning
+          else {
+            scannerRef.current = null;
+            window.scannerInstance = undefined;
           }
         } catch (e) {
           console.error('Error during cleanup', e);
         }
       }
+      
+      // Find and cleanup all video elements as a fallback
+      document.querySelectorAll('video').forEach(video => {
+        try {
+          const stream = video.srcObject as MediaStream;
+          if (stream) {
+            stream.getTracks().forEach(track => {
+              track.stop();
+              console.log('Media track stopped during unmount');
+            });
+            video.srcObject = null;
+          }
+        } catch (err) {
+          console.error('Error stopping video tracks during unmount:', err);
+        }
+      });
     };
-  }, []);
-
+  }, []);  
+  
   // Start/stop scanning when camera changes
   useEffect(() => {
-    if (!scannerRef.current || !currentCamera || !scannerCreated) {
+    // Don't do anything if conditions aren't right
+    if (!scannerRef.current || !currentCamera || !scannerCreated || unmountingRef.current) {
       return;
     }
 
-    const startScanner = async () => {
-      // Stop any existing scan
-      if (scannerRef.current?.isScanning) {
+    // Small delay to ensure DOM is ready for scanner
+    const timer = setTimeout(() => {
+      const startScannerAsync = async () => {
         try {
-          await scannerRef.current.stop();
-        } catch (err) {
-          console.error('Error stopping scanner', err);
-        }
-      }
-
-      // Configure scanner options
-      const config = {
-        fps: 10, // Lower frame rate for better performance
-        qrbox: 250, // Fixed size instead of object
-        aspectRatio: 1.0
-      };
-
-      try {
-        // Start scanning
-        setScanning(true);
-        if (!scannerRef.current) {
-          throw new Error('Scanner not initialized');
-        }
-        await scannerRef.current.start(
-          { deviceId: currentCamera },
-          config,
-          (decodedText) => {
-            console.log('QR Code found:', decodedText);
-            onScan(decodedText);
-          },
-          (errorMessage) => {
-            // We only care about true errors, not "no QR code found" notices
-            if (!errorMessage.includes('No MultiFormat Readers') && 
-                !errorMessage.includes('No barcode found')) {
-              console.error('QR Scan error:', errorMessage);
+          // Double-check refs and DOM elements
+          if (!scannerRef.current || !document.getElementById(scannerContainerId) || unmountingRef.current) {
+            console.log('Scanner or container not available or component unmounting');
+            return;
+          }
+          
+          // Stop any existing scan first
+          if (scannerRef.current.isScanning) {
+            await scannerRef.current.stop();
+            console.log('Stopped existing scan before starting new one');
+            // Small delay to ensure clean state transition
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // Abort if component is unmounting during the delay
+            if (unmountingRef.current) {
+              console.log('Component unmounting during scanner restart - aborting');
+              return;
             }
           }
-        );
-        console.log('Scanner started successfully with camera:', currentCamera);
-      } catch (err) {
-        console.error('Error starting scanner:', err);
-        setError(`Không thể khởi động camera: ${err instanceof Error ? err.message : 'Lỗi không xác định'}`);
-        setScanning(false);
-      }
-    };
 
-    // Start the scanner
-    startScanner();
+          // Check if scanner container exists and has proper dimensions
+          const scannerElement = document.getElementById(scannerContainerId);
+          if (!scannerElement || scannerElement.clientWidth === 0) {
+            console.error('Scanner container not ready or has no dimensions');
+            if (!unmountingRef.current) {
+              setError('Không thể khởi tạo camera. Vui lòng thử lại');
+            }
+            return;
+          }
+          
+          // Configure scanner options
+          const config = {
+            fps: 10, 
+            qrbox: 250,
+            aspectRatio: 1.0
+          };
 
+          // Only update state if component is still mounted
+          if (!unmountingRef.current) {
+            setScanning(true);
+            setError(null); // Clear any previous errors
+          } else {
+            console.log('Component unmounting before starting scanner - aborting');
+            return;
+          }
+          
+          // Start scanning
+          await scannerRef.current.start(
+            { deviceId: currentCamera },
+            config,
+            (decodedText) => {
+              if (unmountingRef.current) return;
+              console.log('QR Code found:', decodedText);
+              onScan(decodedText);
+            },
+            (errorMessage) => {
+              if (unmountingRef.current) return;
+              
+              // Skip logging for common non-critical errors
+              if (errorMessage.includes('No MultiFormat Readers') || 
+                  errorMessage.includes('No barcode found') ||
+                  errorMessage.includes('source width is 0') ||
+                  errorMessage.includes('The source width is 0') ||
+                  errorMessage.includes('IndexSizeError') ||
+                  errorMessage.includes('getImageData')) {
+                return; // Don't log these common errors
+              }
+              
+              console.error('QR Scan error:', errorMessage);
+              
+              // Auto-recovery for certain types of errors
+              if ((errorMessage.includes('source width is 0') || 
+                  errorMessage.includes('IndexSizeError')) && 
+                  !window.qrErrorRestartTimeout && 
+                  !unmountingRef.current) {
+                
+                window.qrErrorRestartTimeout = setTimeout(() => {
+                  // Double check component is still mounted
+                  if (!unmountingRef.current) {
+                    console.log('Auto-restarting scanner after error');
+                    restartScanner();
+                  }
+                  window.qrErrorRestartTimeout = undefined;
+                }, 2000);
+              }
+            }
+          );
+          console.log('Scanner started successfully with camera:', currentCamera);
+        } catch (err) {
+          if (unmountingRef.current) return;
+          
+          console.error('Error starting scanner:', err);
+          if (!unmountingRef.current) {
+            setError(`Không thể khởi động camera: ${err instanceof Error ? err.message : 'Lỗi không xác định'}`);
+            setScanning(false);
+          }
+          
+          // Clean up any stray video tracks as a fallback
+          document.querySelectorAll('video').forEach(video => {
+            try {
+              const stream = video.srcObject as MediaStream;
+              if (stream) {
+                stream.getTracks().forEach(track => {
+                  track.stop();
+                  console.log('Force stopped media track after start error');
+                });
+                video.srcObject = null;
+              }
+            } catch (e) {
+              console.error('Error cleaning video during start error', e);
+            }
+          });
+        }
+      };
+
+      // Start the scanner asynchronously
+      startScannerAsync();
+    }, 300);
+    
     // Cleanup this effect
     return () => {
+      clearTimeout(timer);
+      
       if (scannerRef.current && scannerRef.current.isScanning) {
+        console.log('Stopping scanner during camera change cleanup');
+        
         scannerRef.current.stop()
+          .then(() => console.log('Scanner stopped successfully during camera change'))
           .catch(err => console.error('Error stopping scanner during cleanup', err));
+          
+        // As a fallback, also directly stop any video tracks
+        document.querySelectorAll('video').forEach(video => {
+          try {
+            const stream = video.srcObject as MediaStream;
+            if (stream) {
+              stream.getTracks().forEach(track => {
+                track.stop();
+                console.log('Media track stopped during camera change cleanup');
+              });
+              video.srcObject = null;
+            }
+          } catch (err) {
+            console.error('Error stopping video tracks during camera change cleanup:', err);
+          }
+        });
       }
     };
-  }, [currentCamera, scannerCreated, onScan]);
+  }, [currentCamera, scannerCreated, onScan, restartScanner]);
 
   // Switch camera function
   const switchCamera = () => {
@@ -166,29 +409,6 @@ export const HTMLQRScanner = ({
     const currentIndex = cameras.findIndex(camera => camera.id === currentCamera);
     const nextIndex = (currentIndex + 1) % cameras.length;
     setCurrentCamera(cameras[nextIndex].id);
-  };
-
-  // Restart scanner function
-  const restartScanner = async () => {
-    if (!scannerRef.current) return;
-    
-    try {
-      if (scannerRef.current.isScanning) {
-        await scannerRef.current.stop();
-      }
-      
-      setScanning(false);
-      // Force camera refresh
-      setTimeout(() => {
-        if (currentCamera) {
-          const sameCamera = currentCamera;
-          setCurrentCamera(null);
-          setTimeout(() => setCurrentCamera(sameCamera), 200);
-        }
-      }, 300);
-    } catch (err) {
-      console.error('Error restarting scanner', err);
-    }
   };
 
   // Render visual scan guides
