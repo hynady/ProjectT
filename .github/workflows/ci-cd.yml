@@ -51,30 +51,32 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
   
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
+
       
-      # Nouvelle étape: Création du fichier .env à partir des secrets
+      # Nouvelle �tape: Cr�ation du fichier .env � partir des secrets
       - name: Create .env file
         run: |
           cat > .env << EOL
           # -----------------------------------------------------------------------------
           # PRODUCTION ENVIRONMENT CONFIGURATION
           # -----------------------------------------------------------------------------
-          # Tệp cấu hình này chứa tất cả biến môi trường cho cả Backend và Frontend
+          # T?p c?u h�nh n�y ch?a t?t c? bi?n m�i tru?ng cho c? Backend v� Frontend
           # -----------------------------------------------------------------------------
 
           # -----------------------------------------------------------------------------
           # DEPLOYMENT CONFIGURATION
           # -----------------------------------------------------------------------------
-          # Cấu hình cho quá trình triển khai tự động (CI/CD)
+          # C?u h�nh cho qu� tr�nh tri?n khai t? d?ng (CI/CD)
           SERVER_HOST=${{ secrets.SERVER_HOST }}
           SERVER_PORT=${{ secrets.SERVER_PORT }}
           SERVER_USER=${{ secrets.SERVER_USER }}
           SERVER_PASSWORD=${{ secrets.SERVER_PASSWORD }}
           DEPLOY_PATH=${{ secrets.DEPLOY_PATH }}
-          # Cấu hình cho docker-hub
+          # C?u h�nh cho docker-hub
           DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}
 
@@ -82,42 +84,42 @@ jobs:
           # BACKEND CONFIGURATION
           # -----------------------------------------------------------------------------
 
-          # Cấu hình ứng dụng
+          # C?u h�nh ?ng d?ng
           APP_NAME=${{ secrets.APP_NAME || 'Tack Ticket API' }}
 
-          # Cấu hình Database MySQL
+          # C?u h�nh Database MySQL
           MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
           MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE || 'tackticket' }}
-          # Không định nghĩa MYSQL_USER và MYSQL_PASSWORD vì chúng ta dùng root
+          # Kh�ng d?nh nghia MYSQL_USER v� MYSQL_PASSWORD v� ch�ng ta d�ng root
           DB_DRIVER=${{ secrets.DB_DRIVER || 'com.mysql.cj.jdbc.Driver' }}
-          # URL sử dụng tên service MySQL trong Docker network
+          # URL s? d?ng t�n service MySQL trong Docker network
           DB_URL=${{ secrets.DB_URL || 'jdbc:mysql://mysql:3306/tackticket?useSSL=false&allowPublicKeyRetrieval=true' }}
           MYSQL_USER=${{ secrets.MYSQL_USER || 'root' }}
           MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
           JPA_DIALECT=${{ secrets.JPA_DIALECT || 'org.hibernate.dialect.MySQLDialect' }}
           JPA_DDL_AUTO=${{ secrets.JPA_DDL_AUTO || 'update' }}
 
-          # Cấu hình Kafka
-          # URL sử dụng tên service Kafka trong Docker network
+          # C?u h�nh Kafka
+          # URL s? d?ng t�n service Kafka trong Docker network
           KAFKA_BOOTSTRAP_SERVERS=${{ secrets.KAFKA_BOOTSTRAP_SERVERS || 'kafka:9092' }}
           KAFKA_CONSUMER_GROUP_ID=${{ secrets.KAFKA_CONSUMER_GROUP_ID || 'ticket-service' }}
           KAFKA_CONSUMER_AUTO_OFFSET_RESET=${{ secrets.KAFKA_CONSUMER_AUTO_OFFSET_RESET || 'earliest' }}
 
-          # Cấu hình bảo mật
+          # C?u h�nh b?o m?t
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
 
-          # Cấu hình email
+          # C?u h�nh email
           MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
           MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
           MAIL_SENDER_NAME=${{ secrets.MAIL_SENDER_NAME || 'Tack Ticket' }}
 
-          # Cấu hình thanh toán
+          # C?u h�nh thanh to�n
           SEPAY_API_KEY=${{ secrets.SEPAY_API_KEY }}
           SEPAY_URL=${{ secrets.SEPAY_URL || 'https://my.sepay.vn' }}
 
-          # Cấu hình gRPC
-          # Sử dụng '0.0.0.0' cho host để container có thể chấp nhận kết nối từ bên ngoài
+          # C?u h�nh gRPC
+          # S? d?ng '0.0.0.0' cho host d? container c� th? ch?p nh?n k?t n?i t? b�n ngo�i
           GRPC_OCCA_HOST=${{ secrets.GRPC_OCCA_HOST || '0.0.0.0' }}
           GRPC_OCCA_PORT=${{ secrets.GRPC_OCCA_PORT || '9090' }}
           GRPC_AUTH_HOST=${{ secrets.GRPC_AUTH_HOST || '0.0.0.0' }}
@@ -125,25 +127,25 @@ jobs:
           GRPC_TICKET_HOST=${{ secrets.GRPC_TICKET_HOST || '0.0.0.0' }}
           GRPC_TICKET_PORT=${{ secrets.GRPC_TICKET_PORT || '9090' }}
 
-          # Cấu hình CORS
-          # Đặt URL của frontend mà backend sẽ chấp nhận yêu cầu CORS từ đó
+          # C?u h�nh CORS
+          # �?t URL c?a frontend m� backend s? ch?p nh?n y�u c?u CORS t? d�
           FRONTEND_URL=${{ secrets.FRONTEND_URL || 'http://localhost:30000' }}
 
           # -----------------------------------------------------------------------------
           # FRONTEND CONFIGURATION
           # -----------------------------------------------------------------------------
 
-          # API và WebSocket URLs - Sử dụng đường dẫn tương đối vì chúng ta dùng Nginx để proxy
+          # API v� WebSocket URLs - S? d?ng du?ng d?n tuong d?i v� ch�ng ta d�ng Nginx d? proxy
           VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL || '/v1' }}
           VITE_WS_BASE_URL=${{ secrets.VITE_WS_BASE_URL || '/ws' }}
 
-          # Tắt mock trong production
+          # T?t mock trong production
           VITE_ENABLE_MOCK=${{ secrets.VITE_ENABLE_MOCK || 'false' }}
 
           # Google Maps API Key
           VITE_GOOGLE_MAPS_API_KEY=${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
 
-          # Cấu hình Cloudinary
+          # C?u h�nh Cloudinary
           VITE_CLOUDINARY_CLOUD_NAME=${{ secrets.VITE_CLOUDINARY_CLOUD_NAME }}
           VITE_CLOUDINARY_UPLOAD_PRESET=${{ secrets.VITE_CLOUDINARY_UPLOAD_PRESET }}
           VITE_CLOUDINARY_API_KEY=${{ secrets.VITE_CLOUDINARY_API_KEY }}
@@ -155,6 +157,18 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+
+
+
+
+
+
+
+
+
+
+
   
       - name: Create deploy directory
         env:
@@ -177,15 +191,24 @@ jobs:
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
         run: |
+          sshpass -e ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            cd ${{ secrets.DEPLOY_PATH }}
+
           sshpass -e ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << EOF
             cd "${{ secrets.DEPLOY_PATH }}" || exit 1
   
             echo "[1/3] Pulling latest images..."
+            docker compose -f docker-compose.production.yml pull
+
             sudo docker-compose -f docker-compose.production.yml pull
   
             echo "[2/3] Restarting containers..."
+            docker compose -f docker-compose.production.yml up -d
+
             sudo docker-compose -f docker-compose.production.yml up -d
   
             echo "[3/3] Cleaning old images..."
+            docker image prune -f
+          EOF
             sudo docker image prune -f
           EOF
