@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package occa;
+option java_multiple_files = true;
+
+service ShowServices {
+    rpc IsShowExist(ShowRequest) returns (ShowResponse);
+    rpc GetShowById(ShowRequest) returns (ShowDataResponse);
+    rpc GetTicketsClassStatus(TicketStatusRequest) returns (TicketStatusResponse);
+}
+
+message ShowRequest {
+    string show_id = 1;
+}
+
+message ShowResponse {
+    bool is_show_exist = 1;
+}
+
+message ShowDataResponse {
+    string time = 1;
+    string date = 2;
+    string occa_id = 3;
+}
+
+service OccaServices {
+    rpc GetOccaById(OccaResquest) returns (OccaDataResponse);
+}
+
+message OccaResquest {
+    string occa_id = 1;
+}
+
+message OccaDataResponse {
+    string title = 1;
+    string location = 2;
+}
+
+message TicketStatusRequest {
+    repeated string show_ids = 1;
+    repeated string ticket_class_ids = 2;
+}
+
+message TicketStatusData {
+    string ticket_class_id = 1;
+    bool is_active = 2;  // true nếu show chưa diễn ra, false nếu đã diễn ra
+    string show_id = 3;
+    string show_date = 4;
+    string show_time = 5;
+    string occa_id = 6;
+    string occa_title = 7;
+    string occa_location = 8;
+}
+
+message TicketStatusResponse {
+    repeated TicketStatusData tickets = 1;
+}
+
+service ShowIdServices {
+    rpc GetShowIdsByOccaId(OccaIdRequest) returns (ShowIdResponse);
+}
+
+message OccaIdRequest {
+    string occa_id = 1;
+}
+
+message ShowIdResponse {
+    repeated string show_ids = 1;
+}

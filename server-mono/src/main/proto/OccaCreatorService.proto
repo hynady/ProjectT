@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package occa;
+option java_multiple_files = true;
+
+service OccaCreatorService {
+    rpc GetShowsByCreator(CreatorRequestByUserId) returns (ShowsResponseByUserId);
+}
+
+message CreatorRequestByUserId {
+    string user_id = 1;
+}
+
+message ShowsResponseByUserId {
+    repeated ShowDataResponseByUserId shows = 1;
+}
+
+message ShowDataResponseByUserId {
+    string id = 1;
+    string time = 2;
+    string date = 3;
+    string occa_id = 4;
+}

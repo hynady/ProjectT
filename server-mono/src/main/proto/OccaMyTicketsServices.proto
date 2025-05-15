@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package occa;
+option java_multiple_files = true;
+
+service OccaMyTicketsService {
+    rpc GetOccaInfoForMyTicket (Payload) returns (OccaMyTicketsResponse);
+}
+
+message Payload {
+    string occa_id = 1;
+}
+message OccaMyTicketsResponse {
+    string title = 1;
+    string location = 2;
+}

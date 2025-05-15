@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package occa;
+option java_multiple_files = true;
+
+service OccaSearchService {
+    rpc GetTrendingOccas (Empty) returns (OccaSearchResponse);
+    rpc GetRecommendedOccas (UserIdRequest) returns (OccaSearchResponse);
+    rpc searchOccasForSearchBar(SearchRequest) returns (OccaSearchResponse);
+    rpc SearchOccas(SearchOccasRequest) returns (SearchOccasResponse);
+}
+
+// For search bar results
+
+message Empty {}
+
+message UserIdRequest {
+    string user_id = 1;
+}
+
+message SearchRequest {
+    string query = 1;
+}
+
+message OccaSearchResponse {
+    repeated OccaSearchResult results = 1;
+}
+
+message OccaSearchResult {
+    string id = 1;
+    string title = 2;
+    string date = 3;
+    string location = 4;
+}
+
+// For result pages with pagination
+message SearchOccasRequest {
+    int32 page = 1;
+    int32 size = 2;
+    string keyword = 3;
+    string category_id = 4;
+    string venue_id = 5;
+    string sort_by = 6;
+    string sort_order = 7;
+    string region_id = 8;
+}
+
+message SearchOccasResponse {
+    repeated OccaCardResponse occas = 1;
+    int32 total_pages = 2;
+    int64 total_elements = 3;
+}
+
+message OccaCardResponse {
+    string id = 1;
+    string title = 2;
+    string image = 3;
+    string date = 4;
+    string time = 5;
+    string location = 6;
+    double price = 7;
+    string category_id = 8;
+    string venue_id = 9;
+}

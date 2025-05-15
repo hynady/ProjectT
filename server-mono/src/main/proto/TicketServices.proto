@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package ticket;
+option java_multiple_files = true;
+
+service TicketShowServices {
+    rpc GetTicketClassesByShowId (TicketShowRequest) returns (TicketShowResponse);
+    rpc GetMinPriceForShow(GetMinPriceForShowRequest) returns (GetMinPriceForShowResponse);
+}
+
+message TicketShowRequest {
+    string show_id = 1;
+}
+
+message TicketShowResponse {
+    repeated TicketClassResponse ticket_classes = 1;
+}
+
+message TicketClassResponse {
+    string id = 1;
+    string name = 2;
+    double price = 3;
+    int32 available = 4;
+}
+
+message GetMinPriceForShowRequest {
+    string show_id = 1;
+  }
+  
+message GetMinPriceForShowResponse {
+bool has_price = 1;
+double price = 2;
+}
