@@ -60,24 +60,36 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
   
+      - name: Create deploy directory
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          sshpass -e ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << EOF
+            if [ ! -d "${{ secrets.DEPLOY_PATH }}" ]; then
+              echo "Creating directory ${{ secrets.DEPLOY_PATH }}"
+              mkdir -p "${{ secrets.DEPLOY_PATH }}"
+            fi
+          EOF
+  
+      - name: Copy docker-compose file to server
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          sshpass -e scp -P ${{ secrets.SERVER_PORT }} docker-compose.production.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.DEPLOY_PATH }}/
+  
       - name: Deploy to server
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
         run: |
-          DEPLOY_PATH=${{ secrets.DEPLOY_PATH }}
           sshpass -e ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << EOF
-            if [ ! -d "$DEPLOY_PATH" ]; then
-              echo "Directory $DEPLOY_PATH does not exist. Creating..."
-              mkdir -p "$DEPLOY_PATH"
-            fi
-            cd "$DEPLOY_PATH" || exit 1
-      
+            cd "${{ secrets.DEPLOY_PATH }}" || exit 1
+  
             echo "[1/3] Pulling latest images..."
             sudo docker compose -f docker-compose.production.yml pull
-      
+  
             echo "[2/3] Restarting containers..."
             sudo docker compose -f docker-compose.production.yml up -d
-      
+  
             echo "[3/3] Cleaning old images..."
             sudo docker image prune -f
           EOF
