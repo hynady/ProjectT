@@ -20,8 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthDataInitializer {
 
     // Định danh email cho user hệ thống
-    public static final String SYSTEM_USER_EMAIL = "system@projectt.local";
-    
+    public static final String SYSTEM_USER_EMAIL = "duyvnlx3016@gmail.com";
+
     // Lưu trữ ID của system user - được cập nhật khi ứng dụng khởi động
     private static final AtomicReference<UUID> systemUserIdRef = new AtomicReference<>();
     
@@ -48,7 +48,7 @@ public class AuthDataInitializer {
                 // Tạo user hệ thống mới
                 EndUser user = new EndUser();
                 user.setEmail(SYSTEM_USER_EMAIL);
-                user.setPassword("$2a$10$3LptJUZgPJfFZTJpfTpZBejpMsEwWcSG3LhcqLOJYpUMAY3tQnYV2"); // Pre-encoded "system"
+                user.setPassword("$2a$10$j0fGaA3EpMb9bX46Ix1kVeUnzFez2vtyokFQbcoEvwh36aE.1Uaaq"); // Pre-encoded "Test@2003"
                 user.setRoles("ROLE_ADMIN");
                 user.setActivatedStatus(UserStatus.ACTIVE);
                 user.setName("System User");
