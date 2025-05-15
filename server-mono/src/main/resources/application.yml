@@ -30,6 +30,8 @@ app:
   googleClientId: ${GOOGLE_CLIENT_ID}
   sepayApiKey: ${SEPAY_API_KEY}
   sepayUrl: ${SEPAY_URL}
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
 
   mail:
     username: ${MAIL_USERNAME:Tack Ticket}
