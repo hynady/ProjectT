@@ -3,8 +3,6 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
     inputs:
       deploy:
@@ -13,165 +11,68 @@ on:
         default: false
 
 jobs:
-  build-and-test:
+  build-and-push:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # Set up JDK for backend
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
+      # Login Docker Hub
+      - name: Docker Hub login
+        uses: docker/login-action@v2
         with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: gradle
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Set up Node.js for frontend
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: 'user-client/package-lock.json'
-
-      # Backend - build and test
-      - name: Build and test backend
-        working-directory: ./server-mono
-        run: |
-          chmod +x ./gradlew
-          ./gradlew build
-
-      # Frontend - install dependencies, lint, and build
-      - name: Install frontend dependencies
-        working-directory: ./user-client
-        run: npm ci
-
-      - name: Build frontend
-        working-directory: ./user-client
-        run: npm run build
-
-      # Cache Docker layers
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
-      # Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      # Build and push Docker images (backend)
-      - name: Build backend Docker image
+      # Build & push backend
+      - name: Build & push backend image
         uses: docker/build-push-action@v4
         with:
           context: ./server-mono
-          push: false
-          load: true
-          tags: projectt-backend:latest
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          push: true
+          tags: hnduy160103/projectt-backend:latest
 
-      # Build and push Docker images (frontend)
-      - name: Build frontend Docker image
+      # Build & push frontend
+      - name: Build & push frontend image
         uses: docker/build-push-action@v4
         with:
           context: ./user-client
-          push: false
-          load: true
-          tags: projectt-frontend:latest
+          push: true
+          tags: hnduy160103/projectt-frontend:latest
           build-args: |
             VITE_API_BASE_URL=/v1
             VITE_WS_BASE_URL=/ws
             VITE_ENABLE_MOCK=false
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-      
-      # Temp fix for cache
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   deploy:
-    needs: build-and-test
+    needs: build-and-push
     if: github.event_name == 'push' || github.event.inputs.deploy == 'true'
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v3
-      
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
       - name: Add known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-      
+          ssh-keyscan -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
       - name: Deploy to server
         env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
         run: |
-          # Create deployment package
-          mkdir -p deploy
-          cp -r server-mono deploy/
-          cp -r user-client deploy/
-          cp docker-compose.production.yml deploy/
-          cp bin/deploy.sh deploy/
-          chmod +x deploy/deploy.sh
-          
-          # Create .env file with secrets
-          echo "APP_NAME=${{ secrets.APP_NAME }}" > deploy/.env
-          echo "DB_DRIVER=${{ secrets.DB_DRIVER }}" >> deploy/.env
-          echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> deploy/.env
-          echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> deploy/.env
-          echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> deploy/.env
-          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> deploy/.env
-          echo "JPA_DIALECT=${{ secrets.JPA_DIALECT }}" >> deploy/.env
-          echo "JPA_DDL_AUTO=${{ secrets.JPA_DDL_AUTO }}" >> deploy/.env
-          echo "KAFKA_CONSUMER_GROUP_ID=${{ secrets.KAFKA_CONSUMER_GROUP_ID }}" >> deploy/.env
-          echo "KAFKA_CONSUMER_AUTO_OFFSET_RESET=${{ secrets.KAFKA_CONSUMER_AUTO_OFFSET_RESET }}" >> deploy/.env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> deploy/.env
-          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> deploy/.env
-          echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" >> deploy/.env
-          echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> deploy/.env
-          echo "MAIL_SENDER_NAME=${{ secrets.MAIL_SENDER_NAME }}" >> deploy/.env
-          echo "SEPAY_API_KEY=${{ secrets.SEPAY_API_KEY }}" >> deploy/.env
-          echo "SEPAY_URL=${{ secrets.SEPAY_URL }}" >> deploy/.env
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> deploy/.env
-          echo "VITE_GOOGLE_MAPS_API_KEY=${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}" >> deploy/.env
-          echo "VITE_ENABLE_MOCK=${{ secrets.VITE_ENABLE_MOCK }}" >> deploy/.env
-          echo "VITE_CLOUDINARY_CLOUD_NAME=${{ secrets.VITE_CLOUDINARY_CLOUD_NAME }}" >> deploy/.env
-          echo "VITE_CLOUDINARY_UPLOAD_PRESET=${{ secrets.VITE_CLOUDINARY_UPLOAD_PRESET }}" >> deploy/.env
-          echo "VITE_CLOUDINARY_API_KEY=${{ secrets.VITE_CLOUDINARY_API_KEY }}" >> deploy/.env
-          
-          # Transfer files to the server
-          tar -czf deploy.tar.gz deploy
-          scp deploy.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~
-          
-          # Execute deployment on remote server
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            # Extract files
-            mkdir -p ${{ secrets.DEPLOY_PATH }}
-            tar -xzf deploy.tar.gz -C ${{ secrets.DEPLOY_PATH }}
-            
-            # Navigate to deploy directory and run deployment script
-            cd ${{ secrets.DEPLOY_PATH }}/deploy
-            docker-compose -f docker-compose.production.yml down || true
-            docker-compose -f docker-compose.production.yml up -d --build
-            
-            # Clean up
-            rm -f ~/deploy.tar.gz
+          sshpass -e ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            echo "[1/3] Pulling latest images..."
+            docker compose -f docker-compose.production.yml pull
+
+            echo "[2/3] Restarting containers..."
+            docker compose -f docker-compose.production.yml up -d
+
+            echo "[3/3] Cleaning old images..."
+            docker image prune -f
           EOF
-          
-          echo "Deployment completed successfully!"

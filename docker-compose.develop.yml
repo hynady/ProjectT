@@ -2,23 +2,35 @@
 # Create a .env file in the same directory as this docker-compose.yml with all secrets
 # DO NOT commit this .env file to version control
 
-services:
+services:  # Frontend React Vite application
   frontend:
-    image: hnduy160103/projectt-frontend:latest
+    build:
+      context: ./user-client
+      dockerfile: Dockerfile
+      args:
+        # Chuyển sang sử dụng đường dẫn tương đối thay vì tuyệt đối
+        - VITE_API_BASE_URL=/v1
+        - VITE_WS_BASE_URL=/ws
+        - VITE_GOOGLE_MAPS_API_KEY=${VITE_GOOGLE_MAPS_API_KEY}
+        - VITE_ENABLE_MOCK=${VITE_ENABLE_MOCK}
+        - VITE_CLOUDINARY_CLOUD_NAME=${VITE_CLOUDINARY_CLOUD_NAME}
+        - VITE_CLOUDINARY_UPLOAD_PRESET=${VITE_CLOUDINARY_UPLOAD_PRESET}
+        - VITE_CLOUDINARY_API_KEY=${VITE_CLOUDINARY_API_KEY}
     restart: unless-stopped
     ports:
-      - "30000:80"
+      - "30000:80"  # Đổi port host từ 80 thành 30000
     networks:
       - frontend-network
     depends_on:
-      - backend
-
+      - backend  # Backend Spring Boot application
   backend:
-    image: hnduy160103/projectt-backend:latest
+    build:
+      context: ./server-mono
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8080:8080"
-      - "9090:9090"
+      - "8080:8080"  # REST API
+      - "9090:9090"  # gRPC
     environment:
       # App config
       - APP_NAME=${APP_NAME}
@@ -51,7 +63,7 @@ services:
       - GRPC_AUTH_HOST=0.0.0.0
       - GRPC_AUTH_PORT=9090
       - GRPC_TICKET_HOST=0.0.0.0
-      - GRPC_TICKET_PORT=9090
+      - GRPC_TICKET_PORT=9090      # Payment integration
       - SEPAY_API_KEY=${SEPAY_API_KEY}
       - SEPAY_URL=${SEPAY_URL}
       # Frontend URL for CORS (using the public URL where frontend is accessible)
@@ -61,7 +73,7 @@ services:
       - backend-network
     depends_on:
       mysql:
-        condition: service_healthy
+        condition: service_healthy  # Đảm bảo MySQL đã hoàn toàn sẵn sàng trước khi khởi động backend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
@@ -73,7 +85,6 @@ services:
         limits:
           cpus: '1'
           memory: 1G
-
   mysql:
     image: mysql:8.0
     restart: unless-stopped
