@@ -1,0 +1,180 @@
+# Use external secrets file for sensitive data
+# Create a .env file in the same directory as this docker-compose.yml with all secrets
+# DO NOT commit this .env file to version control
+
+services:  # Frontend React Vite application
+  frontend:
+    build:
+      context: ./user-client
+      dockerfile: Dockerfile
+      args:
+        # Chuyển sang sử dụng đường dẫn tương đối thay vì tuyệt đối
+        - VITE_API_BASE_URL=/v1
+        - VITE_WS_BASE_URL=/ws
+        - VITE_GOOGLE_MAPS_API_KEY=${VITE_GOOGLE_MAPS_API_KEY}
+        - VITE_ENABLE_MOCK=${VITE_ENABLE_MOCK}
+        - VITE_CLOUDINARY_CLOUD_NAME=${VITE_CLOUDINARY_CLOUD_NAME}
+        - VITE_CLOUDINARY_UPLOAD_PRESET=${VITE_CLOUDINARY_UPLOAD_PRESET}
+        - VITE_CLOUDINARY_API_KEY=${VITE_CLOUDINARY_API_KEY}
+    restart: unless-stopped
+    ports:
+      - "30000:80"  # Đổi port host từ 80 thành 30000
+    networks:
+      - frontend-network
+    depends_on:
+      - backend  # Backend Spring Boot application
+  backend:
+    build:
+      context: ./server-mono
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"  # REST API
+      - "9090:9090"  # gRPC
+    environment:
+      # App config
+      - APP_NAME=${APP_NAME}
+      # Database
+      - DB_DRIVER=${DB_DRIVER}
+      - DB_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true
+      - DB_USERNAME=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      # JPA
+      - JPA_DIALECT=${JPA_DIALECT}
+      - JPA_DDL_AUTO=${JPA_DDL_AUTO}
+      # Kafka
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_CONSUMER_GROUP_ID=${KAFKA_CONSUMER_GROUP_ID}
+      - KAFKA_CONSUMER_AUTO_OFFSET_RESET=${KAFKA_CONSUMER_AUTO_OFFSET_RESET}
+      # Debug & Logging
+      - SPRING_PROFILES_ACTIVE=production
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_TICKET=DEBUG
+      # Security (using Docker secrets)
+      - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      # Mail
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_SENDER_NAME=${MAIL_SENDER_NAME}
+      # gRPC (configured for container networking)
+      - GRPC_OCCA_HOST=0.0.0.0
+      - GRPC_OCCA_PORT=9090
+      - GRPC_AUTH_HOST=0.0.0.0
+      - GRPC_AUTH_PORT=9090
+      - GRPC_TICKET_HOST=0.0.0.0
+      - GRPC_TICKET_PORT=9090      # Payment integration
+      - SEPAY_API_KEY=${SEPAY_API_KEY}
+      - SEPAY_URL=${SEPAY_URL}
+      # Frontend URL for CORS (using the public URL where frontend is accessible)
+      - FRONTEND_URL=${FRONTEND_URL}
+    networks:
+      - frontend-network
+      - backend-network
+    depends_on:
+      mysql:
+        condition: service_healthy  # Đảm bảo MySQL đã hoàn toàn sẵn sàng trước khi khởi động backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    ports:
+      - "33306:3306"  # Đổi port host từ 3306 thành 33306 để tránh xung đột
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+
+  # Zookeeper (for Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - backend-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 512M
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    ports:
+      - "29092:29092"
+    networks:
+      - backend-network
+    # Thêm healthcheck để delay 40s sau khi Zookeeper khởi động
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 20s
+      retries: 5
+      start_period: 40s  # Delay 40s để đảm bảo Zookeeper đã sẵn sàng
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+
+volumes:
+  mysql_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  zookeeper_logs:
+    driver: local
+  kafka_data:
+    driver: local
+
+networks:
+  frontend-network:
+    driver: bridge
+  backend-network:
+    driver: bridge
