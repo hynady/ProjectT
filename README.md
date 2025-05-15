@@ -7,6 +7,7 @@
 - [Features](#features)
 - [Showcases](#showcases)
 - [Technologies](#technologies)
+- [Deployment](#deployment)
 - [License](#license)
 - [Contact](#contact)
 
@@ -36,6 +37,17 @@ https://github.com/user-attachments/assets/6870bd6f-2b10-4f3d-8af3-472d49c7c093
 - **SlateJS** (Article handler)
 - **Kafka** (Message Broker)
 - **Docker** (Deployment & Containerization)
+
+## Deployment
+
+This project includes deployment scripts in the `bin` directory for easy setup and management:
+
+- `bin/help.sh` or `bin\help.cmd` - View all available commands
+- `bin/create-env.sh` or `bin\create-env.cmd` - Create environment configuration
+- `bin/deploy.sh` or `bin\deploy.cmd` - Build and deploy with Docker Compose
+
+For detailed deployment instructions, see [PRODUCTION-DEPLOYMENT.md](PRODUCTION-DEPLOYMENT.md).
+
 ## License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE.md) file for details.
@@ -43,4 +55,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE.m
 ## Contact
 
 **Huynh Nam Duy**  
-📧 [hnduy.work@gmail.com](mailto:hnduy.work@gmail.com)  
+📧 [hnduy.work@gmail.com](mailto:hnduy.work@gmail.com
