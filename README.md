@@ -55,4 +55,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE.m
 ## Contact
 
 **Huynh Nam Duy**  
-📧 [hnduy.work@gmail.com](mailto:hnduy.work@gmail.com)
+📧 [hnduy.work@gmail.com](mailto:hnduy.work@gmail.com

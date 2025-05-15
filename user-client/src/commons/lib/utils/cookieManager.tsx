@@ -7,8 +7,9 @@ class CookieManager {
   private static readonly SK_KEY = 'sk_auth';
   private static readonly defaultOptions = {
     path: '/',
-    secure: true,
-    sameSite: 'strict' as const,
+    // Only set secure:true when in production or HTTPS
+    secure: window.location.protocol === 'https:',
+    sameSite: 'lax' as const, // Changed from 'strict' to 'lax' for better compatibility
     maxAge: 86400 // 24 hours
   };
   private static readonly AUTH_TOKEN = 'AUTH-TOKEN';
@@ -85,7 +86,23 @@ class CookieManager {
         return `${key.toLowerCase()}=${value}`;
       })
       .join('; ');
-    document.cookie = `${this.AUTH_TOKEN}=${token}; ${cookieOptions}`;
+    
+    // Debug information
+    console.log('Setting auth token with protocol:', window.location.protocol);
+    console.log('Cookie options:', cookieOptions);
+    console.log('Current cookies:', document.cookie);
+    
+    try {
+      document.cookie = `${this.AUTH_TOKEN}=${token}; ${cookieOptions}`;
+      // Verify the cookie was set successfully
+      const savedToken = this.getAuthToken();
+      console.log('Cookie set attempt completed, verification result:', !!savedToken);
+      if (!savedToken) {
+        console.warn('Auth token cookie could not be verified after setting');
+      }
+    } catch (error) {
+      console.error('Error setting auth token cookie:', error);
+    }
   }
 
   /**

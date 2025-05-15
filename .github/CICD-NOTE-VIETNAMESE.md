@@ -24,7 +24,7 @@ Quy trình CI/CD được cấu hình trong file `.github/workflows/ci-cd.yml` t
    - Khi push code lên nhánh `main` hoặc `master` HOẶC
    - Khi kích hoạt thủ công với tùy chọn "Deploy to production"
 - **Các bước thực hiện**:
-   - Thiết lập kết nối SSH đến server sản phẩm
+   - Thiết lập kết nối đến server sản phẩm sử dụng username/password
    - Tạo gói triển khai bao gồm mã nguồn, docker-compose và script triển khai
    - Tạo file `.env` với tất cả biến môi trường cần thiết từ GitHub Secrets
    - Chuyển gói triển khai đến server
@@ -56,10 +56,13 @@ Quy trình CI/CD được cấu hình trong file `.github/workflows/ci-cd.yml` t
 Các secrets sau cần được cấu hình trong mục GitHub repository (Settings > Secrets and variables > Actions):
 
 #### Truy cập Server
-- `SSH_PRIVATE_KEY`: Khóa SSH private để truy cập server
-- `SERVER_HOST`: Tên miền hoặc địa chỉ IP của server
-- `SERVER_USER`: Tên người dùng SSH
+- `SERVER_HOST`: Tên miền hoặc địa chỉ IP của server (vd: 103.130.211.150)
+- `SERVER_PORT`: Cổng SSH của server (vd: 10079)
+- `SERVER_USER`: Tên người dùng SSH (vd: sysadmin)
+- `SERVER_PASSWORD`: Mật khẩu người dùng SSH 
 - `DEPLOY_PATH`: Đường dẫn trên server để triển khai ứng dụng
+
+> **Chú ý**: Trước đây chúng ta sử dụng SSH key để xác thực, nhưng hiện tại chúng ta đã chuyển sang dùng username/password cho việc đăng nhập SSH vào server.
 
 #### Biến môi trường ứng dụng
 - `APP_NAME`: Tên ứng dụng
@@ -98,7 +101,7 @@ Bạn có thể kích hoạt quy trình triển khai thủ công:
 
 Server cần đáp ứng các yêu cầu sau:
 - Đã cài đặt Docker và Docker Compose
-- Có thể truy cập qua SSH bằng khóa SSH đã cung cấp
+- Có thể truy cập qua SSH với thông tin đăng nhập username/password đã cung cấp
 - Có đủ quyền để chạy các container Docker
 - Có dịch vụ MySQL và các dịch vụ khác đã được thiết lập đúng cách
 
