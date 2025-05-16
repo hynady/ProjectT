@@ -45,7 +45,7 @@ public class TicketPurchaseDataInitializer {
         return args -> {
             log.info("Checking if ticket purchase data needs to be initialized...");
             
-            if (ticketRepository.count() <= 1000) {
+            if (ticketRepository.count() <= 200) {
                 log.info("Initializing ticket purchase data...");
                 
                 // Get all ticket classes

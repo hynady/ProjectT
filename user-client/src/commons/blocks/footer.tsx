@@ -5,6 +5,7 @@ import {
   CalendarCheck 
 } from "lucide-react";
 import { cn } from "@/commons/lib/utils/utils";
+import { ServerClock } from "@/commons/components/server-clock";
 
 interface FooterLinkProps {
   href: string;
@@ -79,13 +80,14 @@ const Footer = () => {
         </div>
       </div>
       
-      {/* Bottom Footer */}
-      <div className="border-t">
+      {/* Bottom Footer */}      <div className="border-t">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-2">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-muted-foreground">
               © {currentYear} ProjectT. Đang trong quá trình phát triển.
             </div>
+            
+            <ServerClock />
             
             <div className="flex space-x-4 text-sm">
               <span className="text-muted-foreground">VN | EN</span>

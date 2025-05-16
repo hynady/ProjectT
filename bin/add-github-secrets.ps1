@@ -48,16 +48,13 @@ $secretCount = 0
 
 foreach ($line in $content) {
     # Bo qua dong trong va dong comment
-    if ($line.Trim() -eq "" -or $line.Trim().StartsWith("#") -or $line.Trim().StartsWith("//")) {
+    if ($line.Trim() -eq "" -or $line.Trim().StartsWith("##") -or $line.Trim().StartsWith("//")) {
         continue
     }    if ($line -match "=") {
         $parts = $line.Split("=", 2)
         $key = $parts[0].Trim()
         $value = $parts[1].Trim()
         
-        # Xu ly ky tu escape trong gia tri mot cach an toan hon
-        $value = $value.Replace('\!', '!').Replace('\#', '#').Replace('\)', ')').Replace('\\', '\')
-
         if (![string]::IsNullOrEmpty($key) -and ![string]::IsNullOrEmpty($value)) {
             Write-Host "Them secret: $key" -ForegroundColor White
             Write-Host "  - Gia tri: $value" -ForegroundColor Gray
