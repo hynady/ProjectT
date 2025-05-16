@@ -7,6 +7,7 @@
 - [Features](#features)
 - [Showcases](#showcases)
 - [Technologies](#technologies)
+- [Configuration](#configuration)
 - [Deployment](#deployment)
 - [License](#license)
 - [Contact](#contact)
@@ -38,6 +39,13 @@ https://github.com/user-attachments/assets/6870bd6f-2b10-4f3d-8af3-472d49c7c093
 - **Kafka** (Message Broker)
 - **Docker** (Deployment & Containerization)
 
+## Configuration
+
+The application uses environment variables for configuration. For detailed information:
+
+- [Frontend Environment Configuration](./doc/FRONTEND-ENV-CONFIG.md) - Learn how the frontend uses runtime environment variables
+- [Environment Guide](./doc/ENV-GUIDE.md) - General environment setup guide
+
 ## Deployment
 
 This project includes deployment scripts in the `bin` directory for easy setup and management:
@@ -55,4 +63,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE.m
 ## Contact
 
 **Huynh Nam Duy**  
-📧 [hnduy.work@gmail.com](mailto:hnduy.work@gmail.com
+📧 [hnduy.work@gmail.com](mailto:hnduy.work@gmail.com)

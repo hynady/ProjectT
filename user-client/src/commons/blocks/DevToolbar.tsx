@@ -1,20 +1,24 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {Popover, PopoverContent, PopoverTrigger} from "@radix-ui/react-popover";
 import {Card, CardContent, CardHeader, CardTitle} from "@/commons/components/card.tsx";
 import {Button} from "@/commons/components/button.tsx";
+import { env } from '@/env-config';
 
 
 const DevToolbar: React.FC = () => {
   // Chỉ hiển thị trong môi trường phát triển
-  if (import.meta.env.MODE !== "production") {
+  // For production we'll use the window object to check mode
+  const mode = typeof window !== 'undefined' ? (window as any).__ENV?.MODE : import.meta.env.MODE;
+  if (mode !== "production") {
     return null;
   }
 
   const envVariables = {
-    "App Name": import.meta.env.VITE_API_BASE_URL || "Not set",
-    "API URL": import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "Not set",
-    "Debug Mode": import.meta.env.VITE_DEBUG || "false",
-    "Environment Mode": import.meta.env.MODE || "Not set",
-    "Enable Mock": import.meta.env.VITE_ENABLE_MOCK || "Not set",
+    "App Name": env.VITE_API_BASE_URL || "Not set",
+    "API URL": env.VITE_GOOGLE_MAPS_API_KEY || "Not set", 
+    "Debug Mode": (typeof window !== 'undefined' ? (window as any).__ENV?.VITE_DEBUG : import.meta.env.VITE_DEBUG) || "false",
+    "Environment Mode": mode || "Not set",
+    "Enable Mock": env.VITE_ENABLE_MOCK || "Not set",
   };
 
   return (

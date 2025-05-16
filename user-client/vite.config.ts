@@ -12,4 +12,17 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Enable environment variable replacement in index.html
+  envPrefix: 'VITE_',
+  build: {
+    // Generate a separate env config file that can be loaded at runtime
+    rollupOptions: {
+      output: {
+        // Enable manual chunks to separate env config
+        manualChunks: {
+          'env-config': ['./src/env-config.ts']
+        }
+      }
+    }
+  }
 })

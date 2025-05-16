@@ -8,6 +8,11 @@ param(
     [string]$Repo
 )
 
+if ($Repo -notmatch "^[\w-]+\/[\w.-]+$") {
+    Write-Host "ERROR: Tham số repo không hợp lệ. Định dạng đúng là: [OWNER]/[REPO] (ví dụ: hynady/ProjectT)" -ForegroundColor Red
+    exit 1
+}
+
 # Kiem tra GitHub CLI da duoc cai dat
 try {
     $ghVersion = gh --version

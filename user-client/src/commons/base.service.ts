@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axiosInstance from "@/commons/lib/utils/axios";
+import { env } from '@/env-config';
 
 export class BaseService {
   protected isMockEnabled: boolean;
 
   constructor() {
-    this.isMockEnabled = import.meta.env.VITE_ENABLE_MOCK === 'true';
+    this.isMockEnabled = env.VITE_ENABLE_MOCK === 'true';
   }
 
   protected async request<T>(

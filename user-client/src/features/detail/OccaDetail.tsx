@@ -14,6 +14,7 @@ import { AlertCircle } from 'lucide-react';
 import { OccaOverviewSkeleton } from "./skeletons/OccaOverviewSkeleton";
 import { OccaShowsSkeleton } from "./skeletons/OccaShowsSkeleton";
 import { OccaGallerySkeleton, OccaLocationSkeleton } from "./skeletons/OccaLocationSkeleton";
+import { env } from '@/env-config';
 import NotFoundPage from '@/commons/blocks/NotFoundPage.tsx';
 import { usePreviewData } from '@/features/organize/components/preview/PreviewOccaDetail.tsx';
 
@@ -27,7 +28,7 @@ const ErrorMessage = ({ message, className = '' }: { message: string, className?
 export default function OccaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const apiKey = env.VITE_GOOGLE_MAPS_API_KEY;
   
   // Luôn gọi các hook cơ bản trước
   const detailData = useOccaDetail(id || '');

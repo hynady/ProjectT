@@ -22,7 +22,7 @@ class ServerTimeService extends BaseService {
     try {
       const response = await this.request<ServerTimeResponse>({
         method: 'GET',
-        url: '/v1/common/server-time',
+        url: '/common/server-time',
         mockResponse: () => new Promise((resolve) => {
           // Mock response with current time
           setTimeout(() => {
@@ -31,6 +31,7 @@ class ServerTimeService extends BaseService {
         })
       });
       
+      // Parse the ISO string to a Date object
       return new Date(response.serverTime);
     } catch (error) {
       console.error("Failed to fetch server time:", error);

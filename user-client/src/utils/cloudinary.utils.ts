@@ -21,8 +21,10 @@ export interface CloudinaryResponse {
 /**
  * Initialize Cloudinary instance with configuration from environment variables
  */
+import { env } from '@/env-config';
+
 export function getCloudinaryInstance() {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'your-cloud-name';
+  const cloudName = env.VITE_CLOUDINARY_CLOUD_NAME || 'your-cloud-name';
   
   return {
     cloudName
@@ -39,10 +41,9 @@ export function getCloudinaryInstance() {
 export async function uploadImageToCloudinary(
   imageFile: File,
   folder: string = 'general'
-): Promise<CloudinaryResponse> {
-  // Cloudinary cloud name and upload preset from environment variables
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+): Promise<CloudinaryResponse> {  // Cloudinary cloud name and upload preset from environment variables
+  const cloudName = env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = env.VITE_CLOUDINARY_UPLOAD_PRESET;
   
   if (!cloudName || !uploadPreset) {
     console.error("Cloudinary configuration missing");

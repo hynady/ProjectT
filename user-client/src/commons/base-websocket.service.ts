@@ -1,4 +1,5 @@
 import { EventEmitter } from '@/commons/lib/utils/event-emitter';
+import { env } from '@/env-config';
 
 // Connection status constants
 export enum WebSocketStatus {
@@ -33,13 +34,12 @@ export abstract class BaseWebSocketService {
   protected endpoint: string;
   protected isMockEnabled: boolean;
   protected wsBaseUrl: string | null = null;
-
   constructor() {
-    this.isMockEnabled = import.meta.env.VITE_ENABLE_MOCK === 'true';
+    this.isMockEnabled = env.VITE_ENABLE_MOCK === 'true';
     this.maxReconnectAttempts = 5;
     this.endpoint = '';
     // Set default WebSocket base URL from environment variable if available
-    this.wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || null;
+    this.wsBaseUrl = env.VITE_WS_BASE_URL || null;
   }
 
   /**

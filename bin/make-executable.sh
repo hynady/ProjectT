@@ -7,4 +7,8 @@ cd "$PROJECT_ROOT"
 
 echo "Making bin scripts executable..."
 chmod +x bin/*.sh
+
+echo "Making user-client entrypoint script executable..."
+chmod +x user-client/entrypoint.sh
+
 echo "Done!"

@@ -5,8 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -22,8 +21,8 @@ public class ServerTimeController {
      */
     @GetMapping("/server-time")
     public ResponseEntity<?> getServerTime() {
-        ZonedDateTime now = ZonedDateTime.now();
-        String formattedTime = now.format(DateTimeFormatter.ISO_DATE_TIME);
+        // Use Instant which is designed for machine-readable timestamps
+        String formattedTime = Instant.now().toString();
         
         return ResponseEntity.ok(Map.of(
             "serverTime", formattedTime
