@@ -23,14 +23,14 @@ public class SecurityConfig {
             }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {        http
             .csrf(AbstractHttpConfigurer::disable)  // Disable CSRF protection
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // Stateless session management
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()  // Allow OPTIONS requests
+                .requestMatchers("/ws/**").permitAll()  // Allow all WebSocket connections
                 .requestMatchers("/v1/admin/**").denyAll()  // Chỉ chặn admin endpoints
                 .requestMatchers("/v1/booking").authenticated()  // Yêu cầu xác thực cho /v1/booking
                                 .anyRequest().permitAll()  // Allow all other requests

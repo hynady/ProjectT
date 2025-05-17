@@ -63,7 +63,8 @@ services:  # Frontend React Vite application
       - GRPC_AUTH_HOST=0.0.0.0
       - GRPC_AUTH_PORT=9090
       - GRPC_TICKET_HOST=0.0.0.0
-      - GRPC_TICKET_PORT=9090      # Payment integration
+      - GRPC_TICKET_PORT=9090
+      # Payment integration
       - SEPAY_API_KEY=${SEPAY_API_KEY}
       - SEPAY_URL=${SEPAY_URL}
       # Frontend URL for CORS (using the public URL where frontend is accessible)

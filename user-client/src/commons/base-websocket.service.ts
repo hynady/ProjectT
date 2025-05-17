@@ -44,8 +44,7 @@ export abstract class BaseWebSocketService {
 
   /**
    * Create connection to WebSocket server
-   */
-  public connect(config: WebSocketConfig): void {
+   */  public connect(config: WebSocketConfig): void {
     this.resourceId = config.resourceId;
     this.endpoint = config.endpoint;
     this.maxReconnectAttempts = config.maxReconnectAttempts || this.maxReconnectAttempts;
@@ -61,22 +60,41 @@ export abstract class BaseWebSocketService {
     
     // Create WebSocket URL
     const wsUrl = this.buildWebSocketUrl();
+    console.log(`Connecting to WebSocket at URL: ${wsUrl}`);
     
     try {
       this.setStatus(WebSocketStatus.CONNECTING);
       
       if (this.isMockEnabled) {
+        console.log('Using mock WebSocket connection');
         this.simulateConnection();
       } else {
+        // Close existing connection if any
+        if (this.socket && this.socket.readyState !== WebSocket.CLOSED) {
+          console.log('Closing existing WebSocket connection');
+          this.socket.close();
+        }
+        
+        console.log('Creating new WebSocket connection');
         this.socket = new WebSocket(wsUrl);
         
         // Set up event handlers
-        this.socket.onopen = this.handleOpen.bind(this);
+        this.socket.onopen = (event) => {
+          console.log('WebSocket connection opened', event);
+          this.handleOpen();
+        };
+        
         this.socket.onmessage = this.handleMessage.bind(this);
-        this.socket.onclose = this.handleClose.bind(this);
+        
+        this.socket.onclose = (event) => {
+          console.log(`WebSocket connection closed: ${event.code} ${event.reason}`, event);
+          this.handleClose(event);
+        };
+        
         this.socket.onerror = this.handleError.bind(this);
       }
-    } catch {
+    } catch (error) {
+      console.error('Error creating WebSocket connection:', error);
       this.setStatus(WebSocketStatus.ERROR);
       this.attemptReconnect();
     }
@@ -112,7 +130,6 @@ export abstract class BaseWebSocketService {
       return false;
     }
   }
-
   /**
    * Create WebSocket URL based on configuration
    */
@@ -121,17 +138,30 @@ export abstract class BaseWebSocketService {
       throw new Error('Cannot build WebSocket URL: resourceId and endpoint must be provided');
     }
     
+    // Ensure endpoint format is correct
+    const formattedEndpoint = this.endpoint.startsWith('/') ? this.endpoint : `/${this.endpoint}`;
+    
     if (this.wsBaseUrl) {
       // Remove trailing slash if exists
       const baseUrl = this.wsBaseUrl.endsWith('/') ? this.wsBaseUrl.slice(0, -1) : this.wsBaseUrl;
-      // Add leading slash to endpoint if missing
-      const formattedEndpoint = this.endpoint.startsWith('/') ? this.endpoint : `/${this.endpoint}`;
-      return `${baseUrl}${formattedEndpoint}/${this.resourceId}`;
+      
+      // For Docker/Nginx setup, we use relative URLs to avoid cross-origin issues
+      if (baseUrl.startsWith('/')) {
+        return `${baseUrl}${formattedEndpoint}/${this.resourceId}`;
+      }
+      
+      // For absolute URLs, determine protocol based on secure connection
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      if (baseUrl.startsWith('http:') || baseUrl.startsWith('https:')) {
+        // Convert http: to ws: or https: to wss:
+        return baseUrl.replace(/^http(s?):\/\//, `ws$1://`) + `${formattedEndpoint}/${this.resourceId}`;
+      }
+      
+      return `${protocol}//${baseUrl}${formattedEndpoint}/${this.resourceId}`;
     } else {
       // Fallback to deriving from window location
-      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      const formattedEndpoint = this.endpoint.startsWith('/') ? this.endpoint : `/${this.endpoint}`;
-      return `${protocol}://${window.location.host}${formattedEndpoint}/${this.resourceId}`;
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${protocol}//${window.location.host}${formattedEndpoint}/${this.resourceId}`;
     }
   }
 
@@ -158,8 +188,8 @@ export abstract class BaseWebSocketService {
       this.attemptReconnect();
     }
   }
-
   protected handleError(event: Event): void {
+    console.error('WebSocket connection error:', event);
     this.setStatus(WebSocketStatus.ERROR);
     this.events.emit('error', event);
     this.attemptReconnect();

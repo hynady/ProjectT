@@ -65,13 +65,12 @@ export class PaymentWebSocketService extends BaseWebSocketService {
     // Gọi phương thức connect của lớp cha
     super.connect(config);
   }
-
   // Helper method để dễ dàng kết nối với payment ID
   public connectToPayment(paymentId: string, customConfig?: Partial<WebSocketConfig>): void {
     // Chuẩn bị cấu hình mặc định
     const defaultConfig: WebSocketConfig = {
       resourceId: paymentId,
-      endpoint: '/api/payment-ws',
+      endpoint: '/payment-ws',  // Match the new endpoint in the backend
       useMock: this.isMockEnabled
     };
     

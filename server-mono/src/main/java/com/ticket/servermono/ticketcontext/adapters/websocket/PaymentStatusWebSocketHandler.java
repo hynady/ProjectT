@@ -38,28 +38,29 @@ public class PaymentStatusWebSocketHandler extends TextWebSocketHandler {
         this.invoiceRepository = invoiceRepository;
         this.paymentService = paymentService;
     }
-    
-    @Override
+      @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        String path = session.getUri().getPath();
-        String paymentId = extractPaymentIdFromPath(path);
-        
-        if (paymentId == null) {
-            session.close(CloseStatus.BAD_DATA.withReason("Invalid payment ID format"));
-            return;
-        }
-        
-        log.info("WebSocket connection established for payment: {}", paymentId);
-        sessions.put(paymentId, session);
-        
-        // Gửi trạng thái hiện tại
-        Optional<Invoice> invoiceOpt = invoiceRepository.findByPaymentId(paymentId);
-        if (invoiceOpt.isPresent()) {
-            Invoice invoice = invoiceOpt.get();
+        try {
+            String path = session.getUri().getPath();
+            log.info("WebSocket connection attempt with path: {}", path);
+            String paymentId = extractPaymentIdFromPath(path);
             
-            // Bắt đầu theo dõi thanh toán khi kết nối WebSocket thiết lập
-            if (invoice.getStatus() == PaymentStatus.WAITING_PAYMENT) {
-                log.info("Bắt đầu theo dõi thanh toán khi WebSocket được thiết lập: {}", paymentId);
+            if (paymentId == null) {
+                log.warn("Invalid WebSocket connection attempt - could not extract payment ID from path: {}", path);
+                session.close(CloseStatus.BAD_DATA.withReason("Invalid payment ID format"));
+                return;
+            }
+            
+            log.info("WebSocket connection established for payment: {}", paymentId);
+            sessions.put(paymentId, session);
+            
+            // Send current status
+            Optional<Invoice> invoiceOpt = invoiceRepository.findByPaymentId(paymentId);
+            if (invoiceOpt.isPresent()) {
+                Invoice invoice = invoiceOpt.get();
+                
+                // Start tracking payment when WebSocket connection is established
+                if (invoice.getStatus() == PaymentStatus.WAITING_PAYMENT) {                log.info("Starting payment tracking when WebSocket connection is established for payment ID: {}", paymentId);
                 paymentService.startPaymentTracking(
                     paymentId,
                     invoice.getSoTien(),
@@ -69,16 +70,24 @@ public class PaymentStatusWebSocketHandler extends TextWebSocketHandler {
         } else {
             session.close(CloseStatus.BAD_DATA.withReason("Payment ID not found"));
         }
+    } catch (Exception e) {
+        log.error("Error handling WebSocket connection", e);
+        session.close(CloseStatus.SERVER_ERROR.withReason("Internal server error"));
     }
+}
     
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        String path = session.getUri().getPath();
-        String paymentId = extractPaymentIdFromPath(path);
+        try {
+            String path = session.getUri().getPath();
+            String paymentId = extractPaymentIdFromPath(path);
         
         if (paymentId != null) {
             sessions.remove(paymentId);
             log.info("WebSocket connection closed for payment: {}", paymentId);
+        }
+        } catch (Exception e) {
+            log.error("Error handling WebSocket disconnection", e);
         }
     }
     
