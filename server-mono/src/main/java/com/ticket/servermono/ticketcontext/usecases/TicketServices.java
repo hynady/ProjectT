@@ -176,15 +176,22 @@ public class TicketServices {
             // Kiểm tra số lượng vé hợp lệ
             if (item.getQuantity() <= 0) {
                 throw new IllegalArgumentException("Số lượng vé phải lớn hơn 0");
-            }
-
-            // Tìm hạng vé trong show
+            }            // Tìm hạng vé trong show - sử dụng pessimistic lock để tránh race condition
             TicketClass ticketClass = ticketClassRepository.findById(item.getId())
                     .orElseThrow(() -> new EntityNotFoundException("Ticket class not found"));
-
-            // Kiểm tra số lượng vé còn lại
+                    
+            // Giảm lockedCapacity ngay trước khi tính toán số lượng vé khả dụng
+            // nhưng chỉ cho những vé đang cần đặt, không phải toàn bộ lockedCapacity
+            int originalLockedCapacity = ticketClass.getLockedCapacity();
+            ticketClass.setLockedCapacity(Math.max(0, originalLockedCapacity - item.getQuantity()));
+                    
+            // Kiểm tra số lượng vé còn lại sau khi đã giảm lockedCapacity 
+            // để tính toán chính xác số vé khả dụng
             int availableTickets = calculateAvailableTickets(ticketClass);
+            
             if (availableTickets < item.getQuantity()) {
+                // Khôi phục lockedCapacity nếu không đủ vé
+                ticketClass.setLockedCapacity(originalLockedCapacity);
                 throw new IllegalStateException(
                         String.format("Không đủ vé hạng %s. Yêu cầu: %d, Còn lại: %d",
                                 ticketClass.getName(), item.getQuantity(), availableTickets));
@@ -241,8 +248,10 @@ public class TicketServices {
             
             invoiceRepository.save(invoice);
         }
+          final Invoice finalInvoice = invoice;
         
-        final Invoice finalInvoice = invoice;
+        // Lưu các ticketClass đã được thay đổi lockedCapacity trước đó
+        ticketClassRepository.saveAll(ticketClassesToBook.keySet());
         
         // Tất cả kiểm tra đã thành công, tiến hành tạo vé
         List<Ticket> createdTickets = new ArrayList<>();

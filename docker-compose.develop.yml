@@ -16,6 +16,7 @@ services:  # Frontend React Vite application
       - VITE_CLOUDINARY_CLOUD_NAME=${VITE_CLOUDINARY_CLOUD_NAME}
       - VITE_CLOUDINARY_UPLOAD_PRESET=${VITE_CLOUDINARY_UPLOAD_PRESET}
       - VITE_CLOUDINARY_API_KEY=${VITE_CLOUDINARY_API_KEY}
+      - TZ=Asia/Ho_Chi_Minh
     restart: unless-stopped
     ports:
       - "30000:80"  # Đổi port host từ 80 thành 30000
@@ -34,6 +35,7 @@ services:  # Frontend React Vite application
     environment:
       # App config
       - APP_NAME=${APP_NAME}
+      - PURCHASE_REAL=${PURCHASE_REAL}
       # Database
       - DB_DRIVER=${DB_DRIVER}
       - DB_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true
@@ -69,6 +71,7 @@ services:  # Frontend React Vite application
       - SEPAY_URL=${SEPAY_URL}
       # Frontend URL for CORS (using the public URL where frontend is accessible)
       - FRONTEND_URL=${FRONTEND_URL}
+      - TZ=Asia/Ho_Chi_Minh
     networks:
       - frontend-network
       - backend-network
@@ -92,6 +95,7 @@ services:  # Frontend React Vite application
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - TZ=Asia/Ho_Chi_Minh
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d
@@ -105,7 +109,11 @@ services:  # Frontend React Vite application
       start_period: 30s
     ports:
       - "33306:3306"  # Đổi port host từ 3306 thành 33306 để tránh xung đột
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: >
+      --default-authentication-plugin=mysql_native_password 
+      --character-set-server=utf8mb4 
+      --collation-server=utf8mb4_unicode_ci
+      --default-time-zone='Asia/Ho_Chi_Minh'
     deploy:
       resources:
         limits:
@@ -145,6 +153,7 @@ services:  # Frontend React Vite application
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_DELETE_TOPIC_ENABLE: "true"
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      TZ: Asia/Ho_Chi_Minh
     volumes:
       - kafka_data:/var/lib/kafka/data
     ports:

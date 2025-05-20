@@ -68,6 +68,9 @@ public class PaymentService {    private final PaymentStatusNotifier statusNotif
     @Value("${app.sepayApiKey}")
     private String sepayApiKey;
     
+    @Value("${app.purchaseReal:false}")
+    private boolean purchaseReal;
+    
     // Lưu trữ các task đang chạy để tránh trùng lặp
     private final Map<String, ScheduledFuture<?>> runningTrackers = new ConcurrentHashMap<>();
     
@@ -162,26 +165,29 @@ public class PaymentService {    private final PaymentStatusNotifier statusNotif
             
             // Gọi API Sepay để lấy giao dịch mới nhất
             JsonNode transactionsNode = getSepayTransactions(amount);
-            
-            // Xử lý response khi nhận được dữ liệu từ Sepay
-            //TODO:Xoá chú thích để thanh toán tiền thật
-            // if (transactionsNode != null && transactionsNode.isArray()) {
-            //     for (JsonNode transaction : transactionsNode) {
-            //         if (transaction.has("code")) {
-            //             String code = transaction.get("code").asText();
-                        
-            //             // So sánh mã tham chiếu
-            //             if (referenceCode.equals(code)) {
-            //                 log.info("Tìm thấy giao dịch phù hợp: {}", transaction.toString());
-            //                 processSuccessfulTransaction(paymentId);
-            //                 return;
-            //             }
-            //         }
-            //     }
-            // }
-            
-            //TODO:Xoá đoạn này để thanh toán tiền thật
-            processSuccessfulTransaction(paymentId);
+              // Xử lý response khi nhận được dữ liệu từ Sepay
+            if (purchaseReal) {
+                // Chế độ thanh toán thật - kiểm tra giao dịch từ Sepay
+                if (transactionsNode != null && transactionsNode.isArray()) {
+                    for (JsonNode transaction : transactionsNode) {
+                        if (transaction.has("code")) {
+                            String code = transaction.get("code").asText();
+                            
+                            // So sánh mã tham chiếu
+                            if (referenceCode.equals(code)) {
+                                log.info("Tìm thấy giao dịch phù hợp: {}", transaction.toString());
+                                processSuccessfulTransaction(paymentId);
+                                return;
+                            }
+                        }
+                    }
+                }
+                log.info("Không tìm thấy giao dịch phù hợp cho paymentId={}, referenceCode={}", paymentId, referenceCode);
+            } else {
+                // Chế độ test - luôn xử lý giao dịch thành công
+                log.info("Chế độ test payment: Tự động xử lý thành công cho paymentId={}", paymentId);
+                processSuccessfulTransaction(paymentId);
+            }
 
         } catch (Exception e) {
             log.error("Lỗi khi kiểm tra thanh toán: {}", e.getMessage(), e);
