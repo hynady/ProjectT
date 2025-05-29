@@ -1,22 +1,14 @@
 package com.ticket.servermono.ticketcontext.infrastructure.kafka;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ticket.servermono.ticketcontext.domain.enums.PaymentStatus;
-import com.ticket.servermono.ticketcontext.entities.Invoice;
-import com.ticket.servermono.ticketcontext.entities.TicketClass;
-import com.ticket.servermono.ticketcontext.infrastructure.repositories.InvoiceRepository;
-import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
 import com.ticket.servermono.ticketcontext.usecases.PaymentStatusNotifier;
+import com.ticket.servermono.ticketcontext.usecases.TicketLockService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TicketLockEventConsumer {
 
-    private final TicketClassRepository ticketClassRepository;
-    private final InvoiceRepository invoiceRepository;
+    private final TicketLockService ticketLockService;
     private final PaymentStatusNotifier statusNotifier;
-    private final ObjectMapper objectMapper;
-
-    /**
+    private final ObjectMapper objectMapper;    /**
      * Xử lý sự kiện hết hạn khóa vé
      * Được gọi khi một invoice hết hạn, cần giải phóng khóa vé liên quan
      */
@@ -43,10 +32,12 @@ public class TicketLockEventConsumer {
     public void handleTicketLockExpirationEvent(String jsonEvent) {
         try {
             // Đọc JSON thành Map
-            Map<String, Object> event = objectMapper.readValue(jsonEvent, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> event = (Map<String, Object>) objectMapper.readValue(jsonEvent, Map.class);
             
             String paymentId = (String) event.get("paymentId");
-            log.info("Nhận sự kiện hết hạn khóa vé cho paymentId: {}", paymentId);
+            String invoiceId = (String) event.get("invoiceId");
+            log.info("Bắt đầu xử lý sự kiện hết hạn khóa vé cho paymentId: {}, invoiceId: {}", paymentId, invoiceId);
             
             @SuppressWarnings("unchecked")
             Map<String, Integer> ticketDetails = (Map<String, Integer>) event.get("ticketDetails");
@@ -56,42 +47,23 @@ public class TicketLockEventConsumer {
                 return;
             }
             
-            // Thu thập tất cả ticketClassId để áp dụng pessimistic lock
-            List<UUID> ticketClassIds = ticketDetails.keySet().stream()
-                .map(UUID::fromString)
-                .collect(Collectors.toList());
+            log.info("Thông tin vé cần giải phóng: {}", ticketDetails);
             
-            // Sử dụng pessimistic lock để khóa tất cả ticket class một lúc
-            List<TicketClass> ticketClasses = ticketClassRepository.findAllByIdWithPessimisticLock(ticketClassIds);
+            // Sử dụng TicketLockService để xử lý giải phóng khóa
+            String reason = String.format("Hết hạn thanh toán - paymentId: %s, invoiceId: %s", paymentId, invoiceId);
+            boolean success = ticketLockService.unlockTickets(ticketDetails, reason);
             
-            // Tạo map để truy cập dễ dàng
-            Map<UUID, TicketClass> ticketClassMap = ticketClasses.stream()
-                .collect(Collectors.toMap(TicketClass::getId, tc -> tc));
-            
-            // Cập nhật lockedCapacity cho mỗi ticket class
-            for (Map.Entry<String, Integer> entry : ticketDetails.entrySet()) {
-                UUID ticketClassId = UUID.fromString(entry.getKey());
-                int quantity = entry.getValue();
-                
-                TicketClass ticketClass = ticketClassMap.get(ticketClassId);
-                
-                if (ticketClass != null) {
-                    // Đảm bảo không đặt lockedCapacity thành số âm
-                    int newLockedCapacity = Math.max(0, ticketClass.getLockedCapacity() - quantity);
-                    ticketClass.setLockedCapacity(newLockedCapacity);
-                    log.info("Đã giải phóng khóa {} vé cho hạng vé {} (hết hạn)", 
-                            quantity, ticketClass.getName());
-                }
+            if (success) {
+                log.info("Đã hoàn tất giải phóng khóa vé cho paymentId: {}", paymentId);
+                // Gửi thông báo đến client
+                statusNotifier.sendPaymentStatusUpdate(paymentId, "expired", "Đặt vé đã hết hạn");
+            } else {
+                log.error("Không thể giải phóng khóa vé cho paymentId: {}", paymentId);
             }
             
-            // Lưu tất cả các thay đổi trong một transaction
-            ticketClassRepository.saveAll(ticketClasses);
-            
-            // Gửi thông báo đến client (nếu cần)
-            statusNotifier.sendPaymentStatusUpdate(paymentId, "expired", "Đặt vé đã hết hạn");
-            
         } catch (Exception e) {
-            log.error("Lỗi khi xử lý sự kiện hết hạn khóa vé: {}", e.getMessage(), e);
+            log.error("Lỗi nghiêm trọng khi xử lý sự kiện hết hạn khóa vé: {}", e.getMessage(), e);
+            // Không re-throw để tránh Kafka retry liên tục nếu có lỗi JSON parsing
         }
     }
 }

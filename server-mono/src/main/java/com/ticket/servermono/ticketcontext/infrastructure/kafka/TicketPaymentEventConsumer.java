@@ -1,8 +1,8 @@
 package com.ticket.servermono.ticketcontext.infrastructure.kafka;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.kafka.annotation.KafkaListener;
@@ -11,8 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockRequest;
-import com.ticket.servermono.ticketcontext.entities.TicketClass;
-import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
+import com.ticket.servermono.ticketcontext.usecases.TicketLockService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,10 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TicketPaymentEventConsumer {
 
-    private final TicketClassRepository ticketClassRepository;
+    private final TicketLockService ticketLockService;
     private final ObjectMapper objectMapper;
-    
-    /**
+      /**
      * Lắng nghe và xử lý sự kiện thanh toán thành công
      * Trong một transaction riêng để đảm bảo pessimistic lock hoạt động đúng
      */
@@ -37,7 +35,8 @@ public class TicketPaymentEventConsumer {
     public void handlePaymentSuccessEvent(String jsonEvent) {
         try {
             // Đọc JSON thành Map
-            Map<String, Object> event = objectMapper.readValue(jsonEvent, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> event = (Map<String, Object>) objectMapper.readValue(jsonEvent, Map.class);
             
             String paymentId = (String) event.get("paymentId");
             log.info("Nhận event PAYMENT_SUCCESS cho paymentId: {}", paymentId);
@@ -55,15 +54,27 @@ public class TicketPaymentEventConsumer {
                     .map(this::convertToTicketItem)
                     .collect(Collectors.toList());
             
-            // Xử lý giải phóng khóa vé trong transaction riêng
-            releaseTicketLocks(ticketItems);
+            // Chuyển đổi sang Map để sử dụng TicketLockService
+            Map<String, Integer> ticketDetails = new HashMap<>();
+            for (BookingLockRequest.TicketItem item : ticketItems) {
+                ticketDetails.put(item.getId(), item.getQuantity());
+            }
+            
+            // Sử dụng TicketLockService để giải phóng khóa vé
+            String reason = String.format("Thanh toán thành công - paymentId: %s", paymentId);
+            boolean success = ticketLockService.convertLockedToSold(ticketDetails, reason);
+            
+            if (success) {
+                log.info("Đã hoàn tất giải phóng khóa vé sau thanh toán thành công cho paymentId: {}", paymentId);
+            } else {
+                log.error("Không thể giải phóng khóa vé sau thanh toán thành công cho paymentId: {}", paymentId);
+            }
             
         } catch (Exception e) {
             log.error("Lỗi khi xử lý event thanh toán thành công: {}", e.getMessage(), e);
         }
     }
-    
-    /**
+      /**
      * Chuyển đổi Map sang đối tượng TicketItem
      */
     private BookingLockRequest.TicketItem convertToTicketItem(Map<String, Object> map) {
@@ -80,42 +91,5 @@ public class TicketPaymentEventConsumer {
         }
         
         return item;
-    }
-    
-    /**
-     * Giải phóng khóa vé sau khi đã tạo vé thành công
-     */
-    private void releaseTicketLocks(List<BookingLockRequest.TicketItem> ticketItems) {
-        try {
-            // Thu thập tất cả ticketClassId để áp dụng pessimistic lock
-            List<UUID> ticketClassIds = ticketItems.stream()
-                .map(item -> UUID.fromString(item.getId()))
-                .collect(Collectors.toList());
-            
-            // Sử dụng pessimistic lock để khóa tất cả ticket class một lúc
-            List<TicketClass> ticketClasses = ticketClassRepository.findAllByIdWithPessimisticLock(ticketClassIds);
-            
-            // Tạo map để truy cập dễ dàng
-            Map<UUID, TicketClass> ticketClassMap = ticketClasses.stream()
-                .collect(Collectors.toMap(TicketClass::getId, tc -> tc));
-            
-            // Cập nhật lockedCapacity cho mỗi ticket class
-            for (BookingLockRequest.TicketItem item : ticketItems) {
-                UUID ticketClassId = UUID.fromString(item.getId());
-                TicketClass ticketClass = ticketClassMap.get(ticketClassId);
-                
-                if (ticketClass != null) {
-                    // Đảm bảo không đặt lockedCapacity thành số âm
-                    int newLockedCapacity = Math.max(0, ticketClass.getLockedCapacity() - item.getQuantity());
-                    ticketClass.setLockedCapacity(newLockedCapacity);
-                    log.info("Đã giải phóng khóa {} vé cho hạng vé {}", item.getQuantity(), ticketClass.getName());
-                }
-            }
-            
-            // Lưu tất cả các thay đổi trong một transaction
-            ticketClassRepository.saveAll(ticketClasses);
-        } catch (Exception e) {
-            log.error("Lỗi khi giải phóng khóa vé: {}", e.getMessage(), e);
-        }
     }
 }

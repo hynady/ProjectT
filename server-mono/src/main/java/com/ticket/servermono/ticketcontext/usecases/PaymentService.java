@@ -48,12 +48,14 @@ import occa.ShowDataResponse;
  */
 @Slf4j
 @Service
-public class PaymentService {    private final PaymentStatusNotifier statusNotifier;
+public class PaymentService {
+    private final PaymentStatusNotifier statusNotifier;
     private final InvoiceRepository invoiceRepository;
     private final TicketClassRepository ticketClassRepository;
     private final TicketServices ticketServices;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final TicketLockService ticketLockService;
     
     private final KafkaTemplate<String, Object> kafkaTemplate;// Tên của Kafka topic cho sự kiện thanh toán thành công
     private static final String PAYMENT_SUCCESS_TOPIC = "payment.success";
@@ -86,7 +88,8 @@ public class PaymentService {    private final PaymentStatusNotifier statusNotif
             RestTemplate restTemplate,
             ObjectMapper objectMapper,
             KafkaTemplate<String, Object> kafkaTemplate,
-            OccaGrpcClient occaGrpcClient
+            OccaGrpcClient occaGrpcClient,
+            TicketLockService ticketLockService
             ) {
         this.statusNotifier = statusNotifier;
         this.invoiceRepository = invoiceRepository;
@@ -96,6 +99,7 @@ public class PaymentService {    private final PaymentStatusNotifier statusNotif
         this.objectMapper = objectMapper;
         this.kafkaTemplate = kafkaTemplate;
         this.occaGrpcClient = occaGrpcClient;
+        this.ticketLockService = ticketLockService;
     }
 
     /**
@@ -142,11 +146,26 @@ public class PaymentService {    private final PaymentStatusNotifier statusNotif
                 log.warn("Không tìm thấy invoice với paymentId: {}", paymentId);
                 stopPaymentTracking(paymentId);
                 return;
-            }
-            
-            // Kiểm tra xem invoice có hết hạn không
+            }            // Kiểm tra xem invoice có hết hạn không
             if (invoice.getExpiresAt() != null && LocalDateTime.now().isAfter(invoice.getExpiresAt())) {
                 log.info("Invoice đã hết hạn: {}", paymentId);
+                
+                try {
+                    // Unlock tickets khi invoice hết hạn
+                    List<BookingLockRequest.TicketItem> ticketItems = getTicketItemsFromInvoice(paymentId);
+                    if (ticketItems != null && !ticketItems.isEmpty()) {
+                        Map<String, Integer> ticketMap = new HashMap<>();
+                        for (BookingLockRequest.TicketItem item : ticketItems) {
+                            ticketMap.put(item.getId(), item.getQuantity());
+                        }
+                        
+                        boolean unlockSuccess = ticketLockService.unlockTickets(ticketMap, "Invoice expired: " + paymentId);
+                        log.info("Unlock tickets for expired invoice {}: success={}", paymentId, unlockSuccess);
+                    }
+                } catch (Exception e) {
+                    log.error("Lỗi khi unlock tickets cho invoice hết hạn {}: {}", paymentId, e.getMessage(), e);
+                }
+                
                 invoice.setStatus(PaymentStatus.PAYMENT_EXPIRED);
                 invoiceRepository.save(invoice);
                 updatePaymentStatus(paymentId, "expired");
@@ -305,11 +324,11 @@ public class PaymentService {    private final PaymentStatusNotifier statusNotif
                 // Lấy thông tin từ invoice để tạo vé
                 UUID userId = invoice.getUserId();
                 UUID showId = invoice.getShowId();
-                
-                if (userId != null && showId != null) {
+                  if (userId != null && showId != null) {
+                    List<BookingLockRequest.TicketItem> ticketItems = null;
                     try {
                         // Chuyển BookingLockRequest sang BookingPayload để tạo vé
-                        List<BookingLockRequest.TicketItem> ticketItems = getTicketItemsFromInvoice(paymentId);
+                        ticketItems = getTicketItemsFromInvoice(paymentId);
                         if (ticketItems != null && !ticketItems.isEmpty()) {
                             BookingPayload payload = createBookingPayload(showId, ticketItems);
                               // Tạo vé cho người dùng
@@ -324,6 +343,27 @@ public class PaymentService {    private final PaymentStatusNotifier statusNotif
                         }
                     } catch (Exception e) {
                         log.error("Lỗi khi tạo vé sau thanh toán: {}", e.getMessage(), e);
+                        
+                        // Rollback: unlock tickets nếu tạo vé thất bại
+                        if (ticketItems != null && !ticketItems.isEmpty()) {
+                            try {
+                                Map<String, Integer> ticketMap = new HashMap<>();
+                                for (BookingLockRequest.TicketItem item : ticketItems) {
+                                    ticketMap.put(item.getId(), item.getQuantity());
+                                }
+                                
+                                boolean rollbackSuccess = ticketLockService.unlockTickets(ticketMap, "Rollback failed ticket creation: " + paymentId);
+                                log.warn("Rollback unlock tickets for failed payment {}: success={}", paymentId, rollbackSuccess);
+                            } catch (Exception rollbackEx) {
+                                log.error("Lỗi khi rollback unlock tickets cho payment {}: {}", paymentId, rollbackEx.getMessage(), rollbackEx);
+                            }
+                        }
+                        
+                        // Cập nhật invoice thành failed
+                        invoice.setStatus(PaymentStatus.PAYMENT_FAILED);
+                        invoiceRepository.save(invoice);
+                        updatePaymentStatus(paymentId, "failed");
+                        return; // Exit early
                     }
                 } else {
                     log.warn("Không tìm thấy userId hoặc showId trong invoice: {}", paymentId);
