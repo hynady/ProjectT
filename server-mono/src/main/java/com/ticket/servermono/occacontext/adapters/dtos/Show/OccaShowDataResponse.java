@@ -13,6 +13,7 @@ public class OccaShowDataResponse {
     private LocalDate date;
     private LocalTime time;
     private List<PriceInfo> prices;
+    private String saleStatus;
 
     @Data
     public static class PriceInfo {

@@ -156,7 +156,7 @@ public class ShowServices {
     public List<OccaShowDataResponse> getShowsByOccaId(UUID occaId) {
         List<Show> shows = showRepository.findByOccaIdAndSaleStatusIn(
                 occaId,
-                List.of(SaleStatus.ON_SALE, SaleStatus.SOLD_OUT));
+                List.of(SaleStatus.ON_SALE, SaleStatus.SOLD_OUT, SaleStatus.UPCOMING));
 
         if (shows.isEmpty()) {
             throw new EntityNotFoundException("No shows found for occasion: " + occaId);
@@ -169,6 +169,7 @@ public class ShowServices {
                     response.setId(show.getId());
                     response.setDate(show.getDate());
                     response.setTime(show.getTime());
+                    response.setSaleStatus(formatSaleStatus(show.getSaleStatus()));
 
                     // Get ticket prices and availability for this show
                     List<PriceInfo> prices = getTicketClassesForShow(show.getId());

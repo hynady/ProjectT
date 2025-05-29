@@ -46,6 +46,7 @@ export interface PreviewShowWithPrices extends PreviewShow {
     available: number;
   }[];
   status: string;
+  saleStatus: 'upcoming' | 'ended' | 'on_sale' | 'sold_out';
 }
 
 export interface PreviewHeroData {

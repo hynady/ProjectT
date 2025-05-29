@@ -76,14 +76,14 @@ const PreviewOccaDetail = () => {
           time: show.time || "19:00",
           // Attach prices to each show
           prices: (previewData.tickets || [])
-            .filter((ticket) => ticket.showId === show.id)
-            .map((ticket) => ({
+            .filter((ticket) => ticket.showId === show.id)            .map((ticket) => ({
               id: ticket.id || `preview-ticket-${Math.random().toString(36).substring(2, 11)}`,
               type: ticket.type || "Vé Standard",
               price: ticket.price || 200000,
               available: ticket.availableQuantity || 100
             })),
-          status: "available"
+          status: "available",
+          saleStatus: 'on_sale' as const
         }));
         
         // Generate gallery items

@@ -52,10 +52,17 @@ export default function OccaDetail() {
 
   if (!isPreview && typeof hero.error === 'object' && hero.error?.status === 404) {
     return <NotFoundPage/>;
-  }
-
-  // Ẩn OccaBottomCTA trong chế độ preview
-  const showBottomCTA = !isPreview && shows.data;
+  }  // Ẩn OccaBottomCTA trong chế độ preview hoặc khi không có show đang bán
+  const showBottomCTA = !isPreview && shows.data && 
+    shows.data.some(show => {
+      if ('saleStatus' in show) {
+        return show.saleStatus === 'on_sale' && show.prices.some((price: { available: number }) => price.available > 0);
+      } else {
+        // For preview data without saleStatus
+        const previewShow = show as { prices: { available: number }[] };
+        return previewShow.prices.some((price: { available: number }) => price.available > 0);
+      }
+    });
 
   return (
     <div className="min-h-screen bg-background">

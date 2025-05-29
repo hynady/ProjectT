@@ -15,6 +15,7 @@ export interface OccaShowUnit {
   id: string;
   date: string;
   time: string;
+  saleStatus: 'upcoming' | 'ended' | 'on_sale' | 'sold_out';
   prices: {
     id: string;
     type: string;
