@@ -60,10 +60,24 @@ service ShowIdServices {
     rpc GetShowIdsByOccaId(OccaIdRequest) returns (ShowIdResponse);
 }
 
+service ShowAuthCodeService {
+    rpc getAuthCode(ShowAuthCodeRequest) returns (ShowAuthCodeGrpcResponse);
+    rpc refreshAuthCode(ShowAuthCodeRequest) returns (ShowAuthCodeGrpcResponse);
+}
+
 message OccaIdRequest {
     string occa_id = 1;
 }
 
 message ShowIdResponse {
     repeated string show_ids = 1;
+}
+
+message ShowAuthCodeRequest {
+    string show_id = 1;
+}
+
+message ShowAuthCodeGrpcResponse {
+    string auth_code = 1;
+    string expires_at = 2;
 }

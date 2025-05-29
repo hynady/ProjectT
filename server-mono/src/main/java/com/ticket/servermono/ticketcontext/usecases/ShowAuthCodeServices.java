@@ -2,10 +2,7 @@ package com.ticket.servermono.ticketcontext.usecases;
 
 import com.ticket.servermono.ticketcontext.adapters.dtos.ShowAuthCodeResponse;
 import com.ticket.servermono.ticketcontext.entities.ShowAuthCode;
-import com.ticket.servermono.ticketcontext.entities.TicketClass;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.ShowAuthCodeRepository;
-import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,52 +21,37 @@ import java.util.UUID;
 public class ShowAuthCodeServices {
 
     private final ShowAuthCodeRepository showAuthCodeRepository;
-    private final TicketClassRepository ticketClassRepository;
     
     // Characters used for generating random auth codes
     private static final String AUTH_CODE_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final int AUTH_CODE_LENGTH = 6;
     private static final SecureRandom random = new SecureRandom();
-
+    
     /**
-     * Get the auth code for a show, creating it if it doesn't exist
+     * Get the auth code for a show directly, without authorization checks
+     * This method is intended to be called from gRPC after authorization is verified
      * @param showId The ID of the show
-     * @param userId The ID of the user requesting the code
      * @return The auth code response
      */
     @Transactional
-    public ShowAuthCodeResponse getAuthCode(UUID showId, UUID userId) {
-        log.info("Getting auth code for show {} requested by user {}", showId, userId);
+    public ShowAuthCodeResponse getAuthCodeDirect(UUID showId) {
+        log.info("Getting auth code directly for show {}", showId);
         
-        // Check if the user is authorized to view this code by checking if they created any ticket class for this show
-        boolean isAuthorized = checkUserAuthorization(userId, showId);
-        
-        if (!isAuthorized) {
-            throw new SecurityException("User is not authorized to access this show's auth code");
-        }
-        
-        // Get or create auth code
+        // Get or create auth code without authorization check
         ShowAuthCode authCode = getOrCreateAuthCode(showId);
         
         return buildResponse(authCode);
     }
     
     /**
-     * Manually refresh the auth code for a show
+     * Refresh the auth code for a show directly, without authorization checks
+     * This method is intended to be called from gRPC after authorization is verified
      * @param showId The ID of the show
-     * @param userId The ID of the user requesting the refresh
      * @return The refreshed auth code response
      */
     @Transactional
-    public ShowAuthCodeResponse refreshAuthCode(UUID showId, UUID userId) {
-        log.info("Refreshing auth code for show {} requested by user {}", showId, userId);
-        
-        // Check if the user is authorized to refresh this code
-        boolean isAuthorized = checkUserAuthorization(userId, showId);
-        
-        if (!isAuthorized) {
-            throw new SecurityException("User is not authorized to refresh this show's auth code");
-        }
+    public ShowAuthCodeResponse refreshAuthCodeDirect(UUID showId) {
+        log.info("Refreshing auth code directly for show {}", showId);
         
         // Get existing auth code or create a new one
         ShowAuthCode authCode = getOrCreateAuthCode(showId);
@@ -80,26 +62,7 @@ public class ShowAuthCodeServices {
         
         return buildResponse(authCode);
     }
-    
-    /**
-     * Check if a user is authorized to access a show's auth code
-     * The user must have created at least one ticket class for the show
-     * @param userId The ID of the user
-     * @param showId The ID of the show
-     * @return true if authorized, false otherwise
-     */
-    private boolean checkUserAuthorization(UUID userId, UUID showId) {
-        List<TicketClass> ticketClasses = ticketClassRepository.findByShowId(showId);
-        
-        if (ticketClasses.isEmpty()) {
-            log.warn("No ticket classes found for show {}", showId);
-            throw new EntityNotFoundException("No ticket classes found for show: " + showId);
-        }
-        
-        // Check if any ticket class was created by this user
-        return ticketClasses.stream()
-                .anyMatch(tc -> userId.equals(tc.getCreatedBy()));
-    }
+  
     
     /**
      * Get an existing auth code or create a new one if it doesn't exist
