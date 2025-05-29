@@ -4,7 +4,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import com.ticket.servermono.common.utils.SecurityUtils;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.AnalyticsOverviewResponse;
@@ -139,17 +141,16 @@ public class OrganizerController {    private final OrganizerServices organizerS
      * @param id ID của sự kiện cần cập nhật
      * @param request Thông tin cập nhật của sự kiện (bao gồm trường categoryId trong basicInfo)
      * @return Thông tin sự kiện sau khi cập nhật
-     */
-    @PutMapping("/occas/{id}")
-    public ResponseEntity<?> updateOcca(@PathVariable String id, @RequestBody CreateOccaRequest request) {
-        try {
+     */    @PutMapping("/occas/{id}")
+    public ResponseEntity<?> updateOcca(@PathVariable String id, @RequestBody CreateOccaRequest request, Principal principal) {        try {
             UUID occaId = UUID.fromString(id);
+            UUID userId = SecurityUtils.getCurrentUserId();
             log.info("Updating occa with ID: {}, title: {}, category: {}", 
                     occaId, 
                     request.getBasicInfo() != null ? request.getBasicInfo().getTitle() : "unchanged",
                     request.getBasicInfo() != null ? request.getBasicInfo().getCategoryId() : "unchanged");
             
-            CreateOccaResponse response = organizerServices.updateOcca(occaId, request);
+            CreateOccaResponse response = organizerServices.updateOcca(occaId, request, userId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             log.error("Invalid UUID format: {}", id, e);

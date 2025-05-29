@@ -38,18 +38,36 @@ public abstract class BaseSQLEntity {
     private UUID createdBy;
 
     @Column(name = "updated_by")
-    private UUID updatedBy;
-
-    @PrePersist
+    private UUID updatedBy;    @PrePersist
     protected void onCreate() {
-        // Lấy userId từ security context hoặc sử dụng ID mặc định nếu không có người dùng đăng nhập
-        createdBy = com.ticket.servermono.common.utils.SecurityUtils.getCurrentUserId();
-        updatedBy = createdBy;
+        // Chỉ set createdBy và updatedBy nếu chưa được set
+        if (createdBy == null) {
+            createdBy = com.ticket.servermono.common.utils.SecurityUtils.getCurrentUserId();
+        }
+        if (updatedBy == null) {
+            updatedBy = createdBy;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        // Lấy userId từ security context hoặc sử dụng ID mặc định nếu không có người dùng đăng nhập
-        updatedBy = com.ticket.servermono.common.utils.SecurityUtils.getCurrentUserId();
+        // Chỉ set updatedBy nếu chưa được set
+        if (updatedBy == null) {
+            updatedBy = com.ticket.servermono.common.utils.SecurityUtils.getCurrentUserId();
+        }
+    }
+    
+    /**
+     * Set createdBy manually (for use in services when security context might not be available)
+     */
+    public void setCreatedBy(UUID userId) {
+        this.createdBy = userId;
+    }
+    
+    /**
+     * Set updatedBy manually (for use in services when security context might not be available)
+     */
+    public void setUpdatedBy(UUID userId) {
+        this.updatedBy = userId;
     }
 }

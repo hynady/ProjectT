@@ -1,8 +1,11 @@
 package com.ticket.servermono.occacontext.adapters.controllers;
 
+import java.security.Principal;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.ticket.servermono.common.utils.SecurityUtils;
 import com.ticket.servermono.occacontext.adapters.dtos.Show.AddShowPayload;
 import com.ticket.servermono.occacontext.adapters.dtos.Show.OccaShowDataResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.Show.OrganizeShowResponse;
@@ -39,21 +42,19 @@ public class ShowController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    
-    /**
+      /**
      * Add a new show to an occasion (exact path match for client implementation)
      */
     @PostMapping("/shows/occas/{occaId}/shows")
-    public ResponseEntity<ShowResponse> addShow(@PathVariable String occaId, @RequestBody AddShowPayload showData) {
+    public ResponseEntity<ShowResponse> addShow(@PathVariable String occaId, @RequestBody AddShowPayload showData, Principal principal) {
         try {
-            ShowResponse createdShow = showServices.addShow(UUID.fromString(occaId), showData);
+            UUID userId = SecurityUtils.getCurrentUserId();
+            ShowResponse createdShow = showServices.addShow(UUID.fromString(occaId), showData, userId);
             return ResponseEntity.ok(createdShow);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
-    }
-
-    /**
+    }    /**
      * Update an existing show for an occasion
      * Endpoint: PUT /organize/occas/{occaId}/shows/{showId}
      */
@@ -61,12 +62,15 @@ public class ShowController {
     public ResponseEntity<ShowResponse> updateShow(
             @PathVariable String occaId, 
             @PathVariable String showId, 
-            @RequestBody AddShowPayload showData) {
+            @RequestBody AddShowPayload showData,
+            Principal principal) {
         try {
+            UUID userId = SecurityUtils.getCurrentUserId();
             ShowResponse updatedShow = showServices.updateShow(
                 UUID.fromString(occaId), 
                 UUID.fromString(showId), 
-                showData
+                showData,
+                userId
             );
             return ResponseEntity.ok(updatedShow);
         } catch (Exception e) {

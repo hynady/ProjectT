@@ -267,16 +267,14 @@ public class ShowServices {
      * @return Created show response
      */
     @Transactional
-    public ShowResponse addShow(UUID occaId, AddShowPayload showData) {
+    public ShowResponse addShow(UUID occaId, AddShowPayload showData, UUID userId) {
         // Find the occasion
         Occa occa = occaRepository.findById(occaId)
                 .orElseThrow(() -> new EntityNotFoundException("Occasion not found with ID: " + occaId));
 
         // Parse date and time
         LocalDate date = LocalDate.parse(showData.getDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        LocalTime time = LocalTime.parse(showData.getTime(), DateTimeFormatter.ofPattern("HH:mm"));
-
-        // Create new show with parsed sale status
+        LocalTime time = LocalTime.parse(showData.getTime(), DateTimeFormatter.ofPattern("HH:mm"));        // Create new show with parsed sale status
         Show show = Show.builder()
                 .occa(occa)
                 .date(date)
@@ -284,6 +282,10 @@ public class ShowServices {
                 .saleStatus(parseSaleStatus(showData.getSaleStatus()))
                 .autoUpdateStatus(showData.getAutoUpdateStatus() != null ? showData.getAutoUpdateStatus() : true)
                 .build();
+
+        // Manually set userId for audit trail
+        show.setCreatedBy(userId);
+        show.setUpdatedBy(userId);
 
         // Save the show
         Show savedShow = showRepository.save(show);
@@ -309,7 +311,7 @@ public class ShowServices {
      * @return Updated show response
      */
     @Transactional
-    public ShowResponse updateShow(UUID occaId, UUID showId, AddShowPayload showData) {
+    public ShowResponse updateShow(UUID occaId, UUID showId, AddShowPayload showData, UUID userId) {
         // Find the show and verify it belongs to the specified occasion
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new EntityNotFoundException("Show not found with ID: " + showId));
@@ -326,12 +328,13 @@ public class ShowServices {
         // Update show fields
         show.setDate(date);
         show.setTime(time);
-        show.setSaleStatus(parseSaleStatus(showData.getSaleStatus()));
-
-        // Update autoUpdateStatus if provided
+        show.setSaleStatus(parseSaleStatus(showData.getSaleStatus()));        // Update autoUpdateStatus if provided
         if (showData.getAutoUpdateStatus() != null) {
             show.setAutoUpdateStatus(showData.getAutoUpdateStatus());
         }
+
+        // Manually set userId for audit trail on updates
+        show.setUpdatedBy(userId);
 
         // Save the updated show
         Show updatedShow = showRepository.save(show);

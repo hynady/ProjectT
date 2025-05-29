@@ -428,7 +428,7 @@ class OrganizeService extends BaseService {
   async refreshAuthCode(showId: string): Promise<AuthCodeResponse> {
     return this.request({
       method: 'POST',
-      url: `/shows/${showId}/refresh-auth-code`,
+      url: `/shows/${showId}/auth-code/refresh`,
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => {
           // Create new expiration date 5 minutes from now

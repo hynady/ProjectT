@@ -1,6 +1,5 @@
 package com.ticket.servermono.occacontext.usecases;
 
-import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -45,7 +44,7 @@ import com.ticket.servermono.occacontext.domain.enums.SaleStatus;
 import com.ticket.servermono.occacontext.entities.Category;
 import com.ticket.servermono.occacontext.entities.Occa;
 import com.ticket.servermono.occacontext.entities.OccaDetailInfo;
-import com.ticket.servermono.occacontext.entities.PersonalTrackingStats;
+
 import com.ticket.servermono.occacontext.entities.Region;
 import com.ticket.servermono.occacontext.entities.Show;
 import com.ticket.servermono.occacontext.entities.Venue;
@@ -59,7 +58,7 @@ import com.ticket.servermono.occacontext.infrastructure.repositories.RegionRepos
 import com.ticket.servermono.occacontext.infrastructure.repositories.ShowRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.VenueRepository;
 import com.ticket.servermono.occacontext.infrastructure.repositories.OccaTrackingStatsRepository;
-import com.ticket.servermono.occacontext.infrastructure.repositories.PersonalTrackingStatsRepository;
+
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -176,9 +175,7 @@ public class OrganizerServices {
             category = categoryRepository.findFirstByName("Âm nhạc")
                 .orElseThrow(() -> new EntityNotFoundException("Default category 'Âm nhạc' not found"));
             log.info("Using default category: Âm nhạc");
-        }
-
-        // 3. Tạo và lưu entity Occa
+        }        // 3. Tạo và lưu entity Occa
         ApprovalStatus approvalStatus = parseApprovalStatus(request.getApprovalStatus());
 
         Occa occa = Occa.builder()
@@ -190,6 +187,10 @@ public class OrganizerServices {
                 .status(request.getStatus())
                 .approvalStatus(approvalStatus)
                 .build();
+        
+        // Set userId cho createdBy và updatedBy
+        occa.setCreatedBy(userId);
+        occa.setUpdatedBy(userId);
 
         Occa savedOcca = occaRepository.save(occa);
 
@@ -226,7 +227,7 @@ public class OrganizerServices {
         if (request.getShows() != null) {
             for (ShowDTO showDTO : request.getShows()) {
                 // Tạo và lưu show mới
-                Show show = createShowFromDTO(showDTO, savedOcca);
+                Show show = createShowFromDTO(showDTO, savedOcca, userId);
 
                 Show savedShow = showRepository.save(show);
                 log.info("Created show with ID: {} for date: {}, time: {}", 
@@ -422,7 +423,7 @@ public class OrganizerServices {
      * @return Thông tin sự kiện sau khi cập nhật
      */
     @Transactional
-    public CreateOccaResponse updateOcca(UUID occaId, CreateOccaRequest request) {
+    public CreateOccaResponse updateOcca(UUID occaId, CreateOccaRequest request, UUID userId) {
         log.info("Updating occa with ID: {}", occaId);
 
         // 1. Tìm entity Occa
@@ -519,8 +520,7 @@ public class OrganizerServices {
             for (ShowDTO showDTO : request.getShows()) {
                 String showId = showDTO.getId();
                 Show show;
-                
-                if (showId != null && !showId.isEmpty() && !showId.startsWith("temp-") && existingShowMap.containsKey(showId)) {
+                  if (showId != null && !showId.isEmpty() && !showId.startsWith("temp-") && existingShowMap.containsKey(showId)) {
                     // Cập nhật show hiện có
                     show = existingShowMap.get(showId);
                     updateShowFromDTO(show, showDTO);
@@ -536,6 +536,10 @@ public class OrganizerServices {
                             .time(LocalTime.parse(showDTO.getTime()))
                             .saleStatus(parseSaleStatus(showDTO.getSaleStatus())) // Có thể null, nhưng không sao
                             .build();
+                    
+                    // Manually set userId for audit trail
+                    show.setCreatedBy(userId);
+                    show.setUpdatedBy(userId);
                     
                     show = showRepository.save(show);
                 }
@@ -646,18 +650,23 @@ public class OrganizerServices {
             }
         }
     }
-    
-    /**
+      /**
      * Tạo show mới từ ShowDTO
      */
-    private Show createShowFromDTO(ShowDTO showDTO, Occa occa) {
-        return Show.builder()
+    private Show createShowFromDTO(ShowDTO showDTO, Occa occa, UUID userId) {
+        Show show = Show.builder()
                 .occa(occa)
                 .date(LocalDate.parse(showDTO.getDate()))
                 .time(LocalTime.parse(showDTO.getTime()))
                 .saleStatus(parseSaleStatus(showDTO.getSaleStatus()))
                 .autoUpdateStatus(showDTO.getAutoUpdateStatus() != null ? showDTO.getAutoUpdateStatus() : true)
                 .build();
+        
+        // Set userId cho createdBy và updatedBy
+        show.setCreatedBy(userId);
+        show.setUpdatedBy(userId);
+        
+        return show;
     }
 
     /**
