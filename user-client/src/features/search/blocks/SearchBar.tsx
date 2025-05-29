@@ -1,23 +1,26 @@
-import {useNavigate, useSearchParams} from "react-router-dom";
-import {Overlay, useOverlay} from "@/commons/blocks/Overlay.tsx";
-import React, {useCallback, useEffect, useRef, useState} from "react";
-import {useSearch} from "../hooks/useSearch.tsx";
-import {useRecentItems} from "@/features/search/hooks/useRecentItems.tsx";
-import {cn} from "@/commons/lib/utils/utils.ts";
-import {Flame, Search, ThumbsUp, X} from "lucide-react";
-import {Input} from "@/commons/components/input.tsx";
-import {RecentSearches} from "../components/RecentSearches.tsx";
-import {RecentOccas} from "../components/RecentOccas.tsx";
-import {SuggestOccaList} from "./SuggestOccaList.tsx";
-import {SearchResults} from "@/features/search/components/SearchResults.tsx";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Overlay, useOverlay } from "@/commons/blocks/Overlay.tsx";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useSearch } from "../hooks/useSearch.tsx";
+import { useRecentItems } from "@/features/search/hooks/useRecentItems.tsx";
+import { cn } from "@/commons/lib/utils/utils.ts";
+import { Flame, Search, ThumbsUp, X } from "lucide-react";
+import { Input } from "@/commons/components/input.tsx";
+import { RecentSearches } from "../components/RecentSearches.tsx";
+import { RecentOccas } from "../components/RecentOccas.tsx";
+import { SuggestOccaList } from "./SuggestOccaList.tsx";
+import { SearchResults } from "@/features/search/components/SearchResults.tsx";
 import { searchService } from "../services/search.service.ts";
-import {OccaSearchItemBaseUnit, SearchResultUnit} from "@/features/search/internal-types/search.type.ts";
+import {
+  OccaSearchItemBaseUnit,
+  SearchResultUnit,
+} from "@/features/search/internal-types/search.type.ts";
 import { useDelayedLoading } from "@/features/search/hooks/useDelayedLoading.tsx";
 import { useTracking } from "@/features/tracking/index.ts";
 
 export function SearchBar() {
   const navigate = useNavigate();
-  const {isOpen, open, close} = useOverlay();
+  const { isOpen, open, close } = useOverlay();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [searchParams] = useSearchParams();
@@ -28,7 +31,7 @@ export function SearchBar() {
   const [isFetchingOccas, setIsFetchingOccas] = useState(true);
 
   // Custom hooks
-  const {apiResults, isLoading: searchLoading} = useSearch(query);
+  const { apiResults, isLoading: searchLoading } = useSearch(query);
   const isDelayedLoading = useDelayedLoading(searchLoading);
   const { trackEventClick } = useTracking();
 
@@ -38,7 +41,7 @@ export function SearchBar() {
     addRecentSearch,
     addRecentOcca,
     removeRecentSearch,
-    removeRecentOcca
+    removeRecentOcca,
   } = useRecentItems();
 
   // Fetch dữ liệu trending và recommend
@@ -48,7 +51,7 @@ export function SearchBar() {
       try {
         const [trendingData, recommendData] = await Promise.all([
           searchService.fetchTrendingData(),
-          searchService.fetchRecommendedData()
+          searchService.fetchRecommendedData(),
         ]);
 
         setTrendingOccas(trendingData || trendingData);
@@ -65,60 +68,84 @@ export function SearchBar() {
 
   // Khởi tạo giá trị query từ URL params
   useEffect(() => {
-    const keywordFromUrl = searchParams.get('keyword') || '';
+    const keywordFromUrl = searchParams.get("keyword") || "";
     if (inputRef.current) {
       inputRef.current.value = keywordFromUrl;
     }
     setQuery(keywordFromUrl);
   }, [searchParams]);
 
-  const handleSearchSubmit = useCallback((searchQuery: string) => {
-    if (!searchQuery) return;
-    addRecentSearch(searchQuery);
-    close();
-    navigate(`/search?keyword=${encodeURIComponent(searchQuery)}&sortBy=title&sortOrder=desc`);
-  }, [addRecentSearch, close, navigate]);
+  const handleSearchSubmit = useCallback(
+    (searchQuery: string) => {
+      if (!searchQuery) return;
+      addRecentSearch(searchQuery);
+      close();
+      navigate(
+        `/search?keyword=${encodeURIComponent(
+          searchQuery
+        )}&sortBy=title&sortOrder=desc`
+      );
+    },
+    [addRecentSearch, close, navigate]
+  );
 
-  const handleNavigation = useCallback((occa?: OccaSearchItemBaseUnit) => {
-    if (occa) {
-      addRecentOcca(occa);
-      trackEventClick(occa.id, "searchBar");
-      navigate(`/occas/${occa.id}`);
-    } else {
-      navigate(`/search?keyword=${encodeURIComponent(query)}&sortBy=title&sortOrder=desc`);
-    }
-    close();
-  }, [query, addRecentOcca, navigate, close]);
-
+  const handleNavigation = useCallback(
+    (occa?: OccaSearchItemBaseUnit) => {
+      if (occa) {
+        addRecentOcca(occa);
+        trackEventClick(occa.id, "searchBar");
+        navigate(`/occas/${occa.id}`);
+      } else {
+        navigate(
+          `/search?keyword=${encodeURIComponent(
+            query
+          )}&sortBy=title&sortOrder=desc`
+        );
+      }
+      close();
+    },
+    [query, addRecentOcca, navigate, close, trackEventClick]
+  );
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && query) {
+    if (e.key === "Enter" && query) {
       handleSearchSubmit(query);
+    } else if (e.key === "Escape") {
+      if (query) {
+        // Nếu có text, clear text trước
+        handleClear();
+      } else {
+        // Nếu không có text, đóng search
+        close();
+      }
     }
   };
 
   const handleClear = () => {
-    setQuery('');
+    setQuery("");
     inputRef.current?.focus();
   };
 
   return (
     <>
-      <div className={cn("relative",
-        isOpen &&
-        "z-50 absolute left-0 right-0 top-4 mx-auto w-[95vw] md:w-[80vw] lg:w-[70vw] xl:w-[60vw] max-w-3xl")}>
+      <div
+        className={cn(
+          "relative",
+          isOpen &&
+            "z-50 absolute left-0 right-0 top-4 mx-auto w-[95vw] md:w-[80vw] lg:w-[70vw] xl:w-[60vw] max-w-3xl"
+        )}
+      >
+        {" "}
         <Input
           ref={inputRef}
           placeholder="Tìm kiếm sự kiện..."
-          className="pl-10 pr-9 h-11 rounded-full border border-input bg-background" // Thêm pr-9 để tránh text bị đè bởi nút clear
+          className="pl-10 pr-12 h-11 rounded-full border border-input bg-background" // Tăng pr để phù hợp với text "Đóng"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => open()}
           onKeyUp={handleKeyPress}
-        />
-        <Search
-          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-        />
-        {query && (
+        />{" "}
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        {query ? (
           <button
             onClick={handleClear}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
@@ -127,11 +154,20 @@ export function SearchBar() {
           >
             <X className="h-4 w-4" />
           </button>
+        ) : (
+          isOpen && (
+            <button
+              onClick={close}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none text-sm"
+              type="button"
+              aria-label="Đóng tìm kiếm"
+            >
+              Đóng
+            </button>
+          )
         )}
       </div>
-
-      <Overlay isVisible={isOpen} onClick={close}/>
-
+      <Overlay isVisible={isOpen} onClick={close} />{" "}
       {isOpen && (
         <div className={cn(
           "absolute left-0 right-0 top-full mt-2 mx-auto",
@@ -180,7 +216,7 @@ export function SearchBar() {
                   <>
                     <SuggestOccaList
                       title="Sự kiện nổi bật"
-                      icon={<Flame className="w-4 h-4"/>}
+                      icon={<Flame className="w-4 h-4" />}
                       occas={trendingOccas.slice(0, 3)}
                       onOccaClick={(occa) => {
                         addRecentSearch(occa.title);
@@ -190,7 +226,7 @@ export function SearchBar() {
 
                     <SuggestOccaList
                       title="Đề xuất cho bạn"
-                      icon={<ThumbsUp className="w-4 h-4"/>}
+                      icon={<ThumbsUp className="w-4 h-4" />}
                       occas={recommendOccas.slice(0, 3)}
                       onOccaClick={(occa) => {
                         addRecentSearch(occa.title);

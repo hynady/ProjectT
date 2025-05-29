@@ -1,6 +1,19 @@
-import {AlignJustify, ChevronDown, LogOut, Settings, Ticket, User, LayoutDashboard} from "lucide-react";
-import {Button} from "@/commons/components/button.tsx";
-import {Avatar, AvatarFallback, AvatarImage} from "@/commons/components/avatar.tsx";
+import {
+  AlignJustify,
+  ChevronDown,
+  LogOut,
+  Ticket,
+  User,
+  LayoutDashboard,
+  NotepadText,
+  UserRoundCog
+} from "lucide-react";
+import { Button } from "@/commons/components/button.tsx";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/commons/components/avatar.tsx";
 import {
   DropdownMenuPointerCursor,
   DropdownMenuContent,
@@ -11,10 +24,10 @@ import {
   DropdownMenuTrigger,
 } from "@/commons/components/dropdown-menu-pointer-cursor.tsx";
 import ThemeSwitcher from "@/commons/blocks/ThemeSwitcher.tsx";
-import {useNavigate} from "react-router-dom";
-import {SearchBar} from "@/features/search/blocks/SearchBar.tsx";
-import {cn} from "@/commons/lib/utils/utils";
-import {useState, useEffect} from "react";
+import ThemeButton from "@/commons/blocks/ThemeButton.tsx";
+import { useNavigate } from "react-router-dom";
+import { SearchBar } from "@/features/search/blocks/SearchBar.tsx";
+import { cn } from "@/commons/lib/utils/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,10 +38,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/commons/components/alert-dialog.tsx"
-import {useAuth} from "@/features/auth/contexts.tsx";
-import { useUser } from '@/features/auth/contexts/UserContext';
-import { AdminMenuButton } from '@/features/admin/components/AdminMenuButton';
+} from "@/commons/components/alert-dialog.tsx";
+import { useAuth } from "@/features/auth/contexts.tsx";
+import { useUser } from "@/features/auth/contexts/UserContext";
+import { AdminMenuButton } from "@/features/admin/components/AdminMenuButton";
+import { useEffect, useState } from "react";
+import {
+  checkAdminAccess,
+  clearAdminStatus,
+} from "@/features/auth/utils/role-utils";
 import {
   Dialog,
   DialogContent,
@@ -36,22 +54,50 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose
+  DialogClose,
 } from "@/commons/components/dialog.tsx";
 
 const Navbar = () => {
-  const {isAuthenticated, logout} = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const {
-    displayName, 
-    avatarUrl, 
-    showProfileCompletion, 
-    dismissProfileCompletion, 
-    refreshTrigger
+    displayName,
+    avatarUrl,
+    showProfileCompletion,
+    dismissProfileCompletion,
+    refreshTrigger,
   } = useUser();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
-  
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [adminLoading, setAdminLoading] = useState(true);
+
+  // Check admin status
+  useEffect(() => {
+    const verifyAdminStatus = async () => {
+      if (!isAuthenticated) {
+        setIsAdmin(false);
+        setAdminLoading(false);
+        return;
+      }
+
+      try {
+        clearAdminStatus();
+        const isUserAdmin = await checkAdminAccess(true);
+        setIsAdmin(isUserAdmin);
+      } catch (error) {
+        console.error("Error checking admin status for navbar:", error);
+        setIsAdmin(false);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+
+    verifyAdminStatus();
+    const intervalId = setInterval(verifyAdminStatus, 30000);
+    return () => clearInterval(intervalId);
+  }, [isAuthenticated]);
+
   // This effect will run whenever user data is refreshed
   useEffect(() => {
     // The refresh trigger changing will cause this component to re-evaluate
@@ -62,19 +108,19 @@ const Navbar = () => {
   const handleLogout = () => {
     logout();
   };
-  
+
   // Show dialog when showProfileCompletion changes
   useEffect(() => {
     if (isAuthenticated && showProfileCompletion) {
       setShowProfileDialog(true);
     }
   }, [isAuthenticated, showProfileCompletion]);
-  
+
   const handleGoToSettings = () => {
-    navigate('/settings');
+    navigate("/settings");
     setShowProfileDialog(false);
   };
-  
+
   const handleDismiss = () => {
     dismissProfileCompletion(); // Always dismiss when clicking "Không nhắc lại"
     setShowProfileDialog(false);
@@ -83,13 +129,13 @@ const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-10 border shadow-lg bg-card">
       {/* Profile Completion Dialog */}
-      <Dialog 
-        open={showProfileDialog} 
+      <Dialog
+        open={showProfileDialog}
         onOpenChange={setShowProfileDialog}
         // Fix the focus issue by setting these props
         modal={true}
       >
-        <DialogContent 
+        <DialogContent
           className="sm:max-w-[425px]"
           // Prevent auto focus on elements inside the dialog
           onOpenAutoFocus={(e) => e.preventDefault()}
@@ -104,7 +150,7 @@ const Navbar = () => {
               Vui lòng cập nhật tên của bạn để hoàn thiện hồ sơ người dùng.
             </DialogDescription>
           </DialogHeader>
-          
+
           <DialogFooter className="flex sm:justify-between">
             <Button variant="outline" onClick={handleDismiss}>
               Không nhắc lại
@@ -117,14 +163,17 @@ const Navbar = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <div className="container mx-auto max-w-screen-xl">
         <div className="h-14 md:h-16 flex items-center justify-between gap-4 px-2 sm:px-4 md:px-8">
           {/* Logo */}
           <div className="flex items-center">
-            <span onClick={() => navigate('/')} className="flex items-center space-x-2 cursor-pointer ">
+            <span
+              onClick={() => navigate("/")}
+              className="flex items-center space-x-2 cursor-pointer "
+            >
               <Avatar className="cursor-pointer">
-                <AvatarImage src="/web-app-manifest-512x512.png"/>
+                <AvatarImage src="/web-app-manifest-512x512.png" />
                 <AvatarFallback>TK</AvatarFallback>
               </Avatar>
               <span className="text-lg md:text-xl font-bold hidden sm:inline">
@@ -132,84 +181,121 @@ const Navbar = () => {
               </span>
             </span>
           </div>
-
           {/* SearchBar */}
           <div className="flex-1 max-w-[200px] sm:max-w-[300px] md:max-w-[400px] lg:max-w-[800px]">
-            <SearchBar/>
-          </div>
-
-          {/* Navigation Menu for Mobile & Tablet */}
-          <div className="lg:hidden flex-shrink-0">
-            <DropdownMenuPointerCursor modal={false}>
-              <DropdownMenuTrigger asChild>
-                <div className="relative">
-                  <div
-                    className="relative"
-                    onClick={() => setIsOpen(!isOpen)}
-                  >
-                    <div className={cn(
-                      "transition-all duration-300 ease-in-out",
-                      "absolute inset-0",
-                      isOpen ? "opacity-0 rotate-180" : "opacity-100 rotate-0"
-                    )}>
-                      <AlignJustify size={30} className="cursor-pointer"/>
-                    </div>
-                    <div className={cn(
-                      "transition-all duration-300 ease-in-out",
-                      isOpen ? "opacity-100 rotate-0" : "opacity-0 -rotate-180"
-                    )}>
-                      <ChevronDown size={30} className="cursor-pointer"/>
+            <SearchBar />
+          </div>{" "}
+          {/* Navigation Menu for Mobile & Tablet - Only show when authenticated */}
+          {isAuthenticated && (
+            <div className="lg:hidden flex-shrink-0">
+              <DropdownMenuPointerCursor modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <div className="relative">
+                    <div
+                      className="relative"
+                      onClick={() => setIsOpen(!isOpen)}
+                    >
+                      <div
+                        className={cn(
+                          "transition-all duration-300 ease-in-out",
+                          "absolute inset-0",
+                          isOpen
+                            ? "opacity-0 rotate-180"
+                            : "opacity-100 rotate-0"
+                        )}
+                      >
+                        <AlignJustify size={30} className="cursor-pointer" />
+                      </div>
+                      <div
+                        className={cn(
+                          "transition-all duration-300 ease-in-out",
+                          isOpen
+                            ? "opacity-100 rotate-0"
+                            : "opacity-0 -rotate-180"
+                        )}
+                      >
+                        <ChevronDown size={30} className="cursor-pointer" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end">
-                <DropdownMenuLabel className="text-sm">Menu</DropdownMenuLabel>
-                <DropdownMenuSeparator/>
-                <DropdownMenuGroup>
-                  {isAuthenticated && (
-                    <>
-                      <DropdownMenuItem
-                        className="text-sm"
-                        onClick={() => navigate("my-ticket")}>
-                        <Ticket className="h-4 w-4 mr-2"/>
-                        <span>Vé của tôi</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-sm"
-                        onClick={() => navigate("/organize")}>
-                        <LayoutDashboard className="h-4 w-4 mr-2"/>
-                        <span>Quản lý sự kiện</span>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenuPointerCursor>
-          </div>
-
-          {/* Navigation Links for Desktop */}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuLabel className="text-sm">
+                    Menu
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />{" "}
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem
+                      className="text-sm"
+                      onClick={() => navigate("my-ticket")}
+                    >
+                      <Ticket className="h-4 w-4 mr-2" />
+                      <span>Vé của tôi</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-sm"
+                      onClick={() => navigate("/organize")}
+                    >
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      <span>Quản lý sự kiện</span>
+                    </DropdownMenuItem>
+                    {!adminLoading && isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-sm"
+                          onClick={() => navigate("/admin/approval")}
+                        >
+                          <NotepadText className="h-4 w-4 mr-2" />
+                          <span>Content Approval</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-sm"
+                          onClick={() => navigate("/admin/users")}
+                        >
+                          <UserRoundCog className="h-4 w-4 mr-2" />
+                          <span>User Management</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenuPointerCursor>
+            </div>
+          )}{" "}
+          {/* Theme Switcher for Unauthenticated Users on Mobile */}
+          {!isAuthenticated && (
+            <div className="lg:hidden flex-shrink-0">
+              <ThemeButton />
+            </div>
+          )}
+          {/* Navigation Links for Desktop */}{" "}
           <nav className="hidden lg:flex items-center gap-2">
+            {/* Theme Switcher for Unauthenticated Users on Desktop */}
+            {!isAuthenticated && <ThemeButton />}
+
             {isAuthenticated && (
               <>
                 <Button
                   variant="default"
                   className="text-sm px-3 h-9"
-                  onClick={() => navigate("my-ticket")}>
-                  <Ticket className="w-4 h-4 mr-2"/>
+                  onClick={() => navigate("my-ticket")}
+                >
+                  <Ticket className="w-4 h-4 mr-2" />
                   Vé của tôi
-                </Button>                <Button
+                </Button>
+                <Button
                   variant="outline"
                   className="text-sm px-3 h-9"
-                  onClick={() => navigate("/organize")}>
-                  <LayoutDashboard className="w-4 h-4 mr-2"/>
+                  onClick={() => navigate("/organize")}
+                >
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
                   Quản lý sự kiện
                 </Button>
                 <AdminMenuButton />
               </>
             )}
           </nav>
-
           {/* Auth Buttons / User Menu */}
           <div className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
             {isAuthenticated ? (
@@ -218,36 +304,29 @@ const Navbar = () => {
                   <Avatar className="h-8 w-8 md:h-9 md:w-9">
                     <AvatarImage src={avatarUrl} />
                     <AvatarFallback>
-                      {displayName ? displayName.charAt(0).toUpperCase() : 'U'}
+                      {displayName ? displayName.charAt(0).toUpperCase() : "U"}
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
                   <DropdownMenuLabel className="text-sm">
-                    {displayName || 'Tài khoản của tôi'}
+                    {displayName || "Tài khoản của tôi"}
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator/>
+                  <DropdownMenuSeparator />{" "}
                   <DropdownMenuGroup>
                     <DropdownMenuItem
                       onClick={() => navigate("/settings/account")}
                       className="text-sm"
                     >
-                      <User className="h-4 w-4 mr-2"/>
+                      <User className="h-4 w-4 mr-2" />
                       <span>Hồ sơ</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/settings")}
-                      className="text-sm"
-                    >
-                      <Settings className="h-4 w-4 mr-2"/>
-                      <span>Cài đặt</span>
-                    </DropdownMenuItem>
                   </DropdownMenuGroup>
-                  <DropdownMenuSeparator/>
+                  <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <ThemeSwitcher/>
+                    <ThemeSwitcher />
                   </DropdownMenuGroup>
-                  <DropdownMenuSeparator/>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-sm"
                     onSelect={(e) => {
@@ -258,13 +337,15 @@ const Navbar = () => {
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <div className="flex items-center w-full">
-                          <LogOut className="h-4 w-4 mr-2"/>
+                          <LogOut className="h-4 w-4 mr-2" />
                           <span>Đăng xuất</span>
                         </div>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Xác nhận đăng xuất</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            Xác nhận đăng xuất
+                          </AlertDialogTitle>
                           <AlertDialogDescription>
                             Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
                           </AlertDialogDescription>

@@ -23,9 +23,9 @@ class RoleService extends BaseService {
     return this.request({
       method: 'GET',
       url: skipCache ? `/user/role?_t=${Date.now()}` : '/user/role', // Add timestamp to force fresh request
-      mockResponse: () => Promise.resolve('role_user'),
+      mockResponse: () => Promise.resolve('role_admin'),
       // Return a default value in case of an error
-      defaultValue: 'role_user'
+      defaultValue: 'role_admin'
     });
   }
   
