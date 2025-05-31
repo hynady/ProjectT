@@ -74,21 +74,28 @@ export function SearchBar() {
     }
     setQuery(keywordFromUrl);
   }, [searchParams]);
-
   const handleSearchSubmit = useCallback(
     (searchQuery: string) => {
       if (!searchQuery) return;
       addRecentSearch(searchQuery);
       close();
-      navigate(
-        `/search?keyword=${encodeURIComponent(
-          searchQuery
-        )}&sortBy=title&sortOrder=desc`
-      );
+      
+      // Giữ lại các filter hiện tại từ URL params
+      const params = new URLSearchParams(searchParams);
+      params.set("keyword", searchQuery);
+      
+      // Nếu chưa có sortBy và sortOrder, đặt giá trị mặc định
+      if (!params.get("sortBy")) {
+        params.set("sortBy", "title");
+      }
+      if (!params.get("sortOrder")) {
+        params.set("sortOrder", "desc");
+      }
+      
+      navigate(`/search?${params.toString()}`);
     },
-    [addRecentSearch, close, navigate]
+    [addRecentSearch, close, navigate, searchParams]
   );
-
   const handleNavigation = useCallback(
     (occa?: OccaSearchItemBaseUnit) => {
       if (occa) {
@@ -96,15 +103,23 @@ export function SearchBar() {
         trackEventClick(occa.id, "searchBar");
         navigate(`/occas/${occa.id}`);
       } else {
-        navigate(
-          `/search?keyword=${encodeURIComponent(
-            query
-          )}&sortBy=title&sortOrder=desc`
-        );
+        // Giữ lại các filter hiện tại từ URL params
+        const params = new URLSearchParams(searchParams);
+        params.set("keyword", query);
+        
+        // Nếu chưa có sortBy và sortOrder, đặt giá trị mặc định
+        if (!params.get("sortBy")) {
+          params.set("sortBy", "title");
+        }
+        if (!params.get("sortOrder")) {
+          params.set("sortOrder", "desc");
+        }
+        
+        navigate(`/search?${params.toString()}`);
       }
       close();
     },
-    [query, addRecentOcca, navigate, close, trackEventClick]
+    [query, addRecentOcca, navigate, close, trackEventClick, searchParams]
   );
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && query) {
