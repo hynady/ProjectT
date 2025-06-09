@@ -17,8 +17,8 @@ export interface UseOccaSubmissionReturn {
   isSaving: boolean;
   isDraft: boolean;
   isSubmitting: boolean;
-  handleSave: (data: OccaFormData, originalData: OccaFormData | null, asDraft: boolean, validateFormFn: () => boolean) => Promise<void>;
-  handleSubmitForApproval: (data: OccaFormData, originalData: OccaFormData | null, validateFormFn: () => boolean) => Promise<void>;
+  handleSave: (data: OccaFormData, originalData: OccaFormData | null, asDraft: boolean, validateFormFn: () => boolean, requiresApprovalReset?: boolean) => Promise<void>;
+  handleSubmitForApproval: (data: OccaFormData, originalData: OccaFormData | null, validateFormFn: () => boolean, requiresApprovalReset?: boolean) => Promise<void>;
   preparePayloadForSubmission: (data: OccaFormData, originalData: OccaFormData | null) => OccaFormData;
 }
 
@@ -223,11 +223,10 @@ export const useOccaSubmission = ({
     // For new creation or when no changes identified, return full cleaned object
     return cleanData;
   };
-
   /**
    * Handle form submission for approval
    */
-  const handleSubmitForApproval = async (data: OccaFormData, originalData: OccaFormData | null, validateFormFn: () => boolean) => {
+  const handleSubmitForApproval = async (data: OccaFormData, originalData: OccaFormData | null, validateFormFn: () => boolean, requiresApprovalReset: boolean = true) => {
     if (!validateFormFn()) {
       return;
     }
@@ -250,23 +249,29 @@ export const useOccaSubmission = ({
       }
       
       // Prepare data for API submission
-      const cleanData = preparePayloadForSubmission(processedData, originalData);
+      const cleanData = preparePayloadForSubmission(processedData, originalData);      // Determine approval status based on whether approval reset is required
+      const currentApprovalStatus = originalData?.approvalStatus;
+      const approvalStatus: "pending" | "draft" = requiresApprovalReset ? "pending" : (currentApprovalStatus as "pending" | "draft") || "pending";
       
       // Create payload with approval status
       const payload: CreateOccaPayload = {
         ...cleanData,
         status: "active",
-        approvalStatus: "pending"
+        approvalStatus
       };
 
       // Log the payload for debugging
       console.log("Submitting payload for approval:", JSON.stringify(payload, null, 2));
+      console.log("requiresApprovalReset:", requiresApprovalReset);
+      console.log("Final approvalStatus:", approvalStatus);
 
       if (isEditing && occaId) {
         await organizeService.updateOcca(occaId, payload);
         toast({
           title: "Thành công",
-          description: "Sự kiện đã được cập nhật và gửi để xét duyệt",
+          description: requiresApprovalReset 
+            ? "Sự kiện đã được cập nhật và gửi để xét duyệt" 
+            : "Sự kiện đã được cập nhật thành công",
         });
       } else {
         await organizeService.createOcca(payload);
@@ -287,11 +292,10 @@ export const useOccaSubmission = ({
       setIsSubmitting(false);
     }
   };
-
   /**
    * Handle saving (draft or published)
    */
-  const handleSave = async (data: OccaFormData, originalData: OccaFormData | null, asDraft: boolean, validateFormFn: () => boolean) => {
+  const handleSave = async (data: OccaFormData, originalData: OccaFormData | null, asDraft: boolean, validateFormFn: () => boolean, requiresApprovalReset: boolean = true) => {
     // Only validate if not saving as draft
     if (!asDraft && !validateFormFn()) {
       return;
@@ -319,21 +323,31 @@ export const useOccaSubmission = ({
       // Prepare data for API submission
       const cleanData = preparePayloadForSubmission(processedData, originalData);
       
+      // Determine approval status for save operation
+      let approvalStatus: "draft" | "pending" | "approved" | "rejected" = "draft";
+        if (!asDraft && isEditing) {
+        // For published saves in edit mode, only reset to pending if basic info or gallery changed
+        const currentApprovalStatus = originalData?.approvalStatus;
+        approvalStatus = requiresApprovalReset ? "pending" : (currentApprovalStatus as "draft" | "pending" | "approved" | "rejected") || "draft";
+      }
+      
       // Create payload with draft status
       const payload: CreateOccaPayload = {
         ...cleanData,
         status: asDraft ? "draft" : "active",
-        approvalStatus: "draft" // Always draft when saving
+        approvalStatus
       };
 
       // Log the payload for debugging
       console.log("Saving payload:", JSON.stringify(payload, null, 2));
+      console.log("requiresApprovalReset:", requiresApprovalReset);
+      console.log("Final approvalStatus for save:", approvalStatus);
 
       if (isEditing && occaId) {
         await organizeService.updateOcca(occaId, payload);
         toast({
           title: "Thành công",
-          description: "Đã cập nhật bản nháp sự kiện",
+          description: asDraft ? "Đã cập nhật bản nháp sự kiện" : "Đã cập nhật sự kiện",
         });
       } else {
         await organizeService.createOcca(payload);

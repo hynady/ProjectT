@@ -51,6 +51,7 @@ export interface OccaFormData {
   shows: ShowFormData[];
   tickets: TicketFormData[];
   gallery: GalleryItem[];
+  approvalStatus?: OccaApprovalStatus; // Add approval status to form data for editing
 }
 
 export interface CreateOccaPayload extends OccaFormData {

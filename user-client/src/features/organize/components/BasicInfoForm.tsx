@@ -181,8 +181,7 @@ export const BasicInfoForm = ({
     fetchRegions();
   }, []);
   // REMOVE THE PROBLEMATIC WATCH EFFECT THAT CAUSES TYPING ISSUES
-  // Instead, only update on blur or submit
-  // Handle blur events to update the parent form
+  // Instead, only update on blur or submit  // Handle blur events to update the parent form
   const handleFieldBlur = () => {
     const values = form.getValues();
     const currentData: BasicInfoFormData = {
@@ -195,7 +194,8 @@ export const BasicInfoForm = ({
       categoryId: values.categoryId || "",
       regionId: values.regionId || "",
       bannerUrl: bannerPreview || values.bannerUrl || "", // Use current preview or form value
-      bannerFile: bannerFile || undefined, // Use current file state
+      // Only include bannerFile if it exists to avoid unnecessary updates
+      ...(bannerFile && { bannerFile: bannerFile }),
     };
 
     onChange(currentData);

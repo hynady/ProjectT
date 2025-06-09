@@ -20,6 +20,9 @@ export interface UseOccaFormStateReturn {
   activeTab: string;
   isFormValid: boolean;
   hasChanges: boolean;
+  hasBasicInfoChanges: boolean;
+  hasGalleryChanges: boolean;
+  requiresApprovalReset: boolean; // true if basicInfo or gallery changed
   setActiveTab: (tab: string) => void;
   validateForm: () => boolean;
   updateBasicInfo: (data: BasicInfoFormData) => void;
@@ -74,9 +77,11 @@ export const useOccaFormState = ({
       }
     }
   }, [initialData, isEditing]);
-
   // Track if there are changes between current data and original data
   const [hasChanges, setHasChanges] = useState(false);
+  const [hasBasicInfoChanges, setHasBasicInfoChanges] = useState(false);
+  const [hasGalleryChanges, setHasGalleryChanges] = useState(false);
+  const [requiresApprovalReset, setRequiresApprovalReset] = useState(false);
 
   // Update hasChanges when occaData changes
   useEffect(() => {
@@ -190,17 +195,31 @@ export const useOccaFormState = ({
         console.log(`- Current bannerFile:`, currentObj.bannerFile);
         console.log(`- Original bannerUrl:`, originalObj.bannerUrl);
         console.log(`- Current bannerUrl:`, currentObj.bannerUrl);
-      }      
-      // Special handling for Files - detect any file-related changes
+      }        // Special handling for Files - detect any file-related changes
       const hasNewFile = currentKeys.includes('bannerFile') && currentObj.bannerFile instanceof File;
       const hadFile = originalKeys.includes('bannerFile') && originalObj.bannerFile instanceof File;
-      const bannerFileChanged = originalObj.bannerFile !== currentObj.bannerFile;
+      
+      // For file changes, we need to be more careful about detection
+      let bannerFileChanged = false;
+      if (hasNewFile && hadFile) {
+        // Both have files - compare file properties instead of object reference
+        const originalFile = originalObj.bannerFile as File;
+        const currentFile = currentObj.bannerFile as File;
+        bannerFileChanged = (
+          originalFile.name !== currentFile.name ||
+          originalFile.size !== currentFile.size ||
+          originalFile.lastModified !== currentFile.lastModified ||
+          originalFile.type !== currentFile.type
+        );
+      } else if (hasNewFile !== hadFile) {
+        // One has file, other doesn't - definitely a change
+        bannerFileChanged = true;
+      }
       
       if (path.includes('basicInfo')) {
         console.log(`File check: hasNewFile=${hasNewFile}, hadFile=${hadFile}, bannerFileChanged=${bannerFileChanged}`);
-      }
-        if (hasNewFile || hadFile || bannerFileChanged) {
-        console.log(`✅ File change detected at ${path}: hasNewFile=${hasNewFile}, hadFile=${hadFile}, bannerFileChanged=${bannerFileChanged}`);
+      }        if (bannerFileChanged || (hasNewFile && !hadFile) || (!hasNewFile && hadFile)) {
+        console.log(`✅ File change detected at ${path}: bannerFileChanged=${bannerFileChanged}, hasNewFile=${hasNewFile}, hadFile=${hadFile}`);
         changedPaths.push(`${path}.bannerFile`);
         return { changed: true, changedPaths };
       }
@@ -220,20 +239,24 @@ export const useOccaFormState = ({
           changedPaths.push(`${path}.bannerUrl`);
           return { changed: true, changedPaths };
         }
+      }      // Check if bannerFile was removed (from File to undefined/missing)
+      if (originalKeys.includes('bannerFile') && (!currentKeys.includes('bannerFile') || currentObj.bannerFile === undefined)) {
+        const originalFile = originalObj.bannerFile;
+        if (originalFile instanceof File) {
+          console.log(`✅ Banner file removed at ${path}`);
+          changedPaths.push(`${path}.bannerFile`);
+          return { changed: true, changedPaths };
+        }
       }
 
-      // Check if bannerFile was removed (from File to undefined)
-      if (originalKeys.includes('bannerFile') && !currentKeys.includes('bannerFile')) {
-        console.log(`✅ Banner file removed at ${path}`);
-        changedPaths.push(`${path}.bannerFile`);
-        return { changed: true, changedPaths };
-      }
-
-      // Check if bannerFile was added (from undefined to File)
-      if (!originalKeys.includes('bannerFile') && currentKeys.includes('bannerFile')) {
-        console.log(`✅ Banner file added at ${path}`);
-        changedPaths.push(`${path}.bannerFile`);
-        return { changed: true, changedPaths };
+      // Check if bannerFile was added (from undefined/missing to File)
+      if ((!originalKeys.includes('bannerFile') || originalObj.bannerFile === undefined) && currentKeys.includes('bannerFile')) {
+        const currentFile = currentObj.bannerFile;
+        if (currentFile instanceof File) {
+          console.log(`✅ Banner file added at ${path}`);
+          changedPaths.push(`${path}.bannerFile`);
+          return { changed: true, changedPaths };
+        }
       }
 
       // Filter out file-related keys for comparison to avoid false positives
@@ -273,12 +296,22 @@ export const useOccaFormState = ({
       }
       
       return { changed: false, changedPaths };
-    }
-      // Compare current data with original data
+    }      // Compare current data with original data
     const result = hasDeepChanges(originalData, occaData);
     setHasChanges(result.changed);
     
+    // Check specific sections for approval reset requirement
+    const basicInfoChanged = hasDeepChanges(originalData.basicInfo, occaData.basicInfo).changed;
+    const galleryChanged = hasDeepChanges(originalData.gallery, occaData.gallery).changed;
+    
+    setHasBasicInfoChanges(basicInfoChanged);
+    setHasGalleryChanges(galleryChanged);
+    setRequiresApprovalReset(basicInfoChanged || galleryChanged);
+    
     console.log(`🔄 hasChanges updated to: ${result.changed}`);
+    console.log(`🔄 hasBasicInfoChanges: ${basicInfoChanged}`);
+    console.log(`🔄 hasGalleryChanges: ${galleryChanged}`);
+    console.log(`🔄 requiresApprovalReset: ${basicInfoChanged || galleryChanged}`);
     
     if (result.changed) {
       console.log("✅ Changes detected in the following paths:", result.changedPaths);
@@ -435,13 +468,15 @@ export const useOccaFormState = ({
       tickets: prev.tickets.filter(t => t.id !== ticketId)
     }));
   }, []);
-
   return {
     occaData,
     originalData,
     activeTab,
     isFormValid,
     hasChanges,
+    hasBasicInfoChanges,
+    hasGalleryChanges,
+    requiresApprovalReset,
     setActiveTab,
     validateForm,
     updateBasicInfo,

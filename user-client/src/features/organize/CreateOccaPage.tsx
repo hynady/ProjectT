@@ -22,7 +22,6 @@ interface CreateOccaPageProps {
 const CreateOccaPage = ({ isEditing = false, occaId, initialData }: CreateOccaPageProps) => {
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
-  
   // Use our custom hook to manage form state and logic
   const { 
     occaData, 
@@ -32,6 +31,7 @@ const CreateOccaPage = ({ isEditing = false, occaId, initialData }: CreateOccaPa
     isSubmitting, 
     isFormValid,
     hasChanges, // Add this to get change tracking
+    requiresApprovalReset,
     setActiveTab,
     handleSave,
     handleSubmitForApproval,
@@ -64,8 +64,7 @@ const CreateOccaPage = ({ isEditing = false, occaId, initialData }: CreateOccaPa
 
   return (
     <DashboardLayout>
-      <div className="container py-4 sm:py-6 pb-16 sm:pb-6 px-4 sm:px-6">
-        {/* Header with actions */}
+      <div className="container py-4 sm:py-6 pb-16 sm:pb-6 px-4 sm:px-6">        {/* Header with actions */}
         <OccaFormHeader
           isEditing={isEditing}
           occaData={occaData}
@@ -74,6 +73,7 @@ const CreateOccaPage = ({ isEditing = false, occaId, initialData }: CreateOccaPa
           isDraft={isDraft}
           isSubmitting={isSubmitting}
           hasChanges={hasChanges} // Pass hasChanges to enable/disable buttons
+          requiresApprovalReset={requiresApprovalReset} // Pass approval reset requirement
           onSave={handleSave}
           onSubmit={handleSubmitForApproval}
           onNavigateToTab={setActiveTab}

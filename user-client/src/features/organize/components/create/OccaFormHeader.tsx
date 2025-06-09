@@ -13,6 +13,7 @@ interface OccaFormHeaderProps {
   isDraft: boolean;
   isSubmitting: boolean;
   hasChanges?: boolean; // New prop to track changes
+  requiresApprovalReset?: boolean; // NEW: Track if approval status should reset
   onSave: (asDraft: boolean) => void;
   onSubmit: () => void;
   onNavigateToTab: (tab: string) => void;
@@ -26,11 +27,25 @@ export const OccaFormHeader = ({
   isDraft,
   isSubmitting,
   hasChanges = true, // Default to true for create mode
+  requiresApprovalReset = true, // Default to true for create mode
   onSave,
   onSubmit,
   onNavigateToTab
-}: OccaFormHeaderProps) => {
-  const navigate = useNavigate();
+}: OccaFormHeaderProps) => {  const navigate = useNavigate();
+
+  // Determine submit button text based on editing mode and approval reset requirement
+  const getSubmitButtonText = () => {
+    if (isSubmitting) {
+      return requiresApprovalReset ? "Đang gửi..." : "Đang lưu...";
+    }
+    
+    if (!isEditing) {
+      return "Gửi duyệt"; // Always "Send for approval" for new events
+    }
+    
+    // For editing mode, check if approval status needs to reset
+    return requiresApprovalReset ? "Gửi duyệt" : "Lưu thay đổi";
+  };
 
   // Only show no changes warning in edit mode
   const handleSubmitWithCheck = () => {
@@ -128,8 +143,7 @@ export const OccaFormHeader = ({
             {isSaving && isDraft ? "Đang lưu..." : "Lưu nháp"}
           </span>
         </Button>
-        
-        {/* Publish button */}
+          {/* Publish button */}
         <Button
           onClick={handleSubmitWithCheck}
           disabled={isSaving || isSubmitting || !isFormValid || (isEditing && !hasChanges)}
@@ -139,7 +153,7 @@ export const OccaFormHeader = ({
         >
           <Upload className="h-4 w-4" />
           <span className="md:hidden lg:inline">
-            {isSubmitting ? "Đang gửi..." : "Gửi xét duyệt"}
+            {getSubmitButtonText()}
           </span>
         </Button>
       </div>

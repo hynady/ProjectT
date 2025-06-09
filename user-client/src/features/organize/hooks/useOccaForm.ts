@@ -22,6 +22,9 @@ export interface UseOccaFormReturn {
   isSubmitting: boolean;
   isFormValid: boolean;
   hasChanges: boolean; // NEW: Track changes for edit mode
+  hasBasicInfoChanges: boolean;
+  hasGalleryChanges: boolean;
+  requiresApprovalReset: boolean; // true if basicInfo or gallery changed
   setActiveTab: (tab: string) => void;
   validateForm: () => boolean;
   handleSave: (asDraft: boolean) => Promise<void>;
@@ -48,8 +51,7 @@ export const useOccaForm = ({
   // Use our sub-hooks to manage state and submission logic
   const formState = useOccaFormState({ isEditing, initialData });
   const submission = useOccaSubmission({ isEditing, occaId });
-  
-  // Handle form submission for approval
+    // Handle form submission for approval
   const handleSubmitForApproval = async () => {
     if (isEditing && !formState.hasChanges) {
       // In edit mode, only allow submission when there are changes
@@ -59,7 +61,8 @@ export const useOccaForm = ({
     return submission.handleSubmitForApproval(
       formState.occaData,
       formState.originalData,
-      formState.validateForm
+      formState.validateForm,
+      formState.requiresApprovalReset
     );
   };
 
@@ -74,10 +77,10 @@ export const useOccaForm = ({
       formState.occaData,
       formState.originalData,
       asDraft,
-      formState.validateForm
+      formState.validateForm,
+      formState.requiresApprovalReset
     );
   };
-
   return {
     occaData: formState.occaData,
     activeTab: formState.activeTab,
@@ -86,6 +89,9 @@ export const useOccaForm = ({
     isSubmitting: submission.isSubmitting,
     isFormValid: formState.isFormValid,
     hasChanges: formState.hasChanges,
+    hasBasicInfoChanges: formState.hasBasicInfoChanges,
+    hasGalleryChanges: formState.hasGalleryChanges,
+    requiresApprovalReset: formState.requiresApprovalReset,
     setActiveTab: formState.setActiveTab,
     validateForm: formState.validateForm,
     handleSave,
