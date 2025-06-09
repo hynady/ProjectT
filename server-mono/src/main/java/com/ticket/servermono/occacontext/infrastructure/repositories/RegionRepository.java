@@ -14,9 +14,9 @@ import com.ticket.servermono.occacontext.entities.Region;
 public interface RegionRepository extends JpaRepository<Region, UUID> {
     
     @Query("SELECT new com.ticket.servermono.occacontext.adapters.dtos.RegionDTO(" +
-            "r.id, r.name, r.image, COUNT(o)) " +
-            "FROM Region r LEFT JOIN r.venues v LEFT JOIN v.occas o " +
-            "GROUP BY r.id, r.name, r.image")
+       "r.id, r.name, r.image, COUNT(DISTINCT o.id)) " +
+       "FROM Region r LEFT JOIN r.venues v LEFT JOIN v.occas o " +
+       "GROUP BY r.id, r.name, r.image")
     List<RegionDTO> findAllRegionsWithOccaCount();
     
     Optional<Region> findFirstByName(String name);
