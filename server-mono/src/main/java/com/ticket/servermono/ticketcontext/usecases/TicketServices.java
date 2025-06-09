@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.ticket.servermono.ticketcontext.adapters.dtos.TicketCheckInRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.TicketCheckInResponse;
 import com.ticket.servermono.ticketcontext.adapters.dtos.TicketWithRecipientInfoResponse;
 import com.ticket.servermono.ticketcontext.adapters.dtos.TicketsWithRevenueResponse;
@@ -27,9 +26,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ticket.servermono.occacontext.adapters.dtos.organizer.DailyVisitorsItem;
-import com.ticket.servermono.occacontext.entities.Occa;
-import com.ticket.servermono.occacontext.entities.OccaTrackingStats;
 import com.ticket.servermono.ticketcontext.adapters.dtos.AddTicketClassRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockResponse;
@@ -1148,23 +1144,29 @@ public class TicketServices {
                 .revenueByTicketClass(revenueByTicketClass)
                 .build();
     }
-    
-    /**
+      /**
      * Kiểm tra quyền truy cập của người dùng với show
      * @param userId ID của người dùng
      * @param showId ID của show
      * @return true nếu người dùng có quyền truy cập, false nếu không
      */
     private boolean checkUserAuthorizationForShow(UUID userId, UUID showId) {
-        List<TicketClass> ticketClasses = ticketClassRepository.findByShowId(showId);
-        
-        if (ticketClasses.isEmpty()) {
-            throw new EntityNotFoundException("Show not found or no ticket classes available");
+        try {
+            // Kiểm tra xem show có tồn tại không
+            if (!occaGrpcClient.isShowExist(showId)) {
+                throw new EntityNotFoundException("Show not found: " + showId);
+            }
+            
+            // Lấy danh sách show IDs mà user này đã tạo
+            List<UUID> userShowIds = occaCreatorGrpcClient.getShowIdsByCreatorId(userId.toString());
+            
+            // Kiểm tra xem showId có trong danh sách show của user không
+            return userShowIds.contains(showId);
+            
+        } catch (Exception e) {
+            log.error("Error checking user authorization for show {}: {}", showId, e.getMessage());
+            throw new RuntimeException("Failed to verify user authorization", e);
         }
-        
-        // Kiểm tra nếu người dùng là người tạo ít nhất một ticket class cho show này
-        return ticketClasses.stream()
-                .anyMatch(tc -> userId.equals(tc.getCreatedBy()));
     }
       /**
      * Phương thức chung để lấy danh sách vé từ invoice của một show đã phân trang
