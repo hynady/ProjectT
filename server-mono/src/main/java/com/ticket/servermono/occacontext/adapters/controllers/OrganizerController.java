@@ -29,7 +29,9 @@ import com.ticket.servermono.occacontext.adapters.dtos.organizer.DailyVisitorsIt
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaAnalyticsResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OccaDetailResponse;
 import com.ticket.servermono.occacontext.adapters.dtos.organizer.OrganizerOccaUnit;
+import com.ticket.servermono.occacontext.adapters.dtos.RegionResponseIdName;
 import com.ticket.servermono.occacontext.usecases.OrganizerServices;
+import com.ticket.servermono.occacontext.usecases.RegionServices;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +41,9 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/organize")
-public class OrganizerController {    private final OrganizerServices organizerServices;
+public class OrganizerController {    
+    private final OrganizerServices organizerServices;
+    private final RegionServices regionServices;
 
     /**
      * Lấy danh sách sự kiện của người tổ chức
@@ -310,7 +314,23 @@ public class OrganizerController {    private final OrganizerServices organizerS
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             log.error("Error retrieving occa analytics: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();        }
+    }
+
+    /**
+     * Lấy danh sách regions cho dropdown
+     * 
+     * @return List<RegionResponseIdName> Danh sách regions với id và name
+     */
+    @GetMapping("/regions-basic")
+    public ResponseEntity<?> getRegions() {
+        try {
+            List<RegionResponseIdName> regions = regionServices.getOnlyNameRegion();
+            return ResponseEntity.ok(regions);
+        } catch (Exception e) {
+            log.error("Error retrieving regions: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("An error occurred while retrieving regions: " + e.getMessage());
         }
     }
 }

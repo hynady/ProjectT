@@ -7,6 +7,11 @@ export interface OrganizerOccaUnit {
   approvalMessage?: string; // For rejection messages
 }
 
+export interface RegionType {
+  id: string;
+  name: string;
+}
+
 export interface BasicInfoFormData {
   title: string;  artist: string;
   organizer: string; // Added organizer field
@@ -15,7 +20,8 @@ export interface BasicInfoFormData {
   description: string;
   bannerUrl: string;
   bannerFile?: File;
-  categoryId?: string; // Add category ID field
+  categoryId: string; // Add category ID field (required)
+  regionId: string; // Add region ID field (required)
 }
 
 export interface ShowFormData {

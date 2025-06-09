@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import {
   BasicInfoFormData,
   CategoryType,
+  RegionType,
 } from "../internal-types/organize.type";
 import { toast } from "@/commons/hooks/use-toast";
 import { RichTextEditor } from "@/commons/components/rich-text-editor";
@@ -63,9 +64,11 @@ const basicInfoSchema = z.object({
           },
         ]);
       }
-    }),
-  categoryId: z.string().min(1, {
+    }),  categoryId: z.string().min(1, {
     message: "Vui lòng chọn danh mục cho sự kiện",
+  }),
+  regionId: z.string().min(1, {
+    message: "Vui lòng chọn tỉnh thành phố",
   }),
   bannerUrl: z.string().optional(),
   // Use a custom Zod type for File objects
@@ -87,10 +90,9 @@ export const BasicInfoForm = ({
   data,
   onChange,
   onNext,
-}: BasicInfoFormProps) => {
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
+}: BasicInfoFormProps) => {  const [bannerPreview, setBannerPreview] = useState<string | null>(null);  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [categories, setCategories] = useState<CategoryType[]>([]);
+  const [regions, setRegions] = useState<RegionType[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(basicInfoSchema),
@@ -100,6 +102,7 @@ export const BasicInfoForm = ({
       artist: data?.artist || "",
       location: data?.location || "",
       address: data?.address || "",
+      organizer: data?.organizer || "",
       description:
         data?.description ||
         JSON.stringify([
@@ -109,6 +112,7 @@ export const BasicInfoForm = ({
           },
         ]),
       categoryId: data?.categoryId || "",
+      regionId: data?.regionId || "",
       bannerUrl: data?.bannerUrl || "",
     },
   });
@@ -132,6 +136,7 @@ export const BasicInfoForm = ({
             },
           ]),
         categoryId: data.categoryId || "",
+        regionId: data.regionId || "",
         bannerUrl: data.bannerUrl || "",
       });
 
@@ -160,6 +165,21 @@ export const BasicInfoForm = ({
     fetchCategories();
   }, []);
 
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const fetchedRegions = await organizeService.getRegions();
+        setRegions(fetchedRegions);
+      } catch {
+        toast({
+          title: "Lỗi",
+          description: "Không thể tải danh sách tỉnh thành",
+        });
+      }
+    };
+
+    fetchRegions();
+  }, []);
   // REMOVE THE PROBLEMATIC WATCH EFFECT THAT CAUSES TYPING ISSUES
   // Instead, only update on blur or submit
 
@@ -174,6 +194,7 @@ export const BasicInfoForm = ({
       organizer: values.organizer || "",
       description: values.description || "",
       categoryId: values.categoryId || "",
+      regionId: values.regionId || "",
       bannerUrl: bannerPreview || "",
       bannerFile: bannerFile || undefined,
     };
@@ -232,7 +253,6 @@ export const BasicInfoForm = ({
       description: "Ảnh banner đã được xóa",
     });
   };
-
   const onSubmit = (values: FormValues) => {
     // Explicitly create a BasicInfoFormData object
     const submitData: BasicInfoFormData = {
@@ -243,6 +263,7 @@ export const BasicInfoForm = ({
       organizer: values.organizer,
       description: values.description,
       categoryId: values.categoryId,
+      regionId: values.regionId,
       bannerUrl: bannerPreview || "",
       bannerFile: bannerFile || undefined,
     };
@@ -297,9 +318,7 @@ export const BasicInfoForm = ({
               </FormItem>
             )}
           />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        </div>        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FormField
             control={form.control}
             name="location"
@@ -341,6 +360,37 @@ export const BasicInfoForm = ({
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="regionId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tỉnh thành phố</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleFieldBlur();
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn tỉnh thành" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {regions.map((region) => (
+                        <SelectItem key={region.id} value={region.id}>
+                          {region.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <FormField
@@ -365,9 +415,7 @@ export const BasicInfoForm = ({
               <FormMessage />
             </FormItem>
           )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        />        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
             name="organizer"
@@ -388,6 +436,7 @@ export const BasicInfoForm = ({
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="categoryId"

@@ -17,7 +17,8 @@ public class BasicInfoDTO {
     private String location;
     private String address;
     private String organizer;
-    private String description;
+    private String description;    
     private String bannerUrl;
     private UUID categoryId;
+    private UUID regionId;
 }

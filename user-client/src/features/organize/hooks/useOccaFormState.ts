@@ -46,6 +46,8 @@ const defaultOccaData: OccaFormData = {
     organizer: "",
     description: "",
     bannerUrl: "",
+    categoryId: "",
+    regionId: "",
   },
   shows: [],
   tickets: [],

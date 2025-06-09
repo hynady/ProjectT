@@ -7,7 +7,8 @@ import {
   OccaFilterParams,
   ShowResponse,
   OccaFormData,
-  CategoryType
+  CategoryType,
+  RegionType
 } from '../internal-types/organize.type';
 import { organizeMockData } from './organize.mock';
 import {   AddShowPayload, 
@@ -121,9 +122,9 @@ class OrganizeService extends BaseService {
       })
     });
   }
-
   async createOcca(data: CreateOccaPayload): Promise<CreateOccaResponse> {
     console.log("API call: createOcca with approval status:", data.approvalStatus);
+    console.log("CreateOcca payload:", JSON.stringify(data, null, 2));
     return this.request({
       method: 'POST',
       url: '/organize/occas',
@@ -148,12 +149,12 @@ class OrganizeService extends BaseService {
       })
     });
   }
-  
-  private validateOccaForSubmission(data: CreateOccaPayload): boolean {
+    private validateOccaForSubmission(data: CreateOccaPayload): boolean {
     return Boolean(
       data.basicInfo?.title &&
       data.basicInfo?.location &&
       data.basicInfo?.categoryId && // Add check for categoryId
+      data.basicInfo?.regionId && // Add check for regionId
       data.shows?.length > 0 &&
       data.tickets?.length > 0 &&
       data.gallery?.length > 0
@@ -341,9 +342,11 @@ class OrganizeService extends BaseService {
               id: `gallery-${id}-${i}`,
               image: `https://picsum.photos/seed/${id}-${i}/800/600`
             }));
-          
-          // Generate a random category ID (1-8)
+            // Generate a random category ID (1-8)
           const categoryId = (parseInt(id.replace(/\D/g, '')) % 8 + 1).toString();
+          
+          // Generate a random region ID (1-10)
+          const regionId = (parseInt(id.replace(/\D/g, '')) % 10 + 1).toString();
           
           resolve({
             basicInfo: {
@@ -360,6 +363,7 @@ class OrganizeService extends BaseService {
               ]),
               bannerUrl: basicInfo.image || "",
               categoryId: categoryId, // Add category ID to the returned data
+              regionId: regionId, // Add region ID to the returned data
             },
             shows,
             tickets,
@@ -369,9 +373,9 @@ class OrganizeService extends BaseService {
       })
     });
   }
-  
-  async updateOcca(id: string, data: CreateOccaPayload): Promise<CreateOccaResponse> {
+    async updateOcca(id: string, data: CreateOccaPayload): Promise<CreateOccaResponse> {
     console.log("API call: updateOcca for ID:", id, "with approval status:", data.approvalStatus);
+    console.log("UpdateOcca payload:", JSON.stringify(data, null, 2));
     return this.request({
       method: 'PUT',
       url: `/organize/occas/${id}`,
@@ -401,6 +405,27 @@ class OrganizeService extends BaseService {
       url: '/occas/categories',
       mockResponse: () => new Promise((resolve) => {
         setTimeout(() => resolve(organizeMockData.categories), 500);
+      })
+    });
+  }
+
+  async getRegions(): Promise<RegionType[]> {
+    return this.request({
+      method: 'GET',
+      url: '/organize/regions-basic',
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => resolve([
+          { id: '1', name: 'Hà Nội' },
+          { id: '2', name: 'TP. Hồ Chí Minh' },
+          { id: '3', name: 'Đà Nẵng' },
+          { id: '4', name: 'Hải Phòng' },
+          { id: '5', name: 'Cần Thơ' },
+          { id: '6', name: 'An Giang' },
+          { id: '7', name: 'Bà Rịa - Vũng Tàu' },
+          { id: '8', name: 'Bắc Giang' },
+          { id: '9', name: 'Bắc Kạn' },
+          { id: '10', name: 'Bạc Liêu' },
+        ]), 500);
       })
     });
   }

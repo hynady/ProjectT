@@ -160,10 +160,12 @@ public class OrganizerServices {
      */
     @Transactional
     public CreateOccaResponse createOcca(CreateOccaRequest request, UUID userId) {
-        log.info("Creating new occa with title: {}, userId: {}", request.getBasicInfo().getTitle(), userId);
-
-        // 1. Tìm hoặc tạo mới Venue
-        Venue venue = findOrCreateVenue(request.getBasicInfo().getLocation(), request.getBasicInfo().getAddress());
+        log.info("Creating new occa with title: {}, userId: {}", request.getBasicInfo().getTitle(), userId);        // 1. Tìm hoặc tạo mới Venue
+        Venue venue = findOrCreateVenue(
+            request.getBasicInfo().getLocation(), 
+            request.getBasicInfo().getAddress(),
+            request.getBasicInfo().getRegionId()
+        );
 
         // 2. Tìm category dựa trên categoryId hoặc sử dụng mặc định là "Âm nhạc"
         Category category;
@@ -292,24 +294,44 @@ public class OrganizerServices {
                 .status(savedOcca.getStatus())
                 .approvalStatus(savedOcca.getApprovalStatus().toString().toLowerCase())
                 .build();
-    }
-
+    }    
     /**
-     * Tìm hoặc tạo mới venue với region mặc định là Đà Nẵng
+     * Tìm hoặc tạo mới venue và cập nhật region nếu được chỉ định
      */
-    private Venue findOrCreateVenue(String location, String address) {
-        return venueRepository.findByLocation(location)
-                .orElseGet(() -> {
-                    Region region = regionRepository.findFirstByName("Đà Nẵng")
-                            .orElseThrow(() -> new EntityNotFoundException("Default region 'Đà Nẵng' not found"));
+    private Venue findOrCreateVenue(String location, String address, UUID regionId) {
+        // Tìm venue hiện có theo location
+        Venue venue = venueRepository.findByLocation(location).orElse(null);
+        
+        if (venue != null) {
+            // Venue đã tồn tại, cập nhật region nếu regionId được cung cấp
+            if (regionId != null) {
+                Region region = regionRepository.findById(regionId)
+                        .orElseThrow(() -> new EntityNotFoundException("Region not found with id: " + regionId));
+                venue.setRegion(region);
+            }
+            // Cập nhật address nếu khác null
+            if (address != null) {
+                venue.setAddress(address);
+            }
+            return venueRepository.save(venue);
+        } else {
+            // Venue chưa tồn tại, tạo mới
+            Region region;
+            if (regionId != null) {
+                region = regionRepository.findById(regionId)
+                        .orElseThrow(() -> new EntityNotFoundException("Region not found with id: " + regionId));
+            } else {
+                region = regionRepository.findFirstByName("Đà Nẵng")
+                        .orElseThrow(() -> new EntityNotFoundException("Default region 'Đà Nẵng' not found"));
+            }
 
-                    Venue newVenue = Venue.builder()
-                            .location(location)
-                            .address(address)
-                            .region(region)
-                            .build();
-                    return venueRepository.save(newVenue);
-                });
+            Venue newVenue = Venue.builder()
+                    .location(location)
+                    .address(address)
+                    .region(region)
+                    .build();
+            return venueRepository.save(newVenue);
+        }
     }
 
     /**
@@ -376,9 +398,7 @@ public class OrganizerServices {
                     log.error("Error fetching ticket classes for show {}: {}", show.getId(), e.getMessage());
                 }
             }
-        }
-
-        // 5. Tạo response object với categoryId
+        }        // 5. Tạo response object với categoryId và regionId
         BasicInfoDTO basicInfo = BasicInfoDTO.builder()
                 .title(occa.getTitle())
                 .artist(occa.getArtist())
@@ -388,6 +408,8 @@ public class OrganizerServices {
                 .description(detailInfo.getDescription())
                 .bannerUrl(detailInfo.getBannerUrl())
                 .categoryId(occa.getCategory() != null ? occa.getCategory().getId() : null)
+                .regionId(occa.getVenue() != null && occa.getVenue().getRegion() != null ? 
+                         occa.getVenue().getRegion().getId() : null)
                 .build();
 
         List<ShowDTO> showDTOs = shows.stream()
@@ -441,9 +463,8 @@ public class OrganizerServices {
                 occa.setCategory(category);
                 log.info("Updated occa category to: {}", category.getName());
             }
-            
-            // Cập nhật Venue nếu location hoặc address được cung cấp
-            if (basicInfo.getLocation() != null || basicInfo.getAddress() != null) {
+              // Cập nhật Venue nếu location, address hoặc regionId được cung cấp
+            if (basicInfo.getLocation() != null || basicInfo.getAddress() != null || basicInfo.getRegionId() != null) {
                 String location = basicInfo.getLocation() != null ? 
                         basicInfo.getLocation() : 
                         (occa.getVenue() != null ? occa.getVenue().getLocation() : "");
@@ -451,8 +472,11 @@ public class OrganizerServices {
                 String address = basicInfo.getAddress() != null ? 
                         basicInfo.getAddress() : 
                         (occa.getVenue() != null ? occa.getVenue().getAddress() : "");
+                  UUID regionId = basicInfo.getRegionId() != null ?
+                        basicInfo.getRegionId() :
+                        (occa.getVenue() != null ? occa.getVenue().getRegion().getId() : null);
                 
-                Venue venue = findOrCreateVenue(location, address);
+                Venue venue = findOrCreateVenue(location, address, regionId);
                 occa.setVenue(venue);
             }
             
