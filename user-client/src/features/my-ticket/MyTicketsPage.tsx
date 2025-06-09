@@ -4,50 +4,48 @@ import { useNavigate } from 'react-router-dom';
 import { Input } from '@/commons/components/input.tsx';
 import { Button } from '@/commons/components/button.tsx';
 import { Search, RefreshCw } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/commons/components/select.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/commons/components/tabs.tsx';
 import { format } from 'date-fns';
 import { useTickets } from "@/features/my-ticket/hooks/useTickets.tsx";
 import { TicketList } from "@/features/my-ticket/blocks/TicketList.tsx";
 import { TicketSkeleton } from "@/features/my-ticket/skeletons/TicketSkeleton.tsx";
 import { ScrollToTop } from "@/commons/blocks/ScrollToTop.tsx";
+import { TicketFilter } from '@/features/my-ticket/services/ticket.service';
 
 export const MyTicketsPage = () => {
-  const navigate = useNavigate();
-  const {
-    activeTickets,
-    usedTickets,
+  const navigate = useNavigate();  const {
+    tickets,
     loading,
+    loadingMore,
     error,
-    hasLoadedUsedTickets,
-    loadUsedTickets,
+    pageInfo,
+    currentFilter,
+    searchQuery,
+    changeFilter,
+    searchTickets,
+    loadMoreTickets,
     refreshTickets
   } = useTickets();
   
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      // Nếu đã load usedTickets, refresh cả active và used tickets
-      // Nếu chưa load usedTickets, chỉ refresh active tickets
-      if (hasLoadedUsedTickets) {
-        await Promise.all([refreshTickets(), loadUsedTickets()]);
-      } else {
-        await refreshTickets();
-      }
+      await refreshTickets();
     } catch (error) {
       console.error("Lỗi khi làm mới dữ liệu:", error);
     } finally {
       setTimeout(() => setIsRefreshing(false), 500); // Give visual feedback
     }
+  };
+
+  const handleSearch = (query: string) => {
+    searchTickets(query);
+  };
+
+  const handleTabChange = (value: string) => {
+    changeFilter(value as TicketFilter);
   };
 
   if (loading && !isRefreshing) {
@@ -58,7 +56,7 @@ export const MyTicketsPage = () => {
     );
   }
 
-  if (error && !activeTickets.length) {
+  if (error && !tickets.length) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="text-destructive text-xl mb-4">Lỗi: {error}</div>
@@ -69,12 +67,12 @@ export const MyTicketsPage = () => {
     );
   }
 
-  // Directly assign tickets without filtering by user
-  const userActiveTickets = activeTickets;
-  const userUsedTickets = usedTickets;
-
-  // Get the next upcoming event
-  const nextEvent = userActiveTickets.sort(
+  // Get the next upcoming event from active tickets
+  const activeTickets = tickets.filter(ticket => 
+    !ticket.ticket.checkedInAt && new Date(ticket.show.date) > new Date()
+  );
+  
+  const nextEvent = activeTickets.sort(
     (a, b) => new Date(a.show.date).getTime() - new Date(b.show.date).getTime()
   )[0];
 
@@ -110,66 +108,69 @@ export const MyTicketsPage = () => {
             </div>
           )}
 
-          <div className="mb-6 space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"/>
-                <Input
-                  placeholder="Tìm kiếm theo tên sự kiện hoặc địa điểm..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Lọc theo"/>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả vé</SelectItem>
-                  <SelectItem value="upcoming">Sắp tới</SelectItem>
-                  <SelectItem value="past">Đã diễn ra</SelectItem>
-                  <SelectItem value="today">Hôm nay</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>            
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"/>
+              <Input
+                placeholder="Tìm kiếm theo tên sự kiện hoặc địa điểm..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </div>
           </div>
 
-          <div className="relative">
-            <TicketList
-              activeTickets={userActiveTickets}
-              usedTickets={userUsedTickets}
-              hasLoadedUsedTickets={hasLoadedUsedTickets}
-              onLoadUsedTickets={loadUsedTickets}
-              searchQuery={searchQuery}
-              filterType={filterType}
-            />
+          <Tabs value={currentFilter} onValueChange={handleTabChange} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="ACTIVE">Vé đang hoạt động</TabsTrigger>
+              <TabsTrigger value="USED">Vé đã sử dụng</TabsTrigger>
+              <TabsTrigger value="ALL">Tất cả vé</TabsTrigger>
+            </TabsList>            <TabsContent value="ACTIVE" className="mt-6">
+              <TicketList 
+                tickets={tickets} 
+                pageInfo={pageInfo} 
+                onLoadMore={loadMoreTickets}
+                loading={loading}
+                loadingMore={loadingMore}
+              />
+            </TabsContent>
+            
+            <TabsContent value="USED" className="mt-6">
+              <TicketList 
+                tickets={tickets} 
+                pageInfo={pageInfo} 
+                onLoadMore={loadMoreTickets}
+                loading={loading}
+                loadingMore={loadingMore}
+              />
+            </TabsContent>
+            
+            <TabsContent value="ALL" className="mt-6">
+              <TicketList 
+                tickets={tickets} 
+                pageInfo={pageInfo} 
+                onLoadMore={loadMoreTickets}
+                loading={loading}
+                loadingMore={loadingMore}
+              />
+            </TabsContent>
+          </Tabs>
 
-            {userActiveTickets.length === 0 && !loading && !hasLoadedUsedTickets && (
-              <div className="text-center py-12">
-                <p className="text-lg font-semibold mb-2">Không có vé nào đang hoạt động</p>
-                <p className="text-muted-foreground mb-4">
-                  Bạn có thể kiểm tra vé đã dùng hoặc khám phá sự kiện mới
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button variant="outline" onClick={() => loadUsedTickets()}>
-                    Xem vé đã dùng
-                  </Button>
-                  <Button onClick={() => navigate('/')}>Khám phá sự kiện</Button>
-                </div>
-              </div>
-            )}
-
-            {userActiveTickets.length === 0 && hasLoadedUsedTickets && userUsedTickets.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <p className="text-lg font-semibold mb-2">Không có vé nào</p>
-                <p className="text-muted-foreground mb-4">
-                  Bạn chưa mua vé cho bất kỳ sự kiện nào. Hãy khám phá sự kiện và mua vé ngay!
-                </p>
-                <Button onClick={() => navigate('/')}>Khám phá sự kiện</Button>
-              </div>
-            )}
-          </div>
+          {tickets.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <p className="text-lg font-semibold mb-2">
+                {currentFilter === 'ACTIVE' && 'Không có vé nào đang hoạt động'}
+                {currentFilter === 'USED' && 'Không có vé nào đã sử dụng'}
+                {currentFilter === 'ALL' && 'Không có vé nào'}
+              </p>
+              <p className="text-muted-foreground mb-4">
+                {currentFilter === 'ACTIVE' && 'Bạn có thể kiểm tra vé đã dùng hoặc khám phá sự kiện mới'}
+                {currentFilter === 'USED' && 'Bạn chưa có vé nào đã sử dụng'}
+                {currentFilter === 'ALL' && 'Bạn chưa mua vé cho bất kỳ sự kiện nào. Hãy khám phá sự kiện và mua vé ngay!'}
+              </p>
+              <Button onClick={() => navigate('/')}>Khám phá sự kiện</Button>
+            </div>
+          )}
         </div>
       </div>
     </ScrollToTop>

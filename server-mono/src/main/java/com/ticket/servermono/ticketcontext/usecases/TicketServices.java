@@ -403,101 +403,120 @@ public class TicketServices {
         }
         
         return responses;
-    }
-
-    /**
-     * Lấy vé active (chưa diễn ra) của người dùng
+    }    /**
+     * Get paginated tickets data for a user with filtering and sorting options
+     * @param userId The user ID
+     * @param page Page number (0-based)
+     * @param size Page size
+     * @param sort Sort field (createdAt, checkedInAt, etc.)
+     * @param direction Sort direction (asc/desc)
+     * @param filter Filter type (active, used, all)
+     * @param query Search query (optional)
+     * @return Paginated tickets data
      */
-    public List<ListTicketsResponse> getActiveTicketsData(UUID userId) {
-        // Sử dụng isActive từ gRPC response
+    @Transactional(readOnly = true)
+    public Page<ListTicketsResponse> getTicketsData(UUID userId, int page, int size, String sort, String direction, String filter, String query) {
+        // Check if user exists
         boolean userExists = checkUserExists(userId);
         if (!userExists) {
             throw new EntityNotFoundException("User not found");
         }
 
         try {
-            List<Ticket> tickets = ticketRepository.findByEndUserIdAndCheckedInAtIsNull(userId);
+            // Create pageable with sorting
+            Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+            Sort sortObj = Sort.by(sortDirection, sort);
+            Pageable pageable = PageRequest.of(page, size, sortObj);
 
-            if (tickets.isEmpty()) {
-                return new ArrayList<>();
+            // Get tickets based on filter
+            Page<Ticket> ticketsPage;
+            if ("active".equalsIgnoreCase(filter)) {
+                // Get tickets that haven't been checked in
+                ticketsPage = ticketRepository.findByEndUserIdAndCheckedInAtIsNull(userId, pageable);
+            } else if ("used".equalsIgnoreCase(filter)) {
+                // Get tickets that have been checked in
+                ticketsPage = ticketRepository.findByEndUserIdAndCheckedInAtIsNotNull(userId, pageable);
+            } else {
+                // Get all tickets
+                ticketsPage = ticketRepository.findByEndUserId(userId, pageable);
             }
 
-            List<ListTicketsResponse> allResponses = buildTicketsResponse(tickets);
+            // Convert to response objects
+            List<ListTicketsResponse> responseList = buildTicketsResponse(ticketsPage.getContent());
+            
+            // Apply additional filtering based on show date/time for active/used status
+            if ("active".equalsIgnoreCase(filter)) {
+                responseList = responseList.stream()
+                        .filter(response -> {
+                            // Check if show is still active (in the future)
+                            return isShowActive(response);
+                        })
+                        .collect(Collectors.toList());
+            } else if ("used".equalsIgnoreCase(filter)) {
+                responseList = responseList.stream()
+                        .filter(response -> {
+                            // Check if ticket is used (checked in or show has passed)
+                            return isTicketUsed(response);
+                        })
+                        .collect(Collectors.toList());
+            }
+            
+            // Apply search query if provided
+            if (query != null && !query.trim().isEmpty()) {
+                final String searchQuery = query.toLowerCase().trim();
+                responseList = responseList.stream()
+                        .filter(response -> 
+                            response.getOcca().getTitle().toLowerCase().contains(searchQuery) ||
+                            response.getOcca().getLocation().toLowerCase().contains(searchQuery) ||
+                            response.getTicketType().getType().toLowerCase().contains(searchQuery)
+                        )
+                        .collect(Collectors.toList());
+            }
 
-            // Lọc chỉ lấy các vé active theo kết quả từ gRPC
-            return allResponses.stream()
-                    .filter(response -> {
-                        String ticketClassId = response.getTicketType().getId().toString();
-
-                        // Lấy thông tin ngày giờ show
-                        String dateTimeStr = response.getShow().getDate() + " " + response.getShow().getTime();
-                        java.time.LocalDateTime showDateTime;
-                        try {
-                            showDateTime = java.time.LocalDateTime.parse(
-                                    dateTimeStr,
-                                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-                        } catch (Exception e) {
-                            log.warn("Unable to parse show date/time: {} for ticket: {}", dateTimeStr, ticketClassId);
-                            return false;
-                        }
-
-                        // Kiểm tra xem show còn active không (chưa diễn ra)
-                        return showDateTime.isAfter(java.time.LocalDateTime.now());
-                    })
-                    .collect(Collectors.toList());
+            // Return paginated result
+            return new PageImpl<>(responseList, pageable, ticketsPage.getTotalElements());
+            
         } catch (Exception e) {
-            log.error("Error retrieving active tickets data: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to retrieve active tickets data", e);
+            log.error("Error retrieving tickets data: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve tickets data", e);
         }
     }
-
+    
     /**
-     * Lấy vé đã sử dụng (đã check-in hoặc show đã diễn ra) của người dùng
+     * Check if a show is still active (in the future)
      */
-    public List<ListTicketsResponse> getUsedTicketsData(UUID userId) {
-        boolean userExists = checkUserExists(userId);
-        if (!userExists) {
-            throw new EntityNotFoundException("User not found");
-        }
-
+    private boolean isShowActive(ListTicketsResponse response) {
         try {
-            // Lấy tất cả vé của user
-            List<Ticket> tickets = ticketRepository.findByEndUserId(userId);
-
-            if (tickets.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            List<ListTicketsResponse> allResponses = buildTicketsResponse(tickets);
-
-            // Lọc lấy các vé đã sử dụng (đã check-in hoặc show đã diễn ra)
-            return allResponses.stream()
-                    .filter(response -> {
-                        // Vé đã check-in được coi là đã sử dụng
-                        if (response.getTicket().getCheckedInAt() != null) {
-                            return true;
-                        }
-
-                        // Lấy thông tin ngày giờ show
-                        String dateTimeStr = response.getShow().getDate() + " " + response.getShow().getTime();
-                        java.time.LocalDateTime showDateTime;
-                        try {
-                            showDateTime = java.time.LocalDateTime.parse(
-                                    dateTimeStr,
-                                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-                        } catch (Exception e) {
-                            log.warn("Unable to parse show date/time: {} for ticket: {}",
-                                    dateTimeStr, response.getTicket().getId());
-                            return false;
-                        }
-
-                        // Nếu show đã diễn ra, vé cũng được coi là đã sử dụng
-                        return showDateTime.isBefore(java.time.LocalDateTime.now());
-                    })
-                    .collect(Collectors.toList());
+            String dateTimeStr = response.getShow().getDate() + " " + response.getShow().getTime();
+            java.time.LocalDateTime showDateTime = java.time.LocalDateTime.parse(
+                    dateTimeStr,
+                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            return showDateTime.isAfter(java.time.LocalDateTime.now());
         } catch (Exception e) {
-            log.error("Error retrieving used tickets data: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to retrieve used tickets data", e);
+            log.warn("Unable to parse show date/time for ticket: {}", response.getTicket().getId());
+            return false;
+        }
+    }
+    
+    /**
+     * Check if a ticket is used (checked in or show has passed)
+     */
+    private boolean isTicketUsed(ListTicketsResponse response) {
+        // If ticket is checked in, it's used
+        if (response.getTicket().getCheckedInAt() != null) {
+            return true;
+        }
+        
+        // If show has passed, ticket is considered used
+        try {
+            String dateTimeStr = response.getShow().getDate() + " " + response.getShow().getTime();
+            java.time.LocalDateTime showDateTime = java.time.LocalDateTime.parse(
+                    dateTimeStr,
+                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            return showDateTime.isBefore(java.time.LocalDateTime.now());
+        } catch (Exception e) {
+            log.warn("Unable to parse show date/time for ticket: {}", response.getTicket().getId());
+            return false;
         }
     }
 

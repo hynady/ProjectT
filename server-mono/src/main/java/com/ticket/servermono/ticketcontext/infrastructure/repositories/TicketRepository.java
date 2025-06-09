@@ -18,6 +18,30 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
     
     List<Ticket> findByEndUserIdAndCheckedInAtIsNull(UUID endUserId);
     
+    /**
+     * Find tickets by user ID with pagination support
+     * @param endUserId The user ID to filter by
+     * @param pageable Pagination information
+     * @return Paginated list of tickets
+     */
+    Page<Ticket> findByEndUserId(UUID endUserId, Pageable pageable);
+    
+    /**
+     * Find tickets by user ID with check-in status filter and pagination
+     * @param endUserId The user ID to filter by
+     * @param pageable Pagination information
+     * @return Paginated list of tickets that haven't been checked in
+     */
+    Page<Ticket> findByEndUserIdAndCheckedInAtIsNull(UUID endUserId, Pageable pageable);
+    
+    /**
+     * Find tickets by user ID with check-in status filter and pagination
+     * @param endUserId The user ID to filter by
+     * @param pageable Pagination information
+     * @return Paginated list of tickets that have been checked in
+     */
+    Page<Ticket> findByEndUserIdAndCheckedInAtIsNotNull(UUID endUserId, Pageable pageable);
+    
     Long countByTicketClassId(UUID ticketClassId);
       
     Long countByTicketClassIdAndEndUserIdIsNotNull(UUID ticketClassId);    List<Ticket> findByTicketClassIdAndEndUserIdIsNotNull(UUID ticketClassId);    /**

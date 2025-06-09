@@ -1,205 +1,154 @@
 // src/features/my-ticket/blocks/TicketList.tsx
-import { useState } from 'react';
-import { Button } from '@/commons/components/button.tsx';
+import { useState, useCallback, memo } from 'react';
 import { Badge } from '@/commons/components/badge.tsx';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/commons/components/accordion.tsx";
+import { Button } from '@/commons/components/button.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, Ticket, ChevronRight } from 'lucide-react';
-import { format, isFuture, isPast, isToday } from 'date-fns';
+import { Calendar, Clock, MapPin, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { format, isPast } from 'date-fns';
 import { TicketModal } from "@/features/my-ticket/blocks/TicketModal.tsx";
 import { TicketDisplayUnit } from '@/features/my-ticket/internal-types/ticket.type';
-
-// Helper function to group tickets by Occa and Show
-const groupTickets = (tickets: TicketDisplayUnit[]) => {
-  const groups = new Map<string, {
-    occa: TicketDisplayUnit['occa'],
-    shows: Map<string, {
-      show: TicketDisplayUnit['show'],
-      tickets: TicketDisplayUnit[]
-    }>
-  }>();
-
-  tickets.forEach(ticket => {
-    const occaKey = ticket.occa.id;
-    const showKey = ticket.show.id;
-
-    if (!groups.has(occaKey)) {
-      groups.set(occaKey, {
-        occa: ticket.occa,
-        shows: new Map()
-      });
-    }
-
-    const occaGroup = groups.get(occaKey)!;
-    if (!occaGroup.shows.has(showKey)) {
-      occaGroup.shows.set(showKey, {
-        show: ticket.show,
-        tickets: []
-      });
-    }
-
-    occaGroup.shows.get(showKey)!.tickets.push(ticket);
-  });
-
-  return groups;
-};
+import { PageResponse } from '@/features/my-ticket/services/ticket.service';
+import { vi } from 'date-fns/locale';
 
 const getTicketStatus = (ticket: TicketDisplayUnit) => {
   if (ticket.ticket.checkedInAt) {
     return 'Đã Check-in';
   }
-  return isPast(new Date(ticket.show.date)) ? 'Đã hết hạn' : 'Hoạt động';
+  const showDateTime = new Date(`${ticket.show.date}T${ticket.show.time}`);
+  const oneDayAfterShow = new Date(showDateTime.getTime() + 24 * 60 * 60 * 1000);
+  return isPast(oneDayAfterShow) ? 'Đã quá hạn thanh toán' : 'Hoạt động';
 };
 
 interface TicketListProps {
-  activeTickets: TicketDisplayUnit[];
-  usedTickets: TicketDisplayUnit[];
-  hasLoadedUsedTickets: boolean;
-  onLoadUsedTickets: () => void;
-  searchQuery: string;
-  filterType: string;
+  tickets: TicketDisplayUnit[];
+  pageInfo?: PageResponse<TicketDisplayUnit> | null;
+  onLoadMore?: () => void;
+  loading?: boolean;
+  loadingMore?: boolean;
 }
 
-export const TicketList = ({
-  activeTickets,
-  usedTickets,
-  hasLoadedUsedTickets,
-  onLoadUsedTickets,
-  searchQuery,
-  filterType
-}: TicketListProps) => {
-  const [selectedTicket, setSelectedTicket] = useState<TicketDisplayUnit | null>(null);
+// Memoize individual ticket card to prevent unnecessary re-renders
+const TicketCard = memo(({ ticket, onSelect }: { 
+  ticket: TicketDisplayUnit; 
+  onSelect: (ticket: TicketDisplayUnit) => void;
+}) => {
+  const handleSelect = useCallback(() => {
+    onSelect(ticket);
+  }, [ticket, onSelect]);
 
-  const filterTickets = (tickets: TicketDisplayUnit[]) => {
-    return tickets.filter(ticket => {
-      const matchesSearch = ticket.occa.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ticket.occa.location.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const ticketDate = new Date(ticket.show.date);
-      const matchesFilter = filterType === 'all' ||
-        (filterType === 'upcoming' && isFuture(ticketDate)) ||
-        (filterType === 'past' && isPast(ticketDate)) ||
-        (filterType === 'today' && isToday(ticketDate));
-
-      return matchesSearch && matchesFilter;
-    });
-  };
-
-  const filteredActiveTickets = filterTickets(activeTickets);
-  const filteredUsedTickets = filterTickets(usedTickets);
-
-  const groupedActiveTickets = groupTickets(filteredActiveTickets);
-  const groupedUsedTickets = groupTickets(filteredUsedTickets);
-
-  const renderTicketGroup = (groupedTickets: ReturnType<typeof groupTickets>, isUsed: boolean) => (
-    <Accordion type="multiple" className="space-y-4">
-      {Array.from(groupedTickets.entries()).map(([occaId, occaGroup]) => (
-        <AccordionItem
-          key={occaId}
-          value={occaId}
-          className={`border rounded-lg bg-card ${isUsed ? 'opacity-70 hover:opacity-90 transition-opacity' : ''}`}
-        >
-          <AccordionTrigger className="px-6 hover:no-underline">
-            <div className="flex items-center justify-between flex-1">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Ticket className="w-6 h-6 text-primary"/>
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold text-lg">{occaGroup.occa.title}</h3>
-                  <p className="text-sm text-muted-foreground">{occaGroup.occa.location}</p>
-                </div>
+  return (
+    <motion.div
+      key={ticket.ticket.id}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="w-full"
+    >
+      <button
+        onClick={handleSelect}
+        className="w-full p-6 rounded-lg border bg-card hover:bg-accent transition-colors group"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1 text-left space-y-3">
+            {/* Event Title */}
+            <div className="flex items-start justify-between">
+              <h3 className="font-semibold text-lg text-foreground">
+                {ticket.occa.title}
+              </h3>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </div>
+            
+            {/* Event Details */}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <MapPin className="w-4 h-4" />
+                <span>{ticket.occa.location}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                <span>{format(new Date(ticket.show.date), 'dd/MM/yyyy', { locale: vi })}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                <span>{ticket.show.time}</span>
               </div>
             </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="px-6 pb-4 space-y-4">
-              {Array.from(occaGroup.shows.entries()).map(([showId, showGroup]) => (
-                <div key={showId} className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4"/>
-                    <span>{format(new Date(showGroup.show.date), 'PPP')}</span>
-                    <Clock className="w-4 h-4 ml-2"/>
-                    <span>{showGroup.show.time}</span>
-                  </div>
-                  <div className="grid gap-3">
-                    {showGroup.tickets.map((ticket) => (
-                      <motion.div
-                        key={ticket.ticket.id}
-                        initial={{opacity: 0, y: 10}}
-                        animate={{opacity: 1, y: 0}}
-                        exit={{opacity: 0, y: -10}}
-                      >
-                        <button
-                          onClick={() => setSelectedTicket(ticket)}
-                          className="w-full p-4 rounded-lg border bg-card hover:bg-accent transition-colors flex items-center justify-between group"
-                        >
-                          <div className="flex items-center gap-4">
-                            <Badge variant={ticket.ticketType.type.toLowerCase().includes('vip') ? 'default' : 'secondary'}>
-                              {ticket.ticketType.type}
-                            </Badge>
-                            <span className="text-sm font-medium">
-                              {ticket.ticketType.price.toLocaleString('vi-VN')}đ
-                            </span>
-                            <Badge variant={
-                              ticket.ticket.checkedInAt ? 'default' :
-                                isPast(new Date(ticket.show.date)) ? 'destructive' : 'outline'
-                            }>
-                              {getTicketStatus(ticket)}
-                            </Badge>
-                          </div>
-                          <ChevronRight
-                            className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors"
-                          />
-                        </button>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            
+            {/* Ticket Details */}
+            <div className="flex items-center gap-3">
+              <Badge variant={ticket.ticketType.type.toLowerCase().includes('vip') ? 'default' : 'secondary'}>
+                {ticket.ticketType.type}
+              </Badge>
+              <span className="text-sm font-medium text-foreground">
+                {ticket.ticketType.price.toLocaleString('vi-VN')}đ
+              </span>
+                <Badge variant={
+                getTicketStatus(ticket) === 'Đã Check-in' ? 'default' :
+                  getTicketStatus(ticket) === 'Đã quá hạn thanh toán' ? 'destructive' : 'outline'
+                }>
+                {getTicketStatus(ticket)}
+              </Badge>
             </div>
-          </AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
+          </div>
+        </div>
+      </button>
+    </motion.div>
   );
+});
+
+TicketCard.displayName = 'TicketCard';
+
+export const TicketList = memo(({ tickets, pageInfo, onLoadMore, loading = false, loadingMore = false }: TicketListProps) => {
+  const [selectedTicket, setSelectedTicket] = useState<TicketDisplayUnit | null>(null);
+
+  const handleTicketSelect = useCallback((ticket: TicketDisplayUnit) => {
+    setSelectedTicket(ticket);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setSelectedTicket(null);
+  }, []);
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Active tickets */}
-        {filteredActiveTickets.length > 0 && (
+      <div className="space-y-4">
+        {tickets.length > 0 ? (
           <>
-            <h3 className="text-lg font-semibold mb-4">Vé đang hoạt động</h3>
-            {renderTicketGroup(groupedActiveTickets, false)}
+            <div className="grid gap-4">
+              {tickets.map(ticket => (
+                <TicketCard 
+                  key={ticket.ticket.id}
+                  ticket={ticket} 
+                  onSelect={handleTicketSelect}
+                />
+              ))}
+            </div>
+            
+            {/* Load More Button */}
+            {pageInfo && !pageInfo.last && onLoadMore && (
+              <div className="flex justify-center pt-6">
+                <Button 
+                  variant="outline" 
+                  onClick={onLoadMore}
+                  disabled={loading || loadingMore}
+                  className="min-w-[120px]"
+                >
+                  {loadingMore ? (
+                    <>
+                      <MoreHorizontal className="w-4 h-4 mr-2 animate-spin" />
+                      Đang tải...
+                    </>
+                  ) : (
+                    'Xem thêm'
+                  )}
+                </Button>
+              </div>
+            )}
           </>
-        )}
-
-        {/* Used tickets */}
-        {!hasLoadedUsedTickets ? (
-          filteredActiveTickets.length > 0 && (
-            <div className="text-center py-6">
-              <Button
-                variant="outline"
-                onClick={onLoadUsedTickets}
-                className="mx-auto"
-              >
-                Xem vé đã dùng
-              </Button>
-            </div>
-          )
         ) : (
-          filteredUsedTickets.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Vé đã dùng</h3>
-              {renderTicketGroup(groupedUsedTickets, true)}
-            </div>
-          )
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Không có vé nào để hiển thị</p>
+          </div>
         )}
       </div>
 
@@ -207,16 +156,12 @@ export const TicketList = ({
         {selectedTicket && (
           <TicketModal
             ticket={selectedTicket}
-            onClose={() => setSelectedTicket(null)}
+            onClose={handleCloseModal}
           />
         )}
       </AnimatePresence>
-
-      {filteredActiveTickets.length === 0 && (!hasLoadedUsedTickets || filteredUsedTickets.length === 0) && searchQuery.length > 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Không tìm thấy vé phù hợp với tìm kiếm của bạn</p>
-        </div>
-      )}
     </>
   );
-};
+});
+
+TicketList.displayName = 'TicketList';
