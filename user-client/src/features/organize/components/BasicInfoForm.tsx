@@ -182,7 +182,6 @@ export const BasicInfoForm = ({
   }, []);
   // REMOVE THE PROBLEMATIC WATCH EFFECT THAT CAUSES TYPING ISSUES
   // Instead, only update on blur or submit
-
   // Handle blur events to update the parent form
   const handleFieldBlur = () => {
     const values = form.getValues();
@@ -195,13 +194,12 @@ export const BasicInfoForm = ({
       description: values.description || "",
       categoryId: values.categoryId || "",
       regionId: values.regionId || "",
-      bannerUrl: bannerPreview || "",
-      bannerFile: bannerFile || undefined,
+      bannerUrl: bannerPreview || values.bannerUrl || "", // Use current preview or form value
+      bannerFile: bannerFile || undefined, // Use current file state
     };
 
     onChange(currentData);
   };
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -218,11 +216,26 @@ export const BasicInfoForm = ({
     const objectUrl = URL.createObjectURL(file);
     setBannerPreview(objectUrl);
 
-    // Lưu File object vào form
+    // Lưu File object vào form và cập nhật bannerUrl với preview URL
     form.setValue("bannerFile", file);
+    form.setValue("bannerUrl", objectUrl);
 
-    // Update parent on file change
-    handleFieldBlur();
+    // Update parent immediately with new data
+    const values = form.getValues();
+    const currentData: BasicInfoFormData = {
+      title: values.title || "",
+      artist: values.artist || "",
+      location: values.location || "",
+      address: values.address || "",
+      organizer: values.organizer || "",
+      description: values.description || "",
+      categoryId: values.categoryId || "",
+      regionId: values.regionId || "",
+      bannerUrl: objectUrl, // Use the new preview URL
+      bannerFile: file, // Include the file
+    };
+
+    onChange(currentData);
 
     toast({
       title: "Đã chọn ảnh",
@@ -232,7 +245,6 @@ export const BasicInfoForm = ({
     // Reset the input value to allow selecting the same file again if needed
     event.target.value = "";
   };
-
   const handleRemoveBanner = () => {
     // Revoke the blob URL if it exists
     if (bannerPreview && bannerPreview.startsWith("blob:")) {
@@ -245,8 +257,22 @@ export const BasicInfoForm = ({
     form.setValue("bannerFile", undefined);
     form.setValue("bannerUrl", "");
 
-    // Update parent component
-    handleFieldBlur();
+    // Update parent component immediately with cleared banner
+    const values = form.getValues();
+    const currentData: BasicInfoFormData = {
+      title: values.title || "",
+      artist: values.artist || "",
+      location: values.location || "",
+      address: values.address || "",
+      organizer: values.organizer || "",
+      description: values.description || "",
+      categoryId: values.categoryId || "",
+      regionId: values.regionId || "",
+      bannerUrl: "", // Clear banner URL
+      bannerFile: undefined, // Clear banner file
+    };
+
+    onChange(currentData);
 
     toast({
       title: "Đã xóa ảnh",

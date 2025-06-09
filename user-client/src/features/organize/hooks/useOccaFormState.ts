@@ -83,11 +83,16 @@ export const useOccaFormState = ({
     if (!isEditing || !originalData) {
       setHasChanges(true);
       return;
-    }
-
-    // Deep compare function for nested objects
+    }    // Deep compare function for nested objects
     function hasDeepChanges<T>(original: T, current: T, path: string = 'root'): { changed: boolean; changedPaths: string[] } {     
       const changedPaths: string[] = [];
+      
+      // Debug logging at the start
+      if (path === 'root') {
+        console.log('=== Starting deep comparison ===');
+        console.log('Original data:', original);
+        console.log('Current data:', current);
+      }
       
       // Handle direct equality
       if (Object.is(original, current)) return { changed: false, changedPaths };
@@ -168,34 +173,97 @@ export const useOccaFormState = ({
             return { changed: true, changedPaths };
           }
         }
-        
-        return { changed: false, changedPaths };
-      }
-
-      // Handle objects
+          return { changed: false, changedPaths };
+      }      // Handle objects
       const originalObj = original as Record<string, unknown>;
       const currentObj = current as Record<string, unknown>;
       
       const originalKeys = Object.keys(originalObj);
       const currentKeys = Object.keys(currentObj);
       
-      // Special handling for Files
-      if (currentKeys.includes('bannerFile') && currentObj.bannerFile instanceof File) {
-        console.log(`File object detected at ${path}.bannerFile`);
+      // Debug logging for file detection - only log for basicInfo to reduce noise
+      if (path.includes('basicInfo')) {
+        console.log(`Checking file changes at ${path}:`);
+        console.log(`- Original keys:`, originalKeys);
+        console.log(`- Current keys:`, currentKeys);
+        console.log(`- Original bannerFile:`, originalObj.bannerFile);
+        console.log(`- Current bannerFile:`, currentObj.bannerFile);
+        console.log(`- Original bannerUrl:`, originalObj.bannerUrl);
+        console.log(`- Current bannerUrl:`, currentObj.bannerUrl);
+      }      
+      // Special handling for Files - detect any file-related changes
+      const hasNewFile = currentKeys.includes('bannerFile') && currentObj.bannerFile instanceof File;
+      const hadFile = originalKeys.includes('bannerFile') && originalObj.bannerFile instanceof File;
+      const bannerFileChanged = originalObj.bannerFile !== currentObj.bannerFile;
+      
+      if (path.includes('basicInfo')) {
+        console.log(`File check: hasNewFile=${hasNewFile}, hadFile=${hadFile}, bannerFileChanged=${bannerFileChanged}`);
+      }
+        if (hasNewFile || hadFile || bannerFileChanged) {
+        console.log(`✅ File change detected at ${path}: hasNewFile=${hasNewFile}, hadFile=${hadFile}, bannerFileChanged=${bannerFileChanged}`);
         changedPaths.push(`${path}.bannerFile`);
         return { changed: true, changedPaths };
       }
-      
-      if (originalKeys.length !== currentKeys.length) {
-        console.log(`Object keys length change detected at ${path}: ${originalKeys.length} !== ${currentKeys.length}`);
-        console.log(`Original keys: ${originalKeys.join(', ')}`);
-        console.log(`Current keys: ${currentKeys.join(', ')}`);
+
+      // Special handling for banner URL changes (for delete banner case)
+      if (originalKeys.includes('bannerUrl') && currentKeys.includes('bannerUrl')) {
+        const originalBannerUrl = originalObj.bannerUrl as string;
+        const currentBannerUrl = currentObj.bannerUrl as string;
+        
+        if (path.includes('basicInfo')) {
+          console.log(`Banner URL check: "${originalBannerUrl}" vs "${currentBannerUrl}"`);
+        }
+        
+        // Detect banner URL changes (including empty string changes)
+        if (originalBannerUrl !== currentBannerUrl) {
+          console.log(`✅ Banner URL change detected at ${path}: "${originalBannerUrl}" !== "${currentBannerUrl}"`);
+          changedPaths.push(`${path}.bannerUrl`);
+          return { changed: true, changedPaths };
+        }
+      }
+
+      // Check if bannerFile was removed (from File to undefined)
+      if (originalKeys.includes('bannerFile') && !currentKeys.includes('bannerFile')) {
+        console.log(`✅ Banner file removed at ${path}`);
+        changedPaths.push(`${path}.bannerFile`);
+        return { changed: true, changedPaths };
+      }
+
+      // Check if bannerFile was added (from undefined to File)
+      if (!originalKeys.includes('bannerFile') && currentKeys.includes('bannerFile')) {
+        console.log(`✅ Banner file added at ${path}`);
+        changedPaths.push(`${path}.bannerFile`);
+        return { changed: true, changedPaths };
+      }
+
+      // Filter out file-related keys for comparison to avoid false positives
+      // Note: We keep bannerUrl in comparison since we handle it specially above
+      const filteredOriginalKeys = originalKeys.filter(key => !['bannerFile', 'file'].includes(key));
+      const filteredCurrentKeys = currentKeys.filter(key => !['bannerFile', 'file'].includes(key));
+
+      // Sort keys to avoid order-based false positives
+      filteredOriginalKeys.sort();
+      filteredCurrentKeys.sort();
+
+      if (filteredOriginalKeys.length !== filteredCurrentKeys.length) {
+        console.log(`Object keys length change detected at ${path}: ${filteredOriginalKeys.length} !== ${filteredCurrentKeys.length}`);
+        console.log(`Original keys: ${filteredOriginalKeys.join(', ')}`);
+        console.log(`Current keys: ${filteredCurrentKeys.join(', ')}`);
         changedPaths.push(`${path}.keys`);
         return { changed: true, changedPaths };
       }
-        for (const key of originalKeys) {
-        // Skip file objects and duration field in comparison
-        if (key === 'bannerFile' || key === 'file' || key === 'duration') continue;
+
+      // Check if key names are different (after filtering and sorting)
+      const keysDifferent = filteredOriginalKeys.some((key, index) => key !== filteredCurrentKeys[index]);
+      if (keysDifferent) {
+        console.log(`Object keys difference detected at ${path}`);
+        console.log(`Original keys: ${filteredOriginalKeys.join(', ')}`);
+        console.log(`Current keys: ${filteredCurrentKeys.join(', ')}`);
+        changedPaths.push(`${path}.keys`);
+        return { changed: true, changedPaths };
+      }        for (const key of filteredOriginalKeys) {
+        // Skip duration field, bannerFile (already handled above), and bannerUrl (handled specially above)
+        if (key === 'duration' || key === 'bannerFile' || key === 'bannerUrl') continue;
         
         const keyResult = hasDeepChanges(originalObj[key], currentObj[key], `${path}.${key}`);
         if (keyResult.changed) {
@@ -206,13 +274,16 @@ export const useOccaFormState = ({
       
       return { changed: false, changedPaths };
     }
-    
-    // Compare current data with original data
+      // Compare current data with original data
     const result = hasDeepChanges(originalData, occaData);
     setHasChanges(result.changed);
     
+    console.log(`🔄 hasChanges updated to: ${result.changed}`);
+    
     if (result.changed) {
-      console.log("Changes detected in the following paths:", result.changedPaths);
+      console.log("✅ Changes detected in the following paths:", result.changedPaths);
+    } else {
+      console.log("❌ No changes detected");
     }
   }, [occaData, originalData, isEditing]);
 
