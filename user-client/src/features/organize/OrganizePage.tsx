@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DashboardLayout } from "./layouts/DashboardLayout";
 import { EventsTable } from "./components/EventsTable";
 import { Button } from "@/commons/components/button";
 import { Input } from "@/commons/components/input";
@@ -15,8 +14,7 @@ const OrganizePage = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="h-fit flex flex-col gap-4">
+    <div className="h-fit flex flex-col gap-4">
         <header className="flex items-center justify-between">
           <div className="space-y-1">
             <h2 className="text-2xl font-bold tracking-tight">Quản lý sự kiện</h2>
@@ -42,12 +40,10 @@ const OrganizePage = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
-        <div className="rounded-md border flex-1 flex flex-col h-[calc(100vh-13rem)] bg-background overflow-hidden">
+          <div className="rounded-md border flex-1 flex flex-col h-[calc(100vh-13rem)] bg-background overflow-hidden">
           <EventsTable searchTerm={searchQuery} />
         </div>
       </div>
-    </DashboardLayout>
   );
 };
 

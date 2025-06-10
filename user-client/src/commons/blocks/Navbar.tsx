@@ -5,8 +5,8 @@ import {
   Ticket,
   User,
   LayoutDashboard,
-  NotepadText,
-  UserRoundCog
+  FileCheck,
+  FileUser
 } from "lucide-react";
 import { Button } from "@/commons/components/button.tsx";
 import {
@@ -246,15 +246,15 @@ const Navbar = () => {
                           className="text-sm"
                           onClick={() => navigate("/admin/approval")}
                         >
-                          <NotepadText className="h-4 w-4 mr-2" />
-                          <span>Content Approval</span>
+                          <FileCheck className="h-4 w-4 mr-2" />
+                          <span>Kiểm duyệt nội dung</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-sm"
                           onClick={() => navigate("/admin/users")}
                         >
-                          <UserRoundCog className="h-4 w-4 mr-2" />
-                          <span>User Management</span>
+                          <FileUser className="h-4 w-4 mr-2" />
+                          <span>Quản lý người dùng</span>
                         </DropdownMenuItem>
                       </>
                     )}

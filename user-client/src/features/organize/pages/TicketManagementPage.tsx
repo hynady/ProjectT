@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { TicketIcon } from "lucide-react";
-import { DashboardLayout } from "@/features/organize/layouts/DashboardLayout";
 import { useDataTable } from "@/commons/hooks/use-data-table";
 import { ticketService } from "../services/ticket.service";
 import { organizeService } from "../services/organize.service";
@@ -147,26 +146,22 @@ const TicketManagementPage = () => {
   const handleViewTicketDetails = (ticketId: string) => {
     console.log("View ticket details for:", ticketId);
     // Future implementation
-  };
-  if (!showId) {
+  };  if (!showId) {
     return (
-      <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-full py-12 text-center">
-          <div className="max-w-md space-y-4">
-            <TicketIcon className="h-12 w-12 mx-auto text-muted-foreground" />
-            <h2 className="text-2xl font-bold">Quản lý vé</h2>
-            <p className="text-muted-foreground">
-              Chọn một sự kiện và suất diễn từ menu bên trái để xem và quản lý vé.
-            </p>
-          </div>
+      <div className="flex flex-col items-center justify-center h-full py-12 text-center">
+        <div className="max-w-md space-y-4">
+          <TicketIcon className="h-12 w-12 mx-auto text-muted-foreground" />
+          <h2 className="text-2xl font-bold">Quản lý vé</h2>
+          <p className="text-muted-foreground">
+            Chọn một sự kiện và suất diễn từ menu bên trái để xem và quản lý vé.
+          </p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="h-fit flex flex-col gap-4">
+    <div className="h-fit flex flex-col gap-4">
         {/* Header with event title and search */}
         <Header 
           occaInfo={occaInfo}
@@ -219,10 +214,8 @@ const TicketManagementPage = () => {
               revenueByClass={revenueByClass}
               tickets={tickets}
             />
-          </TabsContent>
-        </Tabs>
+          </TabsContent>        </Tabs>
       </div>
-    </DashboardLayout>
   );
 };
 

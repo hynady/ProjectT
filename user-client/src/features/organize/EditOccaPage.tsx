@@ -6,7 +6,6 @@ import { Button } from "@/commons/components/button";
 import { useAuth } from "@/features/auth/contexts";
 import { organizeService } from "./services/organize.service";
 import { OccaFormData } from "./internal-types/organize.type";
-import { DashboardLayout } from "./layouts/DashboardLayout";
 import CreateOccaPage from "./CreateOccaPage";
 
 const EditOccaPage = () => {
@@ -58,43 +57,38 @@ const EditOccaPage = () => {
   const handleGoBack = () => {
     navigate("/organize");
   };
-
   // Show loading state
   if (authLoading || loading) {
     return (
-      <DashboardLayout>
-        <div className="container py-8">
-          <div className="space-y-6">
-            <Skeleton className="h-12 w-3/4" />
-            <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
+      <div className="container py-8">
+        <div className="space-y-6">
+          <Skeleton className="h-12 w-3/4" />
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-64 w-full" />
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   // Show error state
   if (error || !occaData) {
     return (
-      <DashboardLayout>
-        <div className="container py-8">
-          <Alert variant="destructive">
-            <AlertTitle>Lỗi tải dữ liệu</AlertTitle>
-            <AlertDescription className="flex flex-col gap-4">
-              <span>{error || "Không thể tải thông tin sự kiện"}</span>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={handleGoBack}>
-                  Quay lại
-                </Button>
-                <Button variant="default" onClick={handleRetry}>
-                  Thử lại
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </div>
-      </DashboardLayout>
+      <div className="container py-8">
+        <Alert variant="destructive">
+          <AlertTitle>Lỗi tải dữ liệu</AlertTitle>
+          <AlertDescription className="flex flex-col gap-4">
+            <span>{error || "Không thể tải thông tin sự kiện"}</span>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={handleGoBack}>
+                Quay lại
+              </Button>
+              <Button variant="default" onClick={handleRetry}>
+                Thử lại
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 

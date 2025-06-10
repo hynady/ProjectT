@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { AdminDashboardLayout } from "./layouts/AdminDashboardLayout";
 import { adminService } from "./services/admin.service";
 import { OccaStatistics } from "./internal-types/admin.type";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/commons/components/card";
@@ -65,23 +64,20 @@ const AdminDashboardPage = () => {
         return <Badge variant="secondary" className="ml-2">{type}</Badge>;
     }
   };
-
   return (
-    <AdminDashboardLayout>
-      <div className="flex flex-col gap-6">
-        <header>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome to the admin dashboard</p>
-        </header>
+    <div className="flex flex-col gap-6">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight">Bảng điều khiển</h1>
+        <p className="text-muted-foreground">Chào mừng đến với bảng điều khiển quản trị</p>
+      </header>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {/* Stats Overview */}        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {/* Total Events Card */}
           <Card>
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Total Events</p>
+                  <p className="text-sm font-medium text-muted-foreground">Tổng sự kiện</p>
                   {loading ? (
                     <Skeleton className="h-9 w-16" />
                   ) : (
@@ -97,7 +93,7 @@ const AdminDashboardPage = () => {
                   <ArrowUp className="h-3 w-3 mr-1" />
                   <span>12%</span>
                 </div>
-                <span className="text-muted-foreground ml-1">from last month</span>
+                <span className="text-muted-foreground ml-1">so với tháng trước</span>
               </div>
             </CardContent>
           </Card>
@@ -107,7 +103,7 @@ const AdminDashboardPage = () => {
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                  <p className="text-sm font-medium text-muted-foreground">Tổng người dùng</p>
                   {loading ? (
                     <Skeleton className="h-9 w-16" />
                   ) : (
@@ -123,7 +119,7 @@ const AdminDashboardPage = () => {
                   <ArrowUpRight className="h-3 w-3 mr-1" />
                   <span>8%</span>
                 </div>
-                <span className="text-muted-foreground ml-1">from last month</span>
+                <span className="text-muted-foreground ml-1">so với tháng trước</span>
               </div>
             </CardContent>
           </Card>
@@ -133,7 +129,7 @@ const AdminDashboardPage = () => {
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Tickets Sold</p>
+                  <p className="text-sm font-medium text-muted-foreground">Vé đã bán</p>
                   {loading ? (
                     <Skeleton className="h-9 w-20" />
                   ) : (
@@ -149,17 +145,15 @@ const AdminDashboardPage = () => {
                   <ArrowUp className="h-3 w-3 mr-1" />
                   <span>18%</span>
                 </div>
-                <span className="text-muted-foreground ml-1">from last month</span>
+                <span className="text-muted-foreground ml-1">so với tháng trước</span>
               </div>
             </CardContent>
-          </Card>
-
-          {/* Total Revenue */}
+          </Card>          {/* Total Revenue */}
           <Card>
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                  <p className="text-sm font-medium text-muted-foreground">Tổng doanh thu</p>
                   {loading ? (
                     <Skeleton className="h-9 w-28" />
                   ) : (
@@ -179,7 +173,7 @@ const AdminDashboardPage = () => {
                   <ArrowUpRight className="h-3 w-3 mr-1" />
                   <span>24%</span>
                 </div>
-                <span className="text-muted-foreground ml-1">from last month</span>
+                <span className="text-muted-foreground ml-1">so với tháng trước</span>
               </div>
             </CardContent>
           </Card>
@@ -194,20 +188,19 @@ const AdminDashboardPage = () => {
                 <div className="space-y-2">
                   <p className="flex items-center text-sm font-medium text-amber-500">
                     <Clock4 className="h-4 w-4 mr-1" />
-                    Pending Approval
+                    Chờ phê duyệt
                   </p>
                   {loading ? (
                     <Skeleton className="h-9 w-16" />
                   ) : (
                     <p className="text-2xl font-bold">{stats?.pendingOccas}</p>
                   )}
-                </div>
-                <div className="bg-amber-500/10 p-2 rounded-full">
+                </div>                <div className="bg-amber-500/10 p-2 rounded-full">
                   <Clock className="w-5 h-5 text-amber-500" />
                 </div>
               </div>
               <div className="mt-3 text-sm">
-                <span className="text-muted-foreground">Needs review</span>
+                <span className="text-muted-foreground">Cần xem xét</span>
               </div>
             </CardContent>
           </Card>
@@ -219,7 +212,7 @@ const AdminDashboardPage = () => {
                 <div className="space-y-2">
                   <p className="flex items-center text-sm font-medium text-green-500">
                     <CheckCircle2 className="h-4 w-4 mr-1" />
-                    Approved Events
+                    Đã phê duyệt
                   </p>
                   {loading ? (
                     <Skeleton className="h-9 w-16" />
@@ -232,7 +225,7 @@ const AdminDashboardPage = () => {
                 </div>
               </div>
               <div className="mt-3 text-sm">
-                <span className="text-muted-foreground">Live on site</span>
+                <span className="text-muted-foreground">Đang hoạt động</span>
               </div>
             </CardContent>
           </Card>
@@ -244,7 +237,7 @@ const AdminDashboardPage = () => {
                 <div className="space-y-2">
                   <p className="flex items-center text-sm font-medium text-red-500">
                     <XCircle className="h-4 w-4 mr-1" />
-                    Rejected Events
+                    Đã từ chối
                   </p>
                   {loading ? (
                     <Skeleton className="h-9 w-16" />
@@ -254,10 +247,9 @@ const AdminDashboardPage = () => {
                 </div>
                 <div className="bg-red-500/10 p-2 rounded-full">
                   <XCircle className="w-5 h-5 text-red-500" />
-                </div>
-              </div>
+                </div>              </div>
               <div className="mt-3 text-sm">
-                <span className="text-muted-foreground">Not approved</span>
+                <span className="text-muted-foreground">Không được phê duyệt</span>
               </div>
             </CardContent>
           </Card>
@@ -266,8 +258,8 @@ const AdminDashboardPage = () => {
         {/* Recent Activity */}
         <Card className="col-span-1 md:col-span-2">
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest actions on the platform</CardDescription>
+            <CardTitle>Hoạt động gần đây</CardTitle>
+            <CardDescription>Các hành động mới nhất trên hệ thống</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -295,23 +287,21 @@ const AdminDashboardPage = () => {
                           </div>
                         </div>
                         <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>by {activity.actor}</span>
+                          <span>bởi {activity.actor}</span>
                           <span>{formatActivityDate(activity.timestamp)}</span>
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
-                      <p>No recent activity</p>
+                      <p>Không có hoạt động gần đây</p>
                     </div>
                   )}
                 </div>
               </ScrollArea>
             )}
-          </CardContent>
-        </Card>
+          </CardContent></Card>
       </div>
-    </AdminDashboardLayout>
   );
 };
 

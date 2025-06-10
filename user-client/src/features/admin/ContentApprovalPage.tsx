@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { adminService } from "./services/admin.service";
-import { AdminDashboardLayout } from "./layouts/AdminDashboardLayout";
 import { AdminOccaUnit, OccaFilterParams } from "./internal-types/admin.type";
 import { useDataTable } from "@/commons/hooks/use-data-table";
 import { DataTable, Column, StatusOption } from "@/commons/components/data-table";
@@ -259,14 +258,12 @@ const ContentApprovalPage = () => {
       )
     },
   ], []);
-  
-  return (
-    <AdminDashboardLayout>
-      <div className="flex flex-col gap-6">
-        <header>
-          <h1 className="text-3xl font-bold tracking-tight">Content Approval</h1>
-          <p className="text-muted-foreground">Review and manage event submissions</p>
-        </header>
+    return (
+    <div className="flex flex-col gap-6">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight">Phê duyệt nội dung</h1>
+        <p className="text-muted-foreground">Xem xét và quản lý các đăng ký sự kiện</p>
+      </header>
         
         {/* Search bar */}
         <div className="relative w-full max-w-sm">
@@ -297,7 +294,8 @@ const ContentApprovalPage = () => {
             sortDirection={sortDirection as 'asc' | 'desc'}
             statusOptions={statusOptions}
             statusFilter={statusFilter}
-            searchQuery={searchTerm}            onPageChange={handlePageChange}
+            searchQuery={searchTerm}            
+            onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
             refreshData={refreshData}
             onSortChange={handleSortChange}
@@ -306,7 +304,7 @@ const ContentApprovalPage = () => {
               <ActionMenu
                 actions={[
                   {
-                    label: occa.approvalStatus === "pending" ? "Review & Approve" : "View Details",
+                    label: occa.approvalStatus === "pending" ? "Xem xét & Phê duyệt" : "Xem chi tiết",
                     icon: <Eye className="h-4 w-4" />,
                     onClick: () => handleReviewClick(occa)
                   }
@@ -315,7 +313,6 @@ const ContentApprovalPage = () => {
             )}
           />
         </div>
-      </div>
       
       {/* Review Dialog */}
       {selectedOcca && (
@@ -333,23 +330,22 @@ const ContentApprovalPage = () => {
       <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
         <DialogContent className="max-h-[90vh]">          <DialogHeader>            <DialogTitle>
               {selectedOcca?.approvalStatus === 'approved' 
-                ? 'Update Approved Event' 
-                : 'Approve Event'}
+                ? 'Cập nhật sự kiện đã phê duyệt' 
+                : 'Phê duyệt sự kiện'}
             </DialogTitle>
             <DialogDescription>
               {selectedOcca?.approvalStatus === 'approved'
-                ? 'Are you sure you want to keep this event approved?'
-                : `Are you sure you want to approve "${selectedOcca?.title}"?`}
+                ? 'Bạn có chắc chắn muốn giữ sự kiện này ở trạng thái đã phê duyệt?'
+                : `Bạn có chắc chắn muốn phê duyệt "${selectedOcca?.title}"?`}
             </DialogDescription>
           </DialogHeader>
           
-          <DialogFooter>
-            <Button
+          <DialogFooter>            <Button
               variant="outline"
               onClick={() => setIsApproveDialogOpen(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              Hủy
             </Button>
             <Button 
               onClick={handleApproveSubmit}
@@ -357,8 +353,8 @@ const ContentApprovalPage = () => {
               loading={isSubmitting}
             >
               {isSubmitting 
-                ? (selectedOcca?.approvalStatus === 'approved' ? "Updating..." : "Approving...") 
-                : (selectedOcca?.approvalStatus === 'approved' ? "Update Approval" : "Approve Event")}
+                ? (selectedOcca?.approvalStatus === 'approved' ? "Đang cập nhật..." : "Đang phê duyệt...") 
+                : (selectedOcca?.approvalStatus === 'approved' ? "Cập nhật phê duyệt" : "Phê duyệt sự kiện")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -366,42 +362,39 @@ const ContentApprovalPage = () => {
       
       {/* Reject Dialog */}
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent className="max-h-[90vh]">          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="max-h-[90vh]">          <DialogHeader>            <DialogTitle>
               {selectedOcca?.approvalStatus === 'rejected' 
-                ? 'Update Rejection Reason' 
-                : 'Reject Event'}
+                ? 'Cập nhật lý do từ chối' 
+                : 'Từ chối sự kiện'}
             </DialogTitle>
             <DialogDescription>
               {selectedOcca?.approvalStatus === 'rejected'
-                ? `Update the rejection reason for "${selectedOcca?.title}"`
-                : `Please provide a reason for rejecting "${selectedOcca?.title}"`}
+                ? `Cập nhật lý do từ chối cho "${selectedOcca?.title}"`
+                : `Vui lòng cung cấp lý do từ chối "${selectedOcca?.title}"`}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4 overflow-y-auto max-h-[40vh] px-1">
-            <label className="text-sm font-medium">
-              Rejection Reason <span className="text-red-500">*</span>
+          <div className="py-4 overflow-y-auto max-h-[40vh] px-1">            <label className="text-sm font-medium">
+              Lý do từ chối <span className="text-red-500">*</span>
             </label>
             <Textarea 
-              placeholder="Explain why this event is being rejected..."
+              placeholder="Giải thích tại sao sự kiện này bị từ chối..."
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               className="mt-1.5"
               required
             />
             {!rejectionReason.trim() && (
-              <p className="text-xs text-red-500 mt-1">Reason is required</p>
+              <p className="text-xs text-red-500 mt-1">Lý do là bắt buộc</p>
             )}
           </div>
           
-          <DialogFooter>
-            <Button
+          <DialogFooter>            <Button
               variant="outline"
               onClick={() => setIsRejectDialogOpen(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              Hủy
             </Button>
             <Button 
               variant="destructive"
@@ -410,13 +403,13 @@ const ContentApprovalPage = () => {
               loading={isSubmitting}
             >
               {isSubmitting 
-                ? (selectedOcca?.approvalStatus === 'rejected' ? "Updating..." : "Rejecting...") 
-                : (selectedOcca?.approvalStatus === 'rejected' ? "Update Rejection" : "Reject Event")}
+                ? (selectedOcca?.approvalStatus === 'rejected' ? "Đang cập nhật..." : "Đang từ chối...") 
+                : (selectedOcca?.approvalStatus === 'rejected' ? "Cập nhật từ chối" : "Từ chối sự kiện")}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </DialogFooter>        
+          </DialogContent>
       </Dialog>
-    </AdminDashboardLayout>
+    </div>
   );
 };
 

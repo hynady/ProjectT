@@ -36,7 +36,7 @@ export const AdminDashboardLayout = ({
             <div className="flex items-center gap-2">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
-              <h1 className="text-sm font-semibold">Admin Dashboard</h1>
+              <h1 className="text-sm font-semibold">Bảng điều khiển Admin</h1>
             </div>
           </header>
 

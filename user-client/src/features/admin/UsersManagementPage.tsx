@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { adminService } from "./services/admin.service";
-import { AdminDashboardLayout } from "./layouts/AdminDashboardLayout";
 import { AdminUserInfo, AdminUserFilterParams } from "./internal-types/admin.type";
 import { useDataTable } from "@/commons/hooks/use-data-table";
 import { DataTable, Column, StatusOption } from "@/commons/components/data-table";
@@ -175,14 +174,12 @@ const UsersManagementPage = () => {
       )
     }
   ], []);
-  
-  return (
-    <AdminDashboardLayout>
-      <div className="flex flex-col gap-6">
-        <header>
-          <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
-          <p className="text-muted-foreground">View and manage platform users</p>
-        </header>
+    return (
+    <div className="flex flex-col gap-6">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight">Quản lý người dùng</h1>
+        <p className="text-muted-foreground">Xem và quản lý người dùng trên hệ thống</p>
+      </header>
         
         {/* Search bar */}        <div className="flex gap-4 items-center">
           <div className="relative w-full max-w-sm">
@@ -209,7 +206,8 @@ const UsersManagementPage = () => {
           </Select>
         </div>
         
-        {/* Main table */}        <div className="rounded-md border flex-1 flex flex-col h-[calc(100vh-13rem)] bg-background overflow-hidden">
+        {/* Main table */}        
+        <div className="rounded-md border flex-1 flex flex-col h-[calc(100vh-13rem)] bg-background overflow-hidden">
           <DataTable
             data={data}
             columns={columns}
@@ -249,12 +247,12 @@ const UsersManagementPage = () => {
                     onClick: () => handleToggleUserStatus(user.id, user.status),
                     variant: user.status === "active" ? "destructive" : "default"
                   }
-                ]}
-              />
+                ]}              />
             )}
           />
         </div>
-      </div>      {/* User Details Dialog */}
+      
+      {/* User Details Dialog */}
       {selectedUserId && (
         <UserDetailsDialog
           open={showDetailsDialog}
@@ -272,10 +270,9 @@ const UsersManagementPage = () => {
           userId={selectedUser.id}
           userName={selectedUser.name}
           currentRole={selectedUser.role}
-          onRoleUpdate={refreshData}
-        />
+          onRoleUpdate={refreshData}        />
       )}
-    </AdminDashboardLayout>
+    </div>
   );
 };
 

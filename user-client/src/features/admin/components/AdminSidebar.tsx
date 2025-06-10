@@ -1,13 +1,9 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
-  Calendar,
   Users,
-  Settings,
   ArrowLeft,
   ShieldCheck,
-  LineChart,
-  Inbox,
 } from "lucide-react";
 import { Button } from "@/commons/components/button";
 import {
@@ -23,45 +19,21 @@ import {
 
 const navigationItems = [
   {
-    name: "Dashboard",
+    name: "Bảng thông số chung",
     href: "/admin",
     icon: LayoutDashboard,
     exact: true,
   },
   {
-    name: "Content Approval",
+    name: "Kiểm duyệt nội dung",
     href: "/admin/approval",
     icon: ShieldCheck,
     exact: false,
   },
   {
-    name: "Users",
+    name: "Quản lý người dùng",
     href: "/admin/users",
     icon: Users,
-    exact: false,
-  },
-  {
-    name: "Events",
-    href: "/admin/events",
-    icon: Calendar,
-    exact: false,
-  },
-  {
-    name: "Analytics",
-    href: "/admin/analytics",
-    icon: LineChart,
-    exact: false,
-  },
-  {
-    name: "Reports",
-    href: "/admin/reports",
-    icon: Inbox,
-    exact: false,
-  },
-  {
-    name: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
     exact: false,
   },
 ];
@@ -96,7 +68,7 @@ export function AdminSidebar({
       <SidebarContent>
         <div className="px-2 py-2">
           <SidebarGroupLabel className="px-2 pb-1 text-xs font-semibold text-muted-foreground">
-            ADMIN MANAGEMENT
+            QUẢN TRỊ
           </SidebarGroupLabel>
           <SidebarMenu>
             {navigationItems.map((item) => {

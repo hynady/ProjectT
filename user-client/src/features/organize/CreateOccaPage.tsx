@@ -7,7 +7,6 @@ import { ShowsForm } from "./components/ShowsForm";
 import { TicketForm } from "./components/TicketForm";
 import { GalleryForm } from "./components/GalleryForm";
 import { useAuth } from "@/features/auth/contexts";
-import { DashboardLayout } from "./layouts/DashboardLayout";
 import { OccaFormData } from "./internal-types/organize.type";
 import { useOccaForm } from "./hooks/useOccaForm";
 import { OccaFormHeader } from "./components/create/OccaFormHeader";
@@ -61,10 +60,8 @@ const CreateOccaPage = ({ isEditing = false, occaId, initialData }: CreateOccaPa
   if (loading || !isAuthenticated) {
     return null;
   }
-
   return (
-    <DashboardLayout>
-      <div className="container py-4 sm:py-6 pb-16 sm:pb-6 px-4 sm:px-6">        {/* Header with actions */}
+    <div className="container py-4 sm:py-6 pb-16 sm:pb-6 px-4 sm:px-6">{/* Header with actions */}
         <OccaFormHeader
           isEditing={isEditing}
           occaData={occaData}
@@ -160,10 +157,8 @@ const CreateOccaPage = ({ isEditing = false, occaId, initialData }: CreateOccaPa
                 />
               </TabsContent>
             </Tabs>
-          </CardContent>
-        </Card>
+          </CardContent>        </Card>
       </div>
-    </DashboardLayout>
   );
 };
 

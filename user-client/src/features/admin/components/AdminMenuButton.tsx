@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ShieldIcon } from "lucide-react";
+import { FileCheck, FileUser, LayoutDashboard, ShieldIcon } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -54,26 +54,29 @@ export function AdminMenuButton() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 gap-1">
+        <Button variant="outline" size="sm" className="h-9 gap-1">
           <ShieldIcon className="h-4 w-4" />
           <span>Admin</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[180px]">
         <DropdownMenuItem asChild>
-          <Link to="/admin">Dashboard</Link>
+          <Link to="/admin" className="flex items-center gap-2">
+            <LayoutDashboard className="h-4 w-4" />
+            Bảng thông số chung
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/admin/approval">Content Approval</Link>
+          <Link to="/admin/approval" className="flex items-center gap-2">
+            <FileCheck className="h-4 w-4" />
+            Kiểm duyệt nội dung
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/admin/users">User Management</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/admin/events">Events Management</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/admin/analytics">Analytics</Link>
+          <Link to="/admin/users" className="flex items-center gap-2">
+            <FileUser className="h-4 w-4" />
+            Quản lý người dùng
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

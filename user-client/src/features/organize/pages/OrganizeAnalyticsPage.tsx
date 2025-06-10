@@ -25,7 +25,6 @@ import { useAnalyticsTrends } from '../hooks/useAnalyticsTrends';
 import { useRevenueTrends } from '../hooks/useRevenueTrends';
 import { useRevenueOverview } from '../hooks/useRevenueOverview';
 import { useOccasAnalytics } from '../hooks/useOccasAnalytics';
-import { DashboardLayout } from "../layouts/DashboardLayout";
 import { OccaAnalyticsData } from '../services/analytics-trend.service';
 
 const COLORS = ['#8884d8', '#00C49F', '#FFBB28', '#FF8042', '#0088FE'];
@@ -172,10 +171,8 @@ const OrganizeAnalyticsPage = () => {
       setIsExporting(false);
     }
   };
-
   return (
-    <DashboardLayout>
-      <div className="py-6 space-y-6">
+    <div className="py-6 space-y-6">
         <div className="flex flex-col gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Phân tích dữ liệu</h1>
@@ -382,9 +379,8 @@ const OrganizeAnalyticsPage = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </div>    </DashboardLayout>
+          </div>        </div>
+      </div>
   );
 };
 

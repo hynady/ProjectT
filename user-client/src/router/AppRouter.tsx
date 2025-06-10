@@ -19,7 +19,7 @@ import { DetailPageLayout } from "@/features/detail/layout.tsx";
 import SettingsLayout from "@/features/setting/layout.tsx";
 import { ResetPassword } from "@/features/auth/blocks/ResetPasswordForm.tsx";
 import { RegisterForm } from "@/features/auth/blocks/RegisterForm.tsx";
-import ProtectedBookingRoute from "@/router/ProtectedBookingRoute";
+import ProtectedBookingRoute from "@/router/ProtectedBookingRoute.tsx";
 import OrganizePage from "@/features/organize/OrganizePage.tsx";
 import CreateOccaPage from "@/features/organize/CreateOccaPage.tsx";
 import PreviewOccaDetail from "@/features/organize/components/preview/PreviewOccaDetail";
@@ -31,6 +31,17 @@ import TicketManagementPage from "@/features/organize/pages/TicketManagementPage
 import ShowAuthPage from "@/features/ticket-check-in/ShowAuthPage";
 import TicketScanPage from "@/features/ticket-check-in/TicketScanPage";
 import TicketListPage from "@/features/ticket-check-in/TicketListPage";
+import { DashboardLayout } from "@/features/organize/layouts/DashboardLayout";
+import { Outlet } from "react-router-dom";
+
+// Organize Layout Component to prevent sidebar re-render
+const OrganizeLayout = () => (
+  <ProtectedRoute>
+    <DashboardLayout>
+      <Outlet />
+    </DashboardLayout>
+  </ProtectedRoute>
+);
 
 function AppRouter() {
   return (
@@ -70,15 +81,22 @@ function AppRouter() {
             <Route path="profile" element={<SettingsProfilePage />} />
             <Route path="account" element={<SettingsAccountPage />} />
           </Route>
-        </Route>          {/* Organize Routes - Protected - WITHOUT NavLayout */}
-        <Route path="/organize">
-          <Route index element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />
-          <Route path="create" element={<ProtectedRoute><CreateOccaPage /></ProtectedRoute>} />
-          <Route path="edit/:id" element={<ProtectedRoute><EditOccaPage /></ProtectedRoute>} />
-          <Route path="events" element={<ProtectedRoute><OrganizePage /></ProtectedRoute>} />          <Route path="analytics" element={<ProtectedRoute><OrganizeAnalyticsPage /></ProtectedRoute>} />
-          <Route path="tickets/:occaId/:showId" element={<ProtectedRoute><TicketManagementPage /></ProtectedRoute>} />
-        </Route>{/* Admin Routes - Protected - WITHOUT NavLayout */}
-        <Route path="/admin/*" element={<AdminRoutes />} />        {/* Ticket Check-in Routes - No Auth Required */}
+        </Route>
+
+        {/* Organize Routes - Protected - WITH shared DashboardLayout */}
+        <Route path="/organize" element={<OrganizeLayout />}>
+          <Route index element={<OrganizePage />} />
+          <Route path="create" element={<CreateOccaPage />} />
+          <Route path="edit/:id" element={<EditOccaPage />} />
+          <Route path="events" element={<OrganizePage />} />
+          <Route path="analytics" element={<OrganizeAnalyticsPage />} />
+          <Route path="tickets/:occaId/:showId" element={<TicketManagementPage />} />
+        </Route>
+
+        {/* Admin Routes - Protected - WITHOUT NavLayout */}
+        <Route path="/admin/*" element={<AdminRoutes />} />
+
+        {/* Ticket Check-in Routes - No Auth Required */}
         <Route path="/ticket-check-in">
           <Route index element={<ShowAuthPage />} />
           <Route path="scan" element={<TicketScanPage />} />
