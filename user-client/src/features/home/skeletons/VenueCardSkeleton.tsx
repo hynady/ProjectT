@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardContent } from "@/commons/components/card.tsx";
 import { Skeleton } from "@/commons/components/skeleton.tsx";
 
-export const VenueCardSkeleton = () => {
+export const RegionCardSkeleton = () => {
   return (
     <Card className="w-full">
       <CardHeader className="p-0">

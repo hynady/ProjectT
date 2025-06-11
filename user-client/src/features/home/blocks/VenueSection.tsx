@@ -1,20 +1,20 @@
 import React from 'react';
-import { VenueCard } from '../components/VenueCard.tsx';
-import {VenueCardSkeleton} from "@/features/home/skeletons/VenueCardSkeleton.tsx";
-import { VenueCardUnit } from '@/features/home/internal-types/home.ts';
+import { RegionCard } from '../components/VenueCard.tsx';
+import {RegionCardSkeleton} from "@/features/home/skeletons/VenueCardSkeleton.tsx";
+import { RegionCardUnit } from '@/features/home/internal-types/home.ts';
 
-interface VenueSectionProps {
-  venues: VenueCardUnit[] | null;
+interface RegionSectionProps {
+  regions: RegionCardUnit[] | null;
   isLoading: boolean;
   error: string | null;
 }
 
-export const VenueSection: React.FC<VenueSectionProps> = ({ venues, isLoading, error }) => {
+export const RegionSection: React.FC<RegionSectionProps> = ({ regions, isLoading, error }) => {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.from({ length: 6 }).map((_, index) => (
-          <VenueCardSkeleton key={index} />
+          <RegionCardSkeleton key={index} />
         ))}
       </div>
     );
@@ -29,7 +29,7 @@ export const VenueSection: React.FC<VenueSectionProps> = ({ venues, isLoading, e
     );
   }
 
-  if (!venues || venues.length === 0) {
+  if (!regions || regions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center bg-gray-100 rounded-lg">
         <svg className="w-12 h-12 text-gray-400 mb-4" /* Add empty state icon SVG */ />
@@ -40,9 +40,9 @@ export const VenueSection: React.FC<VenueSectionProps> = ({ venues, isLoading, e
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-      {Array.isArray(venues) ? (
-        venues.map((venue) => (
-          <VenueCard key={venue.id} venue={venue} loading={isLoading} />
+      {Array.isArray(regions) ? (
+        regions.map((region) => (
+          <RegionCard key={region.id} region={region} loading={isLoading} />
         ))
       ) : (
         <div className="flex flex-col items-center justify-center p-8 text-center bg-gray-100 rounded-lg">

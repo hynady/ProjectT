@@ -3,7 +3,7 @@ import { Button } from "@/commons/components/button.tsx";
 import { ArrowRight } from "lucide-react";
 import { HeroSection } from "@/features/home/blocks/HeroSection.tsx";
 import { CategorySection } from "@/features/home/blocks/CategorySection.tsx";
-import { VenueSection } from "@/features/home/blocks/VenueSection.tsx";
+import { RegionSection } from "@/features/home/blocks/VenueSection.tsx";
 import { FeatureOccasSection } from "@/features/home/blocks/FeatureOccasSection.tsx";
 import { UpcomingOccasSection } from "@/features/home/blocks/UpcomingOccasSection.tsx";
 import { useNavigate } from "react-router-dom";
@@ -14,7 +14,7 @@ const HomePage = () => {
   const {
     heroSection,
     categoriesSection,
-    venuesSection,
+    regionsSection,
     featuredSection,
     upcomingSection,
   } = useHome();
@@ -69,10 +69,10 @@ const HomePage = () => {
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
-          <VenueSection
-            venues={venuesSection.data}
-            isLoading={venuesSection.isLoading}
-            error={venuesSection.error}
+          <RegionSection
+            regions={regionsSection.data}
+            isLoading={regionsSection.isLoading}
+            error={regionsSection.error}
           />
         </section>
 

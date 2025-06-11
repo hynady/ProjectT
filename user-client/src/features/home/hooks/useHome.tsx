@@ -5,7 +5,7 @@ import {
   FeatureOccasSectionUnit, 
   UpcomingOccasSectionUnit,
   CategorySectionUnit,
-  VenueCardUnit 
+  RegionCardUnit 
 } from '../internal-types/home';
 
 
@@ -41,7 +41,7 @@ export const useHome = () => {
     error: null
   });
 
-  const [venuesSection, setVenuesSection] = useState<SectionState<VenueCardUnit>>({
+  const [venuesSection, setVenuesSection] = useState<SectionState<RegionCardUnit>>({
     data: null,
     isLoading: true,
     error: null
@@ -134,6 +134,6 @@ export const useHome = () => {
     featuredSection,
     upcomingSection,
     categoriesSection,
-    venuesSection
+    regionsSection: venuesSection
   };
 };

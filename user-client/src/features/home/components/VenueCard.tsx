@@ -1,7 +1,7 @@
 import React from 'react';
 import {Card, CardContent, CardHeader} from "@/commons/components/card.tsx";
 import {useNavigate} from "react-router-dom";
-import { VenueCardUnit } from '@/features/home/internal-types/home';
+import { RegionCardUnit } from '@/features/home/internal-types/home';
 import { Skeleton } from '@/commons/components/skeleton';
 import { useTracking } from '@/features/tracking';
 
@@ -18,12 +18,12 @@ const gradientClasses = [
   'from-emerald-500',
 ] as const;
 
-interface VenueCardProps {
-  venue: VenueCardUnit;
+interface RegionCardProps {
+  region: RegionCardUnit;
   loading: boolean;
 }
 
-export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
+export const RegionCard: React.FC<RegionCardProps> = ({region, loading}) => {
   const navigate = useNavigate();
   const {trackLocationClick} = useTracking();
 
@@ -52,8 +52,8 @@ export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
   const randomGradient = gradientClasses[Math.floor(Math.random() * gradientClasses.length)];
 
   const handleCardClick = () => {
-    trackLocationClick(venue.id);
-    navigate(`/search?venueId=${venue.id}`);
+    trackLocationClick(region.id);
+    navigate(`/search?regionId=${region.id}`);
   }
 
   return (
@@ -65,8 +65,8 @@ export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
       <CardHeader className="p-0">
       <div className="relative overflow-hidden">
         <img
-        src={venue.regionImage}
-        alt={venue.regionName}
+        src={region.regionImage}
+        alt={region.regionName}
         onError={(e) => {
           e.currentTarget.src =
             "https://placehold.co/600x400/8b5cf6/f5f3ff?text=No+Image";
@@ -82,9 +82,9 @@ export const VenueCard: React.FC<VenueCardProps> = ({venue, loading}) => {
         <div 
           className={`text-2xl font-bold bg-gradient-to-r ${randomGradient} to-foreground bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300`}
         >
-          {venue.regionName}
+          {region.regionName}
         </div>
-        <span className="text-sm text-muted-foreground">{venue.occaCount} sự kiện</span>
+        <span className="text-sm text-muted-foreground">{region.occaCount} sự kiện</span>
       </div>
       </CardContent>
     </Card>

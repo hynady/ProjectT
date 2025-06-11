@@ -24,7 +24,7 @@ export interface HeroSectionUnit {
     count: number;
   }
   
-  export interface VenueCardUnit {
+  export interface RegionCardUnit {
     id: string;
     regionImage: string;
     regionName: string;

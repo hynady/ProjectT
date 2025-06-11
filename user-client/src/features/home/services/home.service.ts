@@ -1,5 +1,5 @@
 import { BaseService } from "@/commons/base.service.ts";
-import { HeroSectionUnit, CategorySectionUnit, FeatureOccasSectionUnit, UpcomingOccasSectionUnit, VenueCardUnit } from "@/features/home/internal-types/home.ts";
+import { HeroSectionUnit, CategorySectionUnit, FeatureOccasSectionUnit, UpcomingOccasSectionUnit, RegionCardUnit } from "@/features/home/internal-types/home.ts";
 import { homeMockData } from "@/features/home/services/home.mock.ts";
 
 class HomeService extends BaseService {
@@ -56,7 +56,7 @@ class HomeService extends BaseService {
     });
   }
 
-  async getRegions(): Promise<VenueCardUnit[]> {
+  async getRegions(): Promise<RegionCardUnit[]> {
     return this.request({
       method: 'GET',
       url: '/regions',

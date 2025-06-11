@@ -1,4 +1,4 @@
-import { HeroSectionUnit, FeatureOccasSectionUnit, UpcomingOccasSectionUnit, CategorySectionUnit, VenueCardUnit } from "@/features/home/internal-types/home.ts";
+import { HeroSectionUnit, FeatureOccasSectionUnit, UpcomingOccasSectionUnit, CategorySectionUnit, RegionCardUnit } from "@/features/home/internal-types/home.ts";
 
 export const homeMockData = {
   heroOccas: [
@@ -151,5 +151,5 @@ export const homeMockData = {
       regionName: "Hải Phòng",
       occaCount: 21
     },
-  ] as VenueCardUnit[],
+  ] as RegionCardUnit[],
 };
