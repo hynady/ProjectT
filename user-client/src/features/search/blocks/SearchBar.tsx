@@ -10,6 +10,7 @@ import { RecentSearches } from "../components/RecentSearches.tsx";
 import { RecentOccas } from "../components/RecentOccas.tsx";
 import { SuggestOccaList } from "./SuggestOccaList.tsx";
 import { SearchResults } from "@/features/search/components/SearchResults.tsx";
+import { FilterBadges } from "@/features/search/components/FilterBadges.tsx";
 import { searchService } from "../services/search.service.ts";
 import {
   OccaSearchItemBaseUnit,
@@ -23,12 +24,16 @@ export function SearchBar() {
   const { isOpen, open, close } = useOverlay();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Chỉ giữ lại state cho trending và recommended
   const [trendingOccas, setTrendingOccas] = useState<SearchResultUnit[]>([]);
   const [recommendOccas, setRecommendOccas] = useState<SearchResultUnit[]>([]);
   const [isFetchingOccas, setIsFetchingOccas] = useState(true);
+
+  // Thêm state cho categories và regions
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [regions, setRegions] = useState<{ id: string; name: string }[]>([]);
 
   // Custom hooks
   const { apiResults, isLoading: searchLoading } = useSearch(query);
@@ -43,6 +48,24 @@ export function SearchBar() {
     removeRecentSearch,
     removeRecentOcca,
   } = useRecentItems();
+
+  // Fetch categories và regions
+  useEffect(() => {
+    const fetchCategoriesAndRegions = async () => {
+      try {
+        const [categoriesData, regionsData] = await Promise.all([
+          searchService.fetchCategories(),
+          searchService.fetchRegions(),
+        ]);
+        setCategories(categoriesData);
+        setRegions(regionsData);
+      } catch {
+        // console.error('Error fetching categories and regions:', error);
+      }
+    };
+
+    fetchCategoriesAndRegions();
+  }, []);
 
   // Fetch dữ liệu trending và recommend
   useEffect(() => {
@@ -74,6 +97,21 @@ export function SearchBar() {
     }
     setQuery(keywordFromUrl);
   }, [searchParams]);
+
+  // Xử lý thay đổi filter
+  const handleFilterChange = useCallback(
+    (type: string, value: string) => {
+      const params = new URLSearchParams(searchParams);
+      if (value === "all") {
+        params.delete(type);
+      } else {
+        params.set(type, value);
+      }
+      setSearchParams(params);
+    },
+    [searchParams, setSearchParams]
+  );
+
   const handleSearchSubmit = useCallback(
     (searchQuery: string) => {
       if (!searchQuery) return;
@@ -138,9 +176,7 @@ export function SearchBar() {
   const handleClear = () => {
     setQuery("");
     inputRef.current?.focus();
-  };
-
-  return (
+  };  return (
     <>
       <div
         className={cn(
@@ -148,18 +184,25 @@ export function SearchBar() {
           isOpen &&
             "z-50 absolute left-0 right-0 top-4 mx-auto w-[95vw] md:w-[80vw] lg:w-[70vw] xl:w-[60vw] max-w-3xl"
         )}
-      >
-        {" "}
-        <Input
+      >        <Input
           ref={inputRef}
           placeholder="Tìm kiếm sự kiện..."
-          className="pl-10 pr-12 h-11 rounded-full border border-input bg-background" // Tăng pr để phù hợp với text "Đóng"
+          className="pl-10 pr-12 md:pr-28 h-11 rounded-full border border-input bg-background"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => open()}
           onKeyUp={handleKeyPress}
-        />{" "}
+        />
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {/* Filter badges bên trong input - ẩn trên màn hình nhỏ */}
+        <div className="hidden md:flex absolute right-12 top-1/2 -translate-y-1/2 items-center">
+          <FilterBadges
+            categories={categories}
+            regions={regions}
+            onFilterChange={handleFilterChange}
+          />
+        </div>
+        
         {query ? (
           <button
             onClick={handleClear}
@@ -182,7 +225,8 @@ export function SearchBar() {
           )
         )}
       </div>
-      <Overlay isVisible={isOpen} onClick={close} />{" "}
+      
+      <Overlay isVisible={isOpen} onClick={close} />
       {isOpen && (
         <div className={cn(
           "absolute left-0 right-0 top-full mt-2 mx-auto",
