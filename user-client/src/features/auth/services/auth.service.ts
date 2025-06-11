@@ -27,6 +27,19 @@ class AuthService extends BaseService {
     });
   }
 
+  async googleLogin(idToken: string): Promise<LoginResponse> {
+    return this.request({
+      method: 'POST',
+      url: '/auth/google-login',
+      data: { idToken },
+      mockResponse: () => new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(authMockData.login.response);
+        }, 1000);
+      })
+    });
+  }
+
   async sendRegisterOtp(email: string): Promise<OtpResponse> {
     return this.request({
       method: 'POST',

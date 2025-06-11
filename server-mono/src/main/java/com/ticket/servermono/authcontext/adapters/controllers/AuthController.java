@@ -85,4 +85,31 @@ public class AuthController {
             return ResponseEntity.status(403).body(Map.of("message", e.getMessage()));
         }
     }
+
+    // Google OAuth Login
+    @PostMapping("/google-login")
+    public ResponseEntity<?> googleLogin(@RequestBody AuthDtos.GoogleLoginRequest payload) {
+        try {
+            String token = endUserServices.loginWithGoogle(payload.idToken);
+            AuthDtos.LoginResponse response = new AuthDtos.LoginResponse(token);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Get Google OAuth authorization URL
+    @GetMapping("/google-auth-url")
+    public ResponseEntity<?> getGoogleAuthUrl() {
+        try {
+            // This could be used for server-side OAuth flow
+            // For now, we'll just return the client ID for frontend use
+            return ResponseEntity.ok(Map.of(
+                "message", "Use frontend Google OAuth with client-side flow",
+                "hint", "Use Google OAuth2 library on frontend"
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(500).body(Map.of("message", e.getMessage()));
+        }
+    }
 }

@@ -38,6 +38,7 @@ spring:
 app:
   jwtSecret: ${JWT_SECRET}
   googleClientId: ${GOOGLE_CLIENT_ID}
+  googleClientSecret: ${GOOGLE_CLIENT_SECRET}
   sepayApiKey: ${SEPAY_API_KEY}
   sepayUrl: ${SEPAY_URL}
   purchaseReal: ${PURCHASE_REAL:false}
@@ -48,6 +49,13 @@ app:
     username: ${MAIL_USERNAME:Tack Ticket}
     password: ${MAIL_PASSWORD}
     sender-name: ${MAIL_SENDER_NAME}
+
+# Google OAuth configuration
+google:
+  oauth:
+    client-id: ${GOOGLE_CLIENT_ID}
+    client-secret: ${GOOGLE_CLIENT_SECRET}
+    redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/v1/auth/google/callback}
   
   website:
     url: ${WEBSITE_URL:https://tackticket.com}

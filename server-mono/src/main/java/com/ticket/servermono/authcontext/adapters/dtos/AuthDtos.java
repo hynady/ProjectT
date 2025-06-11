@@ -29,9 +29,30 @@ public class AuthDtos {
         public LoginResponse(String token) {
             this.token = token;
         }
-    }
+    }    
     public static class ResetPasswordRequest {
         public String email;
         public String password;
+    }
+    
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class GoogleLoginRequest {
+        public String idToken;
+    }
+    
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class GoogleAuthCodeRequest {
+        public String authorizationCode;
+    }
+    
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class GoogleAuthUrlResponse {
+        public String authorizationUrl;
     }
 }

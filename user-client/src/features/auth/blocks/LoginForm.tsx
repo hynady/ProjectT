@@ -24,6 +24,8 @@ import {useNavigate, useLocation} from "react-router-dom";
 import {useState} from "react";
 import {useAuth} from "@/features/auth/contexts.tsx";
 import {authService} from "@/features/auth/services/auth.service.ts";
+import {GoogleLoginButton} from "@/features/auth/components/GoogleLoginButton.tsx";
+import {Separator} from "@/commons/components/separator.tsx";
 
 // Define form validation schema
 const formSchema = z.object({
@@ -77,7 +79,10 @@ const LoginPage = () => {
       const from = location.state?.from || "/";
       navigate(from, { replace: true });
       
-    } catch (error: any) {
+    }
+     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    catch (error: any) {
       // console.error("Login error:", error);
       toast({
         title: error.status === 403
@@ -137,12 +142,29 @@ const LoginPage = () => {
                   <FormMessage/>
                 </FormItem>
               )}
-            />
+            />            
             <Button className="w-full" type="submit" disabled={!form.formState.isValid} loading={loading}>
               Đăng nhập
             </Button>
           </form>
         </FormFixColorLabel>
+        
+        <div className="mt-4">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Hoặc
+              </span>
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <GoogleLoginButton />
+          </div>
+        </div>
       </CardContent>
       <CardFooter className="flex justify-between">
         <Label>

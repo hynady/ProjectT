@@ -34,9 +34,14 @@ public class EndUser extends BaseSQLEntity {
     private String avatar;
 
     private LocalDate birthday;
-
+        
     @Column(nullable = false)
-    private String password;    private String roles;
+    private String password;
+    
+    @Column(name = "google_id")
+    private String googleId;
+    
+    private String roles;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "activated_status")
@@ -49,6 +54,17 @@ public class EndUser extends BaseSQLEntity {
     public EndUser(String email, String password) {
         this.email = email;
         this.password = encodePassword(password);
+        this.roles = "ROLE_USER";
+        this.activatedStatus = UserStatus.ACTIVE;
+    }
+
+    // Constructor for Google OAuth user
+    public EndUser(String email, String name, String googleId, String avatar) {
+        this.email = email;
+        this.name = name;
+        this.googleId = googleId;
+        this.avatar = avatar;
+        this.password = ""; // Google users don't have password
         this.roles = "ROLE_USER";
         this.activatedStatus = UserStatus.ACTIVE;
     }

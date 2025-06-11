@@ -8,6 +8,7 @@ import com.ticket.servermono.authcontext.entities.Profile;
 import com.ticket.servermono.authcontext.entities.UserStat;
 import com.ticket.servermono.authcontext.infrastructure.repositories.EndUserRepository;
 import com.ticket.servermono.authcontext.infrastructure.repositories.UserStatRepository;
+import com.ticket.servermono.authcontext.infrastructure.services.GoogleOAuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ticket.servermono.authcontext.infrastructure.config.JWTUtils;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 
 @Slf4j
 @Service
@@ -37,6 +39,7 @@ public class EndUserServices {
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final JWTUtils jwtUtils;
     private final org.springframework.kafka.core.KafkaTemplate<String, String> kafkaTemplate;
+    private final GoogleOAuthService googleOAuthService;
     
     private static final String REGISTRATION_SUCCESS_TOPIC = "auth.register.success";    
     
@@ -90,6 +93,71 @@ public class EndUserServices {
             return jwtUtils.createToken(eFoundUser.get(), false);
         } catch (Exception e) {
             throw new RuntimeException("Thông tin đăng nhập chưa đúng");
+        }
+    }    
+    // Google OAuth login
+    public String loginWithGoogle(String idToken) {
+        try {
+            // Verify Google token and get user info
+            GoogleIdToken.Payload payload = googleOAuthService.verifyGoogleToken(idToken);
+            
+            String email = payload.getEmail();
+            String googleId = payload.getSubject();
+            String name = (String) payload.get("name");
+            String picture = (String) payload.get("picture");
+            
+            // Find user by email or Google ID
+            Optional<EndUser> existingUser = eUserRepo.findEndUserByEmail(email);
+            
+            EndUser user;
+            if (existingUser.isPresent()) {
+                // User exists, update Google information if needed
+                user = existingUser.get();
+                if (user.getGoogleId() == null) {
+                    user.setGoogleId(googleId);
+                }
+                if (user.getName() == null && name != null) {
+                    user.setName(name);
+                }
+                if (user.getAvatar() == null && picture != null) {
+                    user.setAvatar(picture);
+                }
+                user = eUserRepo.save(user);
+                log.info("Updated existing user with Google info: {}", email);
+            } else {
+                // Create new user with Google information
+                user = new EndUser(email, name, googleId, picture);
+                user = eUserRepo.save(user);
+                log.info("Created new user from Google OAuth: {}", email);
+                
+                // Send registration success notification
+                try {
+                    com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    java.util.Map<String, Object> registrationData = new java.util.HashMap<>();
+                    
+                    registrationData.put("userId", user.getId().toString());
+                    registrationData.put("userEmail", user.getEmail());
+                    registrationData.put("userName", user.getName() != null ? user.getName() : user.getEmail().split("@")[0]);
+                    
+                    java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    String registrationDate = java.time.LocalDateTime.now().format(formatter);
+                    registrationData.put("registrationDate", registrationDate);
+                    
+                    String jsonPayload = objectMapper.writeValueAsString(registrationData);
+                    kafkaTemplate.send(REGISTRATION_SUCCESS_TOPIC, user.getId().toString(), jsonPayload);
+                    
+                    log.info("Sent registration success notification for Google user: {}", user.getEmail());
+                } catch (Exception e) {
+                    log.error("Failed to send registration success notification: {}", e.getMessage(), e);
+                }
+            }
+            
+            // Return JWT token
+            return jwtUtils.createToken(user, false);
+            
+        } catch (Exception e) {
+            log.error("Google login failed: {}", e.getMessage());
+            throw new RuntimeException("Đăng nhập Google thất bại: " + e.getMessage());
         }
     }
 
