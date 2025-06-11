@@ -1,11 +1,11 @@
 import { Separator } from "@/commons/components/separator.tsx";
 import { Card } from "@/commons/components/card.tsx";
-import { ResetPassword } from "@/features/auth/blocks/ResetPasswordForm.tsx";
 import { DeleteAccountDialog } from "../components/DeleteAccountDialog.tsx";
 import { useEffect, useState } from "react";
 import { UserInfo } from "../internal-types/settings.types.ts";
 import { settingsService } from "../services/settings.service";
 import { AccountForm } from "../components/AccountForm";
+import SettingsResetPasswordForm from "../components/SettingsResetPasswordForm";
 
 export default function SettingsAccountPage() {
   const [profile, setProfile] = useState<UserInfo | undefined>();
@@ -59,12 +59,11 @@ export default function SettingsAccountPage() {
             <p className="text-sm text-muted-foreground">
               Thay đổi mật khẩu để bảo vệ tài khoản của bạn.
             </p>
-          </div>
+          </div>          
           <div className="mt-6">
-            <ResetPassword
-              hideNavigation={true}
-              noPadding={true}
-            />
+            {profile?.email && (
+              <SettingsResetPasswordForm userEmail={profile.email} />
+            )}
           </div>
         </Card>
 
