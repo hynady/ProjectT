@@ -280,7 +280,7 @@ export default function RegionManagementPage() {
                     )}
                   </TableCell>
                   <TableCell className="font-medium">{region.regionName || "N/A"}</TableCell>
-                  <TableCell>{region.count || 0}</TableCell>
+                  <TableCell>{region.occaCount || 0}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
                       <Button

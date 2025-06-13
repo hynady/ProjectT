@@ -4,14 +4,14 @@ export interface Region {
   id: string;
   regionName: string;
   regionImage?: string;
-  count: number;
+  occaCount: number;
 }
 
 export interface RegionResponse {
   id: string;
   regionName: string;
   regionImage?: string;
-  count: number;
+  occaCount: number;
 }
 
 export interface RegionIdName {
@@ -40,19 +40,19 @@ class RegionService extends BaseService {
           id: "1",
           regionName: "Hà Nội",
           regionImage: "/api/placeholder/50/50",
-          count: 25,
+          occaCount: 25,
         },
         {
           id: "2",
           regionName: "Hồ Chí Minh",
           regionImage: "/api/placeholder/50/50",
-          count: 30,
+          occaCount: 30,
         },
         {
           id: "3",
           regionName: "Đà Nẵng",
           regionImage: "/api/placeholder/50/50",
-          count: 15,
+          occaCount: 15,
         },
       ],
       defaultValue: [],
@@ -81,7 +81,7 @@ class RegionService extends BaseService {
         id,
         regionName: "Mock Region",
         regionImage: "/api/placeholder/50/50",
-        count: 0,
+        occaCount: 0,
       }),
     });
   }
@@ -101,7 +101,7 @@ class RegionService extends BaseService {
         id: Date.now().toString(),
         regionName: data.name,
         regionImage: data.image || "/api/placeholder/50/50",
-        count: 0,
+        occaCount: 0,
       }),
     });
   }
@@ -121,7 +121,7 @@ class RegionService extends BaseService {
         id,
         regionName: data.name,
         regionImage: data.image || "/api/placeholder/50/50",
-        count: 0,
+        occaCount: 0,
       }),
     });
   }

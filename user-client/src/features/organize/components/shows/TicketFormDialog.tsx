@@ -36,8 +36,8 @@ const ticketSchema = z.object({
   availableQuantity: z.coerce.number({
     required_error: "Vui lòng nhập số lượng vé",
     invalid_type_error: "Số lượng vé phải là số",
-  }).min(1, {
-    message: "Số lượng vé phải ít nhất 1",
+  }).min(0, {
+    message: "Số lượng vé không thể âm",
   }),
 });
 
@@ -65,11 +65,11 @@ export const TicketFormDialog = ({
   isSubmitting = false, // Default value if not provided
 }: TicketFormDialogProps) => {
   const form = useForm<TicketFormValues>({
-    resolver: zodResolver(ticketSchema),
+    resolver: zodResolver(ticketSchema),    
     defaultValues: initialValues || {
       type: "",
       price: 0,
-      availableQuantity: 1,
+      availableQuantity: 0,
     },
   });
 
@@ -112,8 +112,7 @@ export const TicketFormDialog = ({
                   <FormMessage />
                 </FormItem>
               )}
-            />
-
+            />                  
             <FormField
               control={form.control}
               name="price"
@@ -122,16 +121,27 @@ export const TicketFormDialog = ({
                   <FormLabel>Giá vé (VNĐ)</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      placeholder="VD: 500000"
-                      {...field}
+                      type="text"
+                      placeholder="VD: 500,000"
+                      name={field.name}
+                      value={field.value === 0 ? '0' : field.value.toLocaleString('vi-VN')}
+                      onChange={(e) => {
+                        // Remove all non-numeric characters
+                        const numericValue = e.target.value.replace(/[^\d]/g, '');
+                        const value = parseInt(numericValue) || 0;
+                        field.onChange(Math.max(0, value));
+                      }}
+                      onBlur={field.onBlur}
+                      onFocus={(e) => {
+                        // Select all text when focus, so user can easily replace
+                        e.target.select();
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
-            />
-
+            />            
             <FormField
               control={form.control}
               name="availableQuantity"
@@ -140,9 +150,21 @@ export const TicketFormDialog = ({
                   <FormLabel>Số lượng vé</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
+                      type="text"
                       placeholder="VD: 100"
-                      {...field}
+                      name={field.name}
+                      value={field.value.toString()}
+                      onChange={(e) => {
+                        // Remove all non-numeric characters
+                        const numericValue = e.target.value.replace(/[^\d]/g, '');
+                        const value = parseInt(numericValue) || 0;
+                        field.onChange(Math.max(0, value));
+                      }}
+                      onBlur={field.onBlur}
+                      onFocus={(e) => {
+                        // Select all text when focus, so user can easily replace
+                        e.target.select();
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

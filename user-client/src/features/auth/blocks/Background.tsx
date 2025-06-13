@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 
 export const Background = () => {
   const [isMuted, setIsMuted] = useState(true);
@@ -10,23 +10,11 @@ export const Background = () => {
       setIsMuted(!isMuted);
     }
   };
-  // Cleanup khi component unmount
-  useEffect(() => {
-    const videoElement = videoRef.current;
-    return () => {
-      if (videoElement) {
-        videoElement.pause();
-        videoElement.currentTime = 0;
-        videoElement.src = '';
-        videoElement.load();
-      }
-    };
-  }, []);
 
   return (
     <>
       {/* Video Background */}
-      <div className="absolute inset-0 z-0">
+      <div className="fixed inset-0 -z-10">
         <video
           ref={videoRef}
           autoPlay
@@ -35,15 +23,12 @@ export const Background = () => {
           playsInline
           className="h-full w-full object-cover"
         >
-          <source
-            src="/bg-authe.mp4"
-            type="video/mp4"
-          />
+          <source src="/bg-authe.mp4" type="video/mp4" />
         </video>
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-black/10"/>
+        <div className="absolute inset-0 bg-black/10" />
       </div>
-        {/* Mute/Unmute Button */}
+
+      {/* Mute/Unmute Button */}
       <button
         onClick={toggleMute}
         className="absolute top-4 right-4 z-20 p-3 rounded-full bg-black/30 hover:bg-black/50 transition-colors duration-200 backdrop-blur-sm"
