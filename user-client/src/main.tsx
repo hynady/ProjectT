@@ -9,6 +9,7 @@ import {UserProvider} from "@/features/auth/contexts/UserContext.tsx";
 import {GoogleAuthProvider} from "@/features/auth/components/GoogleAuthProvider.tsx";
 import DevToolbar from "@/commons/blocks/DevToolbar.tsx";
 import { AdminRoleMonitor } from '@/features/admin/components/AdminRoleMonitor';
+import { GlobalChatbot } from '@/features/chatbot/components/GlobalChatbot';
 
 createRoot(document.getElementById('root')!).render(
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
@@ -20,6 +21,8 @@ createRoot(document.getElementById('root')!).render(
               <Toaster/>
               {/* Global admin role monitor to check for role changes */}
               <AdminRoleMonitor />
+              {/* Global chatbot popup */}
+              <GlobalChatbot />
             </UserProvider>
           </AuthProvider>
           <DevToolbar />

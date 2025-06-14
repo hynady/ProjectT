@@ -33,6 +33,7 @@ import TicketScanPage from "@/features/ticket-check-in/TicketScanPage";
 import TicketListPage from "@/features/ticket-check-in/TicketListPage";
 import { DashboardLayout } from "@/features/organize/layouts/DashboardLayout";
 import { Outlet } from "react-router-dom";
+import ChatbotPage from "@/features/chatbot/pages/ChatbotPage";
 
 // Organize Layout Component to prevent sidebar re-render
 const OrganizeLayout = () => (
@@ -48,13 +49,13 @@ function AppRouter() {
     <ScrollToTop>
       <TrackingProvider>
         <Routes>
-        {/* Nav Routes */}
-        <Route element={<NavLayout />}>
-          <Route element={<SearchResultLayout />}>
-            <Route path="/search" element={<SearchPage />} />
-          </Route>
-          <Route path="occas" element={<DetailPageLayout />}>
-            <Route path=":id" element={<EventDetailPage />} />
+          {/* Nav Routes */}
+          <Route element={<NavLayout />}>
+            <Route element={<SearchResultLayout />}>
+              <Route path="/search" element={<SearchPage />} />
+            </Route>
+            <Route path="occas" element={<DetailPageLayout />}>
+              <Route path=":id" element={<EventDetailPage />} />
               <Route
                 path=":id/booking"
                 element={
@@ -63,80 +64,90 @@ function AppRouter() {
                   </ProtectedBookingRoute>
                 }
               />
+            </Route>{" "}
+            <Route element={<HomeLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="my-ticket" element={<MyTicketsPage />} />
+              <Route
+                path="chatbot"
+                element={
+                  <ProtectedRoute>
+                    <ChatbotPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+            {/* Settings Routes - Protected */}
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="profile" element={<SettingsProfilePage />} />
+              <Route path="account" element={<SettingsAccountPage />} />
+            </Route>
           </Route>
-          <Route element={<HomeLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="my-ticket" element={<MyTicketsPage />} />
+
+          {/* Organize Routes - Protected - WITH shared DashboardLayout */}
+          <Route path="/organize" element={<OrganizeLayout />}>
+            <Route index element={<OrganizePage />} />
+            <Route path="create" element={<CreateOccaPage />} />
+            <Route path="edit/:id" element={<EditOccaPage />} />
+            <Route path="events" element={<OrganizePage />} />
+            <Route path="analytics" element={<OrganizeAnalyticsPage />} />
+            <Route
+              path="tickets/:occaId/:showId"
+              element={<TicketManagementPage />}
+            />
           </Route>
 
-          {/* Settings Routes - Protected */}
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <SettingsLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="profile" element={<SettingsProfilePage />} />
-            <Route path="account" element={<SettingsAccountPage />} />
+          {/* Admin Routes - Protected - WITHOUT NavLayout */}
+          <Route path="/admin/*" element={<AdminRoutes />} />
+
+          {/* Ticket Check-in Routes - No Auth Required */}
+          <Route path="/ticket-check-in">
+            <Route index element={<ShowAuthPage />} />
+            <Route path="scan" element={<TicketScanPage />} />
+            <Route path="tickets" element={<TicketListPage />} />
           </Route>
-        </Route>
 
-        {/* Organize Routes - Protected - WITH shared DashboardLayout */}
-        <Route path="/organize" element={<OrganizeLayout />}>
-          <Route index element={<OrganizePage />} />
-          <Route path="create" element={<CreateOccaPage />} />
-          <Route path="edit/:id" element={<EditOccaPage />} />
-          <Route path="events" element={<OrganizePage />} />
-          <Route path="analytics" element={<OrganizeAnalyticsPage />} />
-          <Route path="tickets/:occaId/:showId" element={<TicketManagementPage />} />
-        </Route>
+          {/* Preview Routes */}
+          <Route path="/preview/occa" element={<PreviewOccaDetail />} />
 
-        {/* Admin Routes - Protected - WITHOUT NavLayout */}
-        <Route path="/admin/*" element={<AdminRoutes />} />
+          {/* Auth Routes */}
+          <Route element={<AuthLayout />}>
+            <Route
+              path="/login"
+              element={
+                <AuthRoute>
+                  <LoginPage />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <AuthRoute>
+                  <RegisterForm />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="/rs-pw"
+              element={
+                <AuthRoute>
+                  <ResetPassword />
+                </AuthRoute>
+              }
+            />
+          </Route>
 
-        {/* Ticket Check-in Routes - No Auth Required */}
-        <Route path="/ticket-check-in">
-          <Route index element={<ShowAuthPage />} />
-          <Route path="scan" element={<TicketScanPage />} />
-          <Route path="tickets" element={<TicketListPage />} />
-        </Route>
-
-        {/* Preview Routes */}
-        <Route path="/preview/occa" element={<PreviewOccaDetail />} />
-
-        {/* Auth Routes */}
-        <Route element={<AuthLayout />}>
-          <Route
-            path="/login"
-            element={
-              <AuthRoute>
-                <LoginPage />
-              </AuthRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <AuthRoute>
-                <RegisterForm />
-              </AuthRoute>
-            }
-          />
-          <Route
-            path="/rs-pw"
-            element={
-              <AuthRoute>
-                <ResetPassword />
-              </AuthRoute>
-            }
-          />
-        </Route>
-
-        {/* 404 Not Found Route */}
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+          {/* 404 Not Found Route */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
       </TrackingProvider>
     </ScrollToTop>
   );

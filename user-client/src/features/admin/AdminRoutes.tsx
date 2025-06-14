@@ -5,6 +5,7 @@ import ContentApprovalPage from './ContentApprovalPage';
 import UsersManagementPage from './UsersManagementPage';
 import CategoryManagementPage from './CategoryManagementPage';
 import RegionManagementPage from './RegionManagementPage';
+import ChatbotContextPage from './pages/ChatbotContextPage';
 import { AdminRequiredAuth } from './components/AdminRequiredAuth';
 import { AdminRoleMonitor } from './components/AdminRoleMonitor';
 import { AdminDashboardLayout } from './layouts/AdminDashboardLayout';
@@ -27,6 +28,7 @@ export default function AdminRoutes() {
             <Route path="/" element={<AdminDashboardPage />} />
             <Route path="/approval" element={<ContentApprovalPage />} />
             <Route path="/users" element={<UsersManagementPage />} />
+            <Route path="/chatbot-context" element={<ChatbotContextPage />} />
             <Route path="/parameters/categories" element={<CategoryManagementPage />} />
             <Route path="/parameters/regions" element={<RegionManagementPage />} />
             <Route path="/events" element={<div>Trang Quản lý Sự kiện (Sắp ra mắt)</div>} />

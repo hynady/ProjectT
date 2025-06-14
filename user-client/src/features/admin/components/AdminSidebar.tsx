@@ -9,6 +9,7 @@ import {
   MapPin,
   Tags,
   ChevronDown,
+  Bot,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { Button } from "@/commons/components/button";
@@ -49,6 +50,12 @@ const navigationItems = [
     name: "Quản lý người dùng",
     href: "/admin/users",
     icon: Users,
+    exact: false,
+  },
+  {
+    name: "Chatbot Context",
+    href: "/admin/chatbot-context",
+    icon: Bot,
     exact: false,
   },
   {

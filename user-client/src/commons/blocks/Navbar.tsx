@@ -6,7 +6,8 @@ import {
   User,
   LayoutDashboard,
   FileCheck,
-  FileUser
+  FileUser,
+  Bot
 } from "lucide-react";
 import { Button } from "@/commons/components/button.tsx";
 import {
@@ -231,13 +232,19 @@ const Navbar = () => {
                     >
                       <Ticket className="h-4 w-4 mr-2" />
                       <span>Vé của tôi</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
+                    </DropdownMenuItem>                    <DropdownMenuItem
                       className="text-sm"
                       onClick={() => navigate("/organize")}
                     >
                       <LayoutDashboard className="h-4 w-4 mr-2" />
                       <span>Quản lý sự kiện</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-sm"
+                      onClick={() => navigate("/chatbot")}
+                    >
+                      <Bot className="h-4 w-4 mr-2" />
+                      <span>AI Chatbot</span>
                     </DropdownMenuItem>
                     {!adminLoading && isAdmin && (
                       <>

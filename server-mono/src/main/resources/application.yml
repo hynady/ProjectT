@@ -39,6 +39,7 @@ app:
   jwtSecret: ${JWT_SECRET}
   googleClientId: ${GOOGLE_CLIENT_ID}
   googleClientSecret: ${GOOGLE_CLIENT_SECRET}
+  geminiApiKey: ${GEMINI_API_KEY}
   sepayApiKey: ${SEPAY_API_KEY}
   sepayUrl: ${SEPAY_URL}
   purchaseReal: ${PURCHASE_REAL:false}
