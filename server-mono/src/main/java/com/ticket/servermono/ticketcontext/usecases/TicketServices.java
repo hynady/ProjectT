@@ -136,8 +136,9 @@ public class TicketServices {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }@Transactional
-    public void bookTicket(BookingPayload payload, UUID userId) {
+    }    
+    @Transactional
+    public List<Ticket> bookTicket(BookingPayload payload, UUID userId) {
 
         // Kiểm tra xem show có tồn tại không thông qua gRPC
         try {
@@ -270,7 +271,7 @@ public class TicketServices {
         log.info("Successfully booked {} tickets for user {} in show {}",
                 createdTickets.size(), userId, payload.getShowId());
         
-        // Sau khi đặt vé thành công, gửi thông tin thống kê qua Kafka
+        // Sau khi đặt vé thành công, gửi thông tin thống kê qua Kafka        
         try {
             // Tính toán thống kê cho người dùng
             Map<String, Object> userStats = calculateUserTicketStats(userId);
@@ -292,6 +293,8 @@ public class TicketServices {
             // Ghi log lỗi nhưng không làm gián đoạn giao dịch đặt vé
             log.error("Failed to send ticket booking stats to Kafka: {}", e.getMessage(), e);
         }
+        
+        return createdTickets;
     }
 
     /**

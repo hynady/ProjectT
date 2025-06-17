@@ -40,7 +40,7 @@ public class MailServices {
     @Value("${app.mail.username}")
     private String email;
     
-    @Value("${app.website.url:https://tackticket.com}")
+    @Value("${app.website.url:https://tackticket.space}")
     private String websiteUrl;
 
     public String generateOTP() {
@@ -66,6 +66,42 @@ public class MailServices {
             return false;
         }
     }
+    
+    /**
+     * Gửi email với các file đính kèm
+     * @param to Địa chỉ email người nhận
+     * @param subject Tiêu đề email
+     * @param text Nội dung email (HTML)
+     * @param attachments Danh sách các file đính kèm
+     * @return true nếu gửi thành công, false nếu có lỗi
+     */
+    public boolean sendMailWithAttachments(String to, String subject, String text, List<EmailTemplateService.EmailAttachment> attachments) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(email, "Tack Ticket"); // Add sender name
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(text, true);
+            
+            // Thêm các file đính kèm vào email
+            if (attachments != null && !attachments.isEmpty()) {
+                for (EmailTemplateService.EmailAttachment attachment : attachments) {
+                    helper.addAttachment(attachment.getFilename(), 
+                        new org.springframework.core.io.ByteArrayResource(attachment.getData()), 
+                        attachment.getContentType());
+                }
+            }
+
+            mailSender.send(message);
+            log.info("Mail with attachments sent successfully to {}", to);
+            return true;
+        } catch (Exception e) {
+            log.error("Error sending mail with attachments: {}", e.getMessage(), e);
+            return false;
+        }
+    }
 
     @Async
     @KafkaListener(topics = REGISTER_TOPIC)
@@ -87,7 +123,8 @@ public class MailServices {
                 "Reset Password OTP",
                 emailTemplateService.getResetPasswordOtpTemplate(otp)
         );
-    }    @Async
+    }    
+      @Async
     @KafkaListener(topics = PURCHASE_NOTIFICATION_TOPIC)
     public void handlePurchaseNotification(String payload) {
         try {
@@ -112,8 +149,8 @@ public class MailServices {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> ticketItems = (List<Map<String, Object>>) data.get("ticketItems");
             
-            // Generate email content using template service
-            String emailContent = emailTemplateService.getPurchaseSuccessTemplate(
+            // Generate email content with QR code attachments
+            EmailTemplateService.EmailTemplateResult emailResult = emailTemplateService.getPurchaseSuccessTemplateWithAttachments(
                     userId,
                     showId,
                     paymentId,
@@ -126,15 +163,16 @@ public class MailServices {
                     ticketUrl
             );
             
-            // Send the email
-            boolean sent = sendMail(
+            // Send the email with QR code attachments
+            boolean sent = sendMailWithAttachments(
                     userEmail,
                     "Thông báo đặt vé thành công - " + eventName,
-                    emailContent
+                    emailResult.getHtmlContent(),
+                    emailResult.getAttachments()
             );
             
             if (sent) {
-                log.info("Purchase success notification email sent successfully to {} for paymentId: {}", userEmail, paymentId);
+                log.info("Purchase success notification email with QR code attachments sent successfully to {} for paymentId: {}", userEmail, paymentId);
             } else {
                 log.error("Failed to send purchase success notification email for paymentId: {}", paymentId);
             }

@@ -26,6 +26,7 @@ public class BookingLockRequest {
         private String id;        // ID của ticket class
         private String type;      // Loại vé (VIP, Thường, etc.)
         private Integer quantity; // Số lượng vé
+        private List<String> ticketIds; // ID của các vé đã tạo
     }
 
     @Data

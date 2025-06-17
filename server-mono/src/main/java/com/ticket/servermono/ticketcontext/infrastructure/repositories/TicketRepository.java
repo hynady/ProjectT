@@ -101,4 +101,12 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
            "AND t.endUserId IS NOT NULL " +
            "GROUP BY tc.id, tc.name")
     List<Object[]> getRevenueByTicketClassForShow(@Param("showId") UUID showId);
+    
+    /**
+     * Find tickets by ticket class ID and invoice
+     * @param ticketClassId The ticket class ID to filter by
+     * @param invoice The invoice to filter by
+     * @return List of tickets for the given ticket class and invoice
+     */
+    List<Ticket> findByTicketClassIdAndInvoice(UUID ticketClassId, com.ticket.servermono.ticketcontext.entities.Invoice invoice);
 }

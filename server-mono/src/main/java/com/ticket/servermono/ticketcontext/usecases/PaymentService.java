@@ -32,10 +32,12 @@ import com.ticket.servermono.ticketcontext.adapters.dtos.BookingLockRequest;
 import com.ticket.servermono.ticketcontext.adapters.dtos.BookingPayload;
 import com.ticket.servermono.ticketcontext.domain.enums.PaymentStatus;
 import com.ticket.servermono.ticketcontext.entities.Invoice;
+import com.ticket.servermono.ticketcontext.entities.Ticket;
 import com.ticket.servermono.ticketcontext.entities.TicketClass;
 import com.ticket.servermono.ticketcontext.grpc.OccaGrpcClient;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.InvoiceRepository;
 import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketClassRepository;
+import com.ticket.servermono.ticketcontext.infrastructure.repositories.TicketRepository;
 
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +54,7 @@ public class PaymentService {
     private final PaymentStatusNotifier statusNotifier;
     private final InvoiceRepository invoiceRepository;
     private final TicketClassRepository ticketClassRepository;
+    private final TicketRepository ticketRepository;
     private final TicketServices ticketServices;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -89,7 +92,8 @@ public class PaymentService {
             ObjectMapper objectMapper,
             KafkaTemplate<String, Object> kafkaTemplate,
             OccaGrpcClient occaGrpcClient,
-            TicketLockService ticketLockService
+            TicketLockService ticketLockService,
+            TicketRepository ticketRepository
             ) {
         this.statusNotifier = statusNotifier;
         this.invoiceRepository = invoiceRepository;
@@ -100,6 +104,7 @@ public class PaymentService {
         this.kafkaTemplate = kafkaTemplate;
         this.occaGrpcClient = occaGrpcClient;
         this.ticketLockService = ticketLockService;
+        this.ticketRepository = ticketRepository;
     }
 
     /**
@@ -330,11 +335,26 @@ public class PaymentService {
                         // Chuyển BookingLockRequest sang BookingPayload để tạo vé
                         ticketItems = getTicketItemsFromInvoice(paymentId);
                         if (ticketItems != null && !ticketItems.isEmpty()) {
-                            BookingPayload payload = createBookingPayload(showId, ticketItems);
-                              // Tạo vé cho người dùng
+                            BookingPayload payload = createBookingPayload(showId, ticketItems);                            // Tạo vé cho người dùng
                             log.info("Bắt đầu tạo vé cho userId: {}, showId: {}", userId, showId);
-                            ticketServices.bookTicket(payload, userId);
+                            List<Ticket> createdTickets = ticketServices.bookTicket(payload, userId);
                             log.info("Đã tạo vé thành công cho userId: {}, showId: {}", userId, showId);
+                            
+                            // Lưu thông tin ID vé vào các ticketItems
+                            Map<UUID, List<String>> ticketIdsByClass = new HashMap<>();
+                            for (Ticket ticket : createdTickets) {
+                                UUID ticketClassId = ticket.getTicketClass().getId();
+                                ticketIdsByClass.computeIfAbsent(ticketClassId, k -> new ArrayList<>())
+                                    .add(ticket.getId().toString());
+                            }
+                            
+                            // Cập nhật ticketIds vào các ticketItems
+                            for (BookingLockRequest.TicketItem item : ticketItems) {
+                                UUID ticketClassId = UUID.fromString(item.getId());
+                                if (ticketIdsByClass.containsKey(ticketClassId)) {
+                                    item.setTicketIds(ticketIdsByClass.get(ticketClassId));
+                                }
+                            }
                               // Gửi event thanh toán thành công qua Kafka để xử lý giải phóng khóa vé
                             sendPaymentSuccessEvent(paymentId, ticketItems);
                             
@@ -403,8 +423,7 @@ public class PaymentService {
             log.error("Lỗi khi gửi event PAYMENT_SUCCESS: {}", e.getMessage(), e);
         }
     }
-    
-    /**
+      /**
      * Lấy danh sách TicketItem từ database dựa trên paymentId
      */
     private List<BookingLockRequest.TicketItem> getTicketItemsFromInvoice(String paymentId) {
@@ -442,6 +461,19 @@ public class PaymentService {
                         item.setId(ticketClassId);
                         item.setType(ticketClass.getName());
                         item.setQuantity(quantity);
+                        
+                        // Lấy thông tin các vé đã được tạo cho ticket class này
+                        List<Ticket> tickets = ticketRepository.findByTicketClassIdAndInvoice(ticketClassUUID, invoice);
+                        if (tickets != null && !tickets.isEmpty()) {
+                            // Tạo danh sách ID vé
+                            List<String> ticketIds = tickets.stream()
+                                .map(ticket -> ticket.getId().toString())
+                                .collect(Collectors.toList());
+                                
+                            // Set vào item
+                            item.setTicketIds(ticketIds);
+                        }
+                        
                         items.add(item);
                     }
                 } catch (IllegalArgumentException e) {
@@ -474,8 +506,7 @@ public class PaymentService {
             .tickets(tickets)
             .build();
     }
-    
-    /**
+      /**
      * Chuyển đổi danh sách TicketItem sang định dạng phù hợp cho email
      */
     private List<Map<String, Object>> convertTicketItemsForEmail(List<BookingLockRequest.TicketItem> ticketItems) {
@@ -493,6 +524,11 @@ public class PaymentService {
                     ticketInfo.put("quantity", item.getQuantity());
                     ticketInfo.put("price", ticketClass.getPrice());
                     
+                    // Thêm thông tin ID vé nếu có
+                    if (item.getTicketIds() != null && !item.getTicketIds().isEmpty()) {
+                        ticketInfo.put("ticketIds", item.getTicketIds());
+                    }
+                    
                     result.add(ticketInfo);
                 }
             }
@@ -501,7 +537,7 @@ public class PaymentService {
         }
         
         return result;
-    }    /**
+    }/**
      * Gửi thông báo đặt vé thành công qua Kafka
      */
     private void sendPurchaseConfirmationEmail(String paymentId, UUID userId, UUID showId, List<BookingLockRequest.TicketItem> ticketItems) {
@@ -537,7 +573,7 @@ public class PaymentService {
             emailData.put("time", showData.getDate() + "-" + showData.getTime());
 
             // URL để xem vé
-            String ticketUrl = "https://tackticket.com/tickets/" + paymentId;
+            String ticketUrl = "https://tackticket.space/my-ticket";
             emailData.put("ticketUrl", ticketUrl);
             emailData.put("ticketItems", ticketItemsForEmail);
             

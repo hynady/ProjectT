@@ -11,7 +11,7 @@
             margin: 0;
             padding: 0;
             background-color: #f8fafc;
-        }        .container {
+        }.container {
             max-width: 600px;
             margin: 20px auto;
             padding: 0 20px;
@@ -155,24 +155,10 @@
         }
         .cta-button:hover {
             background-color: #6d28d9;
-        }
-        .qr-section {
+        }        .qr-section {
             text-align: center;
             margin: 24px 0;
-        }
-        .qr-placeholder {
-            width: 120px;
-            height: 120px;
-            background-color: #f8fafc;
-            border: 1px dashed #cbd5e1;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto;
-            color: #94a3b8;
-            font-size: 12px;
-        }
+        }        /* Các style liên quan đến QR đã được loại bỏ vì không còn hiển thị trong email */
         .order-metadata {
             color: #94a3b8;
             font-size: 11px;
@@ -216,19 +202,17 @@
             <h3>Chi tiết vé</h3>
             <div class="ticket-list">
                 %s
-            </div>
-
-            <div class="total-section">
+            </div>            <div class="total-section">
                 <div class="total-row">
                     <span>Tổng tiền: </span>
                     <span>%s VND</span>
                 </div>
             </div>
-
-            <div class="qr-section">
-                <div class="qr-placeholder">QR Code</div>
-                <p style="margin-top: 8px; font-size: 14px; color: #475569;">Quét mã QR để xem vé</p>
-            </div>
+            
+            <!-- Giữ lại tham số nhưng ẩn hoàn toàn -->
+            <div style="display: none">%s</div>
+            
+            <p style="margin-top: 20px; font-size: 14px; color: #ef4444; font-weight: 500;">Lưu ý: QR code cho mỗi vé đã được đính kèm trong email này. Vui lòng lưu lại để sử dụng khi check-in tại sự kiện.</p>
 
             <a href="%s" class="cta-button">Xem Vé Của Tôi</a>
 
@@ -242,7 +226,7 @@
 
             <div class="footer">
                 <p>Đây là tin nhắn tự động. Vui lòng không trả lời.</p>
-                <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi tại support@tackticket.com</p>
+                <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi tại support@tackticket.space</p>
                 <p>© 2025 Tack Ticket Foundation. Bảo lưu mọi quyền.</p>
             </div>
 
